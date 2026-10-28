@@ -1,11 +1,14 @@
 package io.github.yasarmahomedabbas.immichtv
 
 import android.content.Context
+import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichAlbumRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichServerConnector
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichHttpClient
 import io.github.yasarmahomedabbas.immichtv.data.settings.KeystoreCipher
 import io.github.yasarmahomedabbas.immichtv.data.settings.SharedPreferencesStorage
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSessionRepository
+import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbum
+import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbums
 import io.github.yasarmahomedabbas.immichtv.domain.server.ConnectToServer
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 
@@ -22,4 +25,8 @@ class AppContainer(context: Context) {
 
     val connectToServer = ConnectToServer(ImmichServerConnector(http), sessions)
     val getSession = GetSession(sessions)
+
+    private val albums = ImmichAlbumRepository(http, sessions)
+    val loadAlbums = LoadAlbums(albums)
+    val loadAlbum = LoadAlbum(albums)
 }

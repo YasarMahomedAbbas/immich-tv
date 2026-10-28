@@ -85,7 +85,7 @@ Dispatcher gains `/api/server/version` (default `{"major":3,"minor":3,"patch":5}
 
 Goal: `LoadAlbums` and `LoadAlbum` return domain albums and an album's counts and first items from a real Immich shape, tested against v3.3.5 and v2.0.0 bodies.
 
-### [ ] 2.1 — Domain models
+### [x] 2.1 — Domain models
 
 File: `…/domain/albums/Albums.kt`
 - `@JvmInline value class AlbumId(val value: String)`, `@JvmInline value class PhotoId(val value: String)`.
@@ -95,7 +95,7 @@ File: `…/domain/albums/Albums.kt`
 - `enum class AlbumFilter { All, Mine, SharedWithMe }`, `enum class AlbumSort { RecentlyUpdated, Name, MostItems }`.
 - `fun List<Album>.filterAndSort(filter: AlbumFilter, sort: AlbumSort): List<Album>`: Mine = `ownedByMe`; SharedWithMe = `!ownedByMe`; RecentlyUpdated = `updatedAt` desc; Name = case-insensitive (`String.CASE_INSENSITIVE_ORDER`); MostItems = `itemCount` desc; ties by name.
 
-### [ ] 2.2 — Results and the repository
+### [x] 2.2 — Results and the repository
 
 File: `…/domain/ServerResult.kt` (shared by later tickets)
 `sealed interface ServerResult<out T> { data class Ok<T>(val value: T); data class Failed(val problem: Problem) : ServerResult<Nothing> }`, `enum class Problem { Unreachable, KeyRejected, KeyLacksPermission, NotSignedIn }`.
@@ -103,7 +103,7 @@ File: `…/domain/albums/AlbumRepository.kt`
 `interface AlbumRepository { suspend fun albums(): ServerResult<List<Album>>; suspend fun album(id: AlbumId): ServerResult<Album>; suspend fun contents(album: Album, limit: Int): ServerResult<AlbumContents> }`.
 Use cases in the same file: `class LoadAlbums(repo)` (`invoke(): ServerResult<List<Album>>`), `class LoadAlbum(repo)` (`invoke(id): ServerResult<AlbumPage>`, `data class AlbumPage(val album: Album, val contents: AlbumContents)`, calling `album(id)` then `contents(album, STRIP_SIZE)` with `const val STRIP_SIZE = 30`).
 
-### [ ] 2.3 — The Immich implementation
+### [x] 2.3 — The Immich implementation
 
 File: `…/data/immich/ImmichAlbumRepository.kt` — `internal class ImmichAlbumRepository(client: OkHttpClient, sessions: SessionStore) : AlbumRepository`
 - A private `get(session, path, query)` helper on `Dispatchers.IO`: builds `apiUrl(...)` + query params, sets `API_KEY_HEADER`, maps 401 → `KeyRejected`, 403 → `KeyLacksPermission`, 5xx / `IOException` / `IllegalArgumentException` / unparseable body → `Unreachable`; no session → `NotSignedIn`. Mirror `ImmichServerConnector.parse`.
@@ -112,12 +112,12 @@ File: `…/data/immich/ImmichAlbumRepository.kt` — `internal class ImmichAlbum
 - `album(id)`: `GET albums/{id}` → same mapping.
 - `contents(album, limit)`: `GET timeline/buckets?albumId=&order=` (`asc`/`desc` from `newestFirst`) → `[BucketDto(timeBucket, count)]`; then for each bucket in order `GET timeline/bucket?albumId=&timeBucket=&order=` → `BucketAssetsDto(id: List<String>, isImage: List<Boolean>)`, with at most 4 requests in flight (`Semaphore(4)` + `async`), results kept in bucket order. Counts = sum of `isImage` true / false; `firstItems` = the first `limit` pairs. Any failed bucket fails the whole call.
 
-### [ ] 2.4 — Wiring
+### [x] 2.4 — Wiring
 
 File: `…/AppContainer.kt`
 `private val albums = ImmichAlbumRepository(http, sessions)`; `val loadAlbums = LoadAlbums(albums)`, `val loadAlbum = LoadAlbum(albums)`.
 
-### [ ] 2.5 — Tests
+### [x] 2.5 — Tests
 
 Files: `test/…/domain/albums/AlbumsTest.kt` (filterAndSort, every filter × sort and the tie rule; `LoadAlbum` with a fake repo passes failures through and asks for 30), `test/…/domain/albums/Fakes.kt` (`FakeAlbumRepository`), `test/…/data/immich/ImmichAlbumRepositoryTest.kt` (MockWebServer, fixtures as `const val`s taken from the specs: `ALBUMS_V3_3_5` with `albumUsers` and no `ownerId`, `ALBUMS_V2_0_0` with `ownerId`, `owner`, `assets`; both map to equal `Album` lists; a null `albumThumbnailAssetId` and an empty album without `startDate`/`endDate`; `/users/me` is asked once for two `albums()` calls; contents over two buckets, counts and the 30-item cap, `order=asc` when the album says so, `[]` → zeros; 401/403/500/garbage/socket close; exact paths and queries; every request has `x-api-key`; no session → `NotSignedIn`).
 
