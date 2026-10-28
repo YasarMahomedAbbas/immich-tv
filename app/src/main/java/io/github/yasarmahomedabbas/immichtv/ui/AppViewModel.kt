@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.yasarmahomedabbas.immichtv.AppContainer
+import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,47 +13,70 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/** Which top-level screen the app shows. */
+/** The top menu's tabs, in the order it shows them. */
+enum class Tab { Home, Albums, Photos, Search }
+
+/** Which screen the app shows. */
 sealed interface AppScreen {
     data object Loading : AppScreen
 
-    /** [firstRun] has nowhere to go back to; otherwise it was opened from Settings with [current]. */
-    data class Setup(val firstRun: Boolean, val current: Session?) : AppScreen
-    data object Home : AppScreen
+    /**
+     * [firstRun] has nowhere to go back to; otherwise it was opened from Settings with
+     * [current], and Back returns to [from].
+     */
+    data class Setup(val firstRun: Boolean, val current: Session?, val from: AppScreen = Main(Tab.Home)) : AppScreen
+
+    /** The top menu with [tab]'s content under it. */
+    data class Main(val tab: Tab) : AppScreen
+
+    data class Album(val id: AlbumId) : AppScreen
 }
 
-/** Chooses Setup or Home at launch and moves between them. */
+/** Chooses Setup or Home at launch and moves between screens; Back walks up toward Home. */
 class AppViewModel(private val getSession: GetSession) : ViewModel() {
     private val _screen = MutableStateFlow<AppScreen>(AppScreen.Loading)
     val screen: StateFlow<AppScreen> = _screen.asStateFlow()
 
     init {
         viewModelScope.launch {
-            _screen.value = if (getSession() == null) AppScreen.Setup(firstRun = true, current = null) else AppScreen.Home
+            _screen.value = if (getSession() == null) AppScreen.Setup(firstRun = true, current = null) else HOME
         }
     }
 
+    fun selectTab(tab: Tab) {
+        _screen.value = AppScreen.Main(tab)
+    }
+
+    fun openAlbum(id: AlbumId) {
+        _screen.value = AppScreen.Album(id)
+    }
+
     fun openSettings() {
+        val from = _screen.value
         viewModelScope.launch {
-            _screen.value = AppScreen.Setup(firstRun = false, current = getSession())
+            _screen.value = AppScreen.Setup(firstRun = false, current = getSession(), from = from)
         }
     }
 
     fun connected() {
-        _screen.value = AppScreen.Home
+        _screen.value = HOME
     }
 
     /** True when Back was handled here; false when the system should finish the app. */
     fun back(): Boolean {
-        val current = _screen.value
-        if (current is AppScreen.Setup && !current.firstRun) {
-            _screen.value = AppScreen.Home
-            return true
-        }
-        return false
+        val next = when (val current = _screen.value) {
+            is AppScreen.Setup -> if (current.firstRun) null else current.from
+            is AppScreen.Album -> AppScreen.Main(Tab.Albums)
+            is AppScreen.Main -> if (current.tab == Tab.Home) null else HOME
+            AppScreen.Loading -> null
+        } ?: return false
+        _screen.value = next
+        return true
     }
 
     companion object {
+        private val HOME = AppScreen.Main(Tab.Home)
+
         fun factory(container: AppContainer) = viewModelFactory {
             initializer { AppViewModel(container.getSession) }
         }

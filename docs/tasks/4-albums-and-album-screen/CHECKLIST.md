@@ -194,25 +194,25 @@ Coil's `ImageRequest` needs an Android context, so the logic sits in pure functi
 
 Goal: after Setup the app shows the top menu with four tabs (Albums wired in the next checkpoint, others placeholders), the clock and the Settings gear; Back behaves.
 
-### [ ] 5.1 — Navigation state
+### [x] 5.1 — Navigation state
 
 File: `…/ui/AppViewModel.kt`
-`enum class Tab { Home, Albums, Photos, Search }`. `AppScreen.Home` becomes `data class Main(val tab: Tab)`; add `data class Album(val id: AlbumId)`. `selectTab(tab)`, `openAlbum(id)`. `back()`: `Album` → `Main(Albums)`; `Main(tab != Home)` → `Main(Home)`; `Main(Home)` → false; Setup as today (non-first-run → `Main(Home)`). `connected()` → `Main(Home)`.
+`enum class Tab { Home, Albums, Photos, Search }`. `AppScreen.Home` becomes `data class Main(val tab: Tab)`; add `data class Album(val id: AlbumId)`. `selectTab(tab)`, `openAlbum(id)`. `back()`: `Album` → `Main(Albums)`; `Main(tab != Home)` → `Main(Home)`; `Main(Home)` → false; Setup opened from Settings carries `from` (the screen the gear was pressed on) and Back returns there; first-run Setup → false. `connected()` → `Main(Home)`.
 
-### [ ] 5.2 — Top menu
+### [x] 5.2 — Top menu
 
 File: `…/ui/components/TopMenu.kt`
-`@Composable fun TopMenu(selected: Tab, onSelect: (Tab) -> Unit, onOpenSettings: () -> Unit, modifier)`: the logo (the image glyph tinted `fg`, "Immich TV" 26sp 800 — the canvas's amber logo stroke would break rule 3, so the logo is `fg`), pills Home/Albums/Photos/Search (22sp; selected = `fg` fill + `on-fg` text, others `mfg`-ish text on no fill; focus = amber outline; OK selects), Search with its icon, a spacer, the clock (24sp `mfg`, `HH:mm`, ticks each minute via `LaunchedEffect`, 24-hour per the device's `DateFormat.is24HourFormat`), then the Settings gear (`SecondaryButton` icon). 56dp tall. Add `ic_search` vector.
+`@Composable fun TopMenu(selected: Tab, onSelect: (Tab) -> Unit, onOpenSettings: () -> Unit, modifier)`: the logo (the image glyph tinted `fg`, "Immich TV" 26sp 800 — the canvas's amber logo stroke would break rule 3, so the logo is `fg`), pills Home/Albums/Photos/Search (22sp; selected = `fg` fill + `on-fg` text, others `mfg`-ish text on no fill; focus = amber outline; OK selects), Search with its icon, a spacer, the clock (24sp `mfg`, `HH:mm`, ticks each minute via `LaunchedEffect`, 24-hour per the device's `DateFormat.is24HourFormat`), then the Settings gear (`IconButton`, a new icon-only round `raised` variant in `Buttons.kt`). 56dp tall. Add `ic_search` vector.
 
-### [ ] 5.3 — Main screen
+### [x] 5.3 — Main screen
 
 Files: `…/ui/main/MainScreen.kt`, `…/ui/main/PlaceholderTab.kt`
-`MainScreen(tab, onSelectTab, onOpenSettings, onOpenAlbum, albums: @Composable () -> Unit)` : column with 48dp top / 96dp side padding, `TopMenu`, then the tab's content; Home/Photos/Search show `PlaceholderTab(title)` (the tab name, "Coming soon" in `mfg`). Focus enters on the selected menu pill. The old `ui/home/HomeScreen.kt` is removed (its gear moves to the menu).
+`MainScreen(tab, onSelectTab, onOpenSettings, albums: @Composable () -> Unit)` : column with 48dp top / 96dp side padding, `TopMenu`, then the tab's content; Home/Photos/Search show `PlaceholderTab(title)` (the tab name, "Coming soon" in `mfg`). Focus enters on the selected menu pill (a tab's content may then move it). The old `ui/home/HomeScreen.kt` is removed (its gear moves to the menu).
 File: `…/MainActivity.kt`: route `Main` and `Album`.
 
-### [ ] 5.4 — Tests
+### [x] 5.4 — Tests
 
-File: `test/…/ui/AppViewModelTest.kt`: launch with a session → `Main(Home)`; `selectTab`; `openAlbum`; each Back rule above; `connected()` → `Main(Home)`.
+File: `test/…/ui/AppViewModelTest.kt`: launch with a session → `Main(Home)`; `selectTab`; `openAlbum`; each Back rule above (Setup Back returns to the tab it was opened from); `connected()` → `Main(Home)`.
 
 ### Verify
 

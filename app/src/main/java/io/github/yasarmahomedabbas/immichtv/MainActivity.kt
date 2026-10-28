@@ -14,7 +14,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
 import io.github.yasarmahomedabbas.immichtv.ui.AppScreen
 import io.github.yasarmahomedabbas.immichtv.ui.AppViewModel
-import io.github.yasarmahomedabbas.immichtv.ui.home.HomeScreen
+import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
+import io.github.yasarmahomedabbas.immichtv.ui.main.PlaceholderTab
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
@@ -40,7 +41,12 @@ class MainActivity : ComponentActivity() {
                         onConnected = app::connected,
                         onBack = { app.back() },
                     )
-                    AppScreen.Home -> HomeScreen(onOpenSettings = app::openSettings)
+                    is AppScreen.Main -> MainScreen(
+                        tab = current.tab,
+                        onSelectTab = app::selectTab,
+                        onOpenSettings = app::openSettings,
+                    ) { PlaceholderTab("Albums") }
+                    is AppScreen.Album -> PlaceholderTab(current.id.value)
                 }
             }
         }

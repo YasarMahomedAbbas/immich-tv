@@ -1,10 +1,14 @@
 package io.github.yasarmahomedabbas.immichtv.ui.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -64,5 +68,31 @@ private fun HouseButton(
             Spacer(Modifier.width(10.dp))
         }
         Text(text, fontSize = 22.sp)
+    }
+}
+
+/** A round `raised` button with only an icon, for the top menu's Settings gear. */
+@Composable
+fun IconButton(icon: Painter, contentDescription: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val fill = colors.surfaceVariant
+    Button(
+        onClick = onClick,
+        modifier = modifier.size(56.dp),
+        shape = ButtonDefaults.shape(shape = CircleShape),
+        contentPadding = PaddingValues(0.dp),
+        colors = ButtonDefaults.colors(
+            containerColor = fill,
+            contentColor = colors.onSurface,
+            focusedContainerColor = fill,
+            focusedContentColor = colors.onSurface,
+            pressedContainerColor = fill,
+            pressedContentColor = colors.onSurface,
+        ),
+        border = ButtonDefaults.border(focusedBorder = houseFocusBorder(CircleShape)),
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(28.dp), tint = colors.onSurface)
+        }
     }
 }
