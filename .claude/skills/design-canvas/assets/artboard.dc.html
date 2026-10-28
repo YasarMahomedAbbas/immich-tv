@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>__BOARD_TITLE__</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+:root{--bg:#0E0F12;--surface:#191B20;--raised:#22252C;--fg:#F3F1EC;--mfg:#A3A6AE;--focus:#F5C451;--on-fg:#0E0F12;--scrim:rgba(14,15,18,.72);--r-tile:12px;--r-card:14px;--r-panel:18px}
+.root{position:relative;font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--fg);box-sizing:border-box;overflow:hidden}
+.root *{box-sizing:border-box}
+a{color:inherit;text-decoration:none}a:hover{color:#FFFFFF}
+button{font-family:inherit}
+.focus{outline:4px solid var(--focus);outline-offset:5px}
+.ph0{background:linear-gradient(180deg,#7FA3B8 0 60%,#4E6B52 60% 100%)}
+.ph1{background:linear-gradient(180deg,#E0B48A 0 66%,#7A5A44 66% 100%)}
+.ph2{background:linear-gradient(180deg,#9DB6C9 0 55%,#3F4F63 55% 100%)}
+.ph3{background:linear-gradient(180deg,#C9A6B8 0 62%,#5E4A5C 62% 100%)}
+.ph4{background:linear-gradient(180deg,#B9C4A0 0 58%,#5C6B45 58% 100%)}
+.ph5{background:linear-gradient(180deg,#F0C987 0 64%,#8C5B3B 64% 100%)}
+.ph6{background:linear-gradient(180deg,#8FA9A1 0 57%,#34514C 57% 100%)}
+.ph7{background:linear-gradient(180deg,#D4C3A8 0 68%,#6F6250 68% 100%)}
+.ph8{background:linear-gradient(180deg,#A7B1D6 0 60%,#4A4F7A 60% 100%)}
+.ph9{background:linear-gradient(180deg,#C7D3D8 0 63%,#56656E 63% 100%)}
+.shim{background:linear-gradient(90deg,var(--surface) 0%,var(--raised) 40%,var(--surface) 80%);background-size:200% 100%;animation:shim 1.8s linear infinite;border-radius:var(--r-tile)}
+@keyframes shim{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.shim{animation:none}}
+</style>
+</helmet>
+<div class="root" style="width: 1920px; height: 1080px; padding: 48px 96px 0; display: flex; flex-direction: column; gap: 36px">
+__MAIN__
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 1920, "height": 1080}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

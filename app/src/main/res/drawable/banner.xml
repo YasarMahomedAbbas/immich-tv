@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Google TV launcher tile: 320×180, the photo mark on the app's dark ground. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#0E0F12"
+        android:pathData="M0,0h320v180h-320z" />
+    <path
+        android:strokeColor="#F5C451"
+        android:strokeWidth="8"
+        android:strokeLineJoin="round"
+        android:pathData="M124,54h72a16,16 0,0 1,16 16v40a16,16 0,0 1,-16 16h-72a16,16 0,0 1,-16 -16v-40a16,16 0,0 1,16 -16z" />
+    <path
+        android:fillColor="#F5C451"
+        android:pathData="M140,78m-9,0a9,9 0,1 1,18 0a9,9 0,1 1,-18 0" />
+    <path
+        android:strokeColor="#F5C451"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M112,120l36,-30l24,20l18,-14l22,20" />
+</vector>
