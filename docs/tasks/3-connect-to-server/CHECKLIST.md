@@ -60,7 +60,7 @@ Decisions: Q1.1 Keystore-encrypted key (security), Q2.1 a Settings gear at the r
 
 Goal: `ConnectToServer` validates the input and reports exactly one outcome for any server, tested with fakes and with MockWebServer.
 
-### [ ] 1.1 — Dependencies
+### [x] 1.1 — Dependencies
 
 Files: `gradle/libs.versions.toml`, `build.gradle.kts`, `app/build.gradle.kts`
 
@@ -71,7 +71,7 @@ Files: `gradle/libs.versions.toml`, `build.gradle.kts`, `app/build.gradle.kts`
 
 All of these except the plugin are already in the catalog.
 
-### [ ] 1.2 — Domain models and interfaces
+### [x] 1.2 — Domain models and interfaces
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/server/Server.kt`
 ```kotlin
@@ -104,7 +104,7 @@ interface SessionStore { suspend fun load(): Session?; suspend fun save(session:
 ```
 Parse the host with `java.net.URI` (plain Kotlin/JDK, allowed in domain).
 
-### [ ] 1.3 — The use case
+### [x] 1.3 — The use case
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/server/ConnectToServer.kt`
 `class ConnectToServer(private val connector: ServerConnector, private val store: SessionStore) { suspend operator fun invoke(address: String, apiKey: String): ConnectResult }`.
@@ -115,7 +115,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/server/Conn
 
 Also `class GetSession(private val store: SessionStore) { suspend operator fun invoke(): Session? }` in the same file.
 
-### [ ] 1.4 — The Immich connector
+### [x] 1.4 — The Immich connector
 
 Files: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/immich/ImmichHttp.kt`, `.../data/immich/ImmichServerConnector.kt`
 
@@ -126,7 +126,7 @@ Files: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/immich/Immic
 - A URL that fails to build → `Unreachable`. Close every response.
 - The DTOs (`PingDto(val res: String)`, `MeDto`) are private to this file.
 
-### [ ] 1.5 — Tests
+### [x] 1.5 — Tests
 
 Files: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/domain/server/ServerAddressTest.kt`, `ApiKeyTest.kt`, `ConnectToServerTest.kt` (hand-written fakes, `runTest`), `app/src/test/java/io/github/yasarmahomedabbas/immichtv/data/immich/ImmichServerConnectorTest.kt`.
 
