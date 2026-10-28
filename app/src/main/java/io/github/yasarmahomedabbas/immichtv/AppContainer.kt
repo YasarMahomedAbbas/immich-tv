@@ -10,6 +10,7 @@ import io.github.yasarmahomedabbas.immichtv.data.settings.KeystoreCipher
 import io.github.yasarmahomedabbas.immichtv.data.settings.SharedPreferencesStorage
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSessionRepository
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSlideshowSettings
+import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbums
 import io.github.yasarmahomedabbas.immichtv.domain.server.ConnectToServer
@@ -34,6 +35,7 @@ class AppContainer(context: Context) {
     private val albums = ImmichAlbumRepository(http, sessions)
     val loadAlbums = LoadAlbums(albums)
     val loadAlbum = LoadAlbum(albums)
+    val albumTimeline = AlbumTimeline(albums)
 
     private val slideshowSettings = StoredSlideshowSettings(
         SharedPreferencesStorage(context.getSharedPreferences("slideshow", Context.MODE_PRIVATE)),

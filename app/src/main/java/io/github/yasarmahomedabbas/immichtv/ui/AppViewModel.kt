@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.yasarmahomedabbas.immichtv.AppContainer
+import io.github.yasarmahomedabbas.immichtv.domain.albums.Album as DomainAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
@@ -29,7 +30,11 @@ sealed interface AppScreen {
     /** The top menu with [tab]'s content under it. */
     data class Main(val tab: Tab) : AppScreen
 
-    data class Album(val id: AlbumId) : AppScreen
+    /** [focusBrowse]: coming Back from its photos, so focus goes to Browse photos. */
+    data class Album(val id: AlbumId, val focusBrowse: Boolean = false) : AppScreen
+
+    /** Browse photos: [album]'s photos by month. */
+    data class AlbumPhotos(val album: DomainAlbum) : AppScreen
 }
 
 /** Chooses Setup or Home at launch and moves between screens; Back walks up toward Home. */
@@ -51,6 +56,10 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
         _screen.value = AppScreen.Album(id)
     }
 
+    fun openAlbumPhotos(album: DomainAlbum) {
+        _screen.value = AppScreen.AlbumPhotos(album)
+    }
+
     fun openSettings() {
         val from = _screen.value
         viewModelScope.launch {
@@ -67,6 +76,7 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
         val next = when (val current = _screen.value) {
             is AppScreen.Setup -> if (current.firstRun) null else current.from
             is AppScreen.Album -> AppScreen.Main(Tab.Albums)
+            is AppScreen.AlbumPhotos -> AppScreen.Album(current.album.id, focusBrowse = true)
             is AppScreen.Main -> if (current.tab == Tab.Home) null else HOME
             AppScreen.Loading -> null
         } ?: return false

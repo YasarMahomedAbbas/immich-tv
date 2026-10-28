@@ -2,6 +2,8 @@ package io.github.yasarmahomedabbas.immichtv.domain.albums
 
 import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
+import io.github.yasarmahomedabbas.immichtv.domain.photos.FakeTimeline
+import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
 import java.time.Instant
 
 /** An album with sensible defaults; override what a test is about. */
@@ -51,4 +53,8 @@ class FakeAlbumRepository(
         contentsLimits += limit
         return contents
     }
+
+    val timelines = mutableMapOf<AlbumId, Timeline>()
+
+    override fun timeline(album: Album): Timeline = timelines.getOrPut(album.id) { FakeTimeline() }
 }

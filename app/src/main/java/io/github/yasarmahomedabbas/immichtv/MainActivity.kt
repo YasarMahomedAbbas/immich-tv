@@ -14,11 +14,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
 import io.github.yasarmahomedabbas.immichtv.ui.AppScreen
 import io.github.yasarmahomedabbas.immichtv.ui.AppViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumPhotosScreen
 import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumScreen
 import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
+import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
@@ -58,7 +60,16 @@ class MainActivity : ComponentActivity() {
                             factory = AlbumViewModel.factory(container, current.id),
                         ),
                         onBack = { app.back() },
-                        onBrowsePhotos = {},
+                        onBrowsePhotos = app::openAlbumPhotos,
+                        focusBrowse = current.focusBrowse,
+                    )
+                    is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
+                        albumName = current.album.name,
+                        viewModel = viewModel(
+                            key = "album-photos-${current.album.id.value}",
+                            factory = PhotoGridViewModel.factory(container.albumTimeline(current.album)),
+                        ),
+                        onBack = { app.back() },
                     )
                 }
             }

@@ -7,6 +7,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumContents
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
+import io.github.yasarmahomedabbas.immichtv.domain.photos.TimelineMonth
 import io.github.yasarmahomedabbas.immichtv.domain.server.ApiKey
 import io.github.yasarmahomedabbas.immichtv.domain.server.FakeSessionStore
 import io.github.yasarmahomedabbas.immichtv.domain.server.ServerAddress
@@ -23,6 +24,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.Instant
+import java.time.YearMonth
 import java.util.concurrent.TimeUnit
 
 class ImmichAlbumRepositoryTest {
@@ -181,6 +183,57 @@ class ImmichAlbumRepositoryTest {
     fun `failed buckets list fails the contents`() = runTest {
         routes["/api/timeline/buckets?albumId=$SUMMER&order=desc"] = MockResponse().setResponseCode(500)
         assertEquals(ServerResult.Failed(Problem.Unreachable), repository.contents(expectedAlbums[0], 30))
+    }
+
+    @Test
+    fun `the timeline's months come from the buckets, as year-months with counts`() = runTest {
+        routes["/api/timeline/buckets?albumId=$SUMMER&order=desc"] =
+            MockResponse().setBody("""[{"timeBucket":"2025-08-01","count":2},{"timeBucket":"2025-07-01T00:00:00.000Z","count":3}]""")
+
+        assertEquals(
+            ServerResult.Ok(listOf(TimelineMonth(YearMonth.of(2025, 8), 2), TimelineMonth(YearMonth.of(2025, 7), 3))),
+            repository.timeline(expectedAlbums[0]).months(),
+        )
+    }
+
+    @Test
+    fun `a month's photos are asked for with the exact bucket the server sent`() = runTest {
+        routes["/api/timeline/buckets?albumId=$SUMMER&order=desc"] =
+            MockResponse().setBody("""[{"timeBucket":"2025-07-01T00:00:00.000Z","count":2}]""")
+        routes["/api/timeline/bucket?albumId=$SUMMER&timeBucket=2025-07-01T00%3A00%3A00.000Z&order=desc"] =
+            MockResponse().setBody(bucket(listOf("p1" to true, "v1" to false)))
+        val timeline = repository.timeline(expectedAlbums[0])
+        timeline.months()
+
+        assertEquals(
+            ServerResult.Ok(listOf(Photo(PhotoId("p1"), false), Photo(PhotoId("v1"), true))),
+            timeline.photos(YearMonth.of(2025, 7)),
+        )
+    }
+
+    @Test
+    fun `a month not seen in the buckets is asked for as its first day, in the album's order`() = runTest {
+        val oldestFirst = expectedAlbums[0].copy(newestFirst = false)
+        routes["/api/timeline/bucket?albumId=$SUMMER&timeBucket=2025-06-01T00%3A00%3A00.000Z&order=asc"] =
+            MockResponse().setBody(bucket(listOf("p1" to true)))
+
+        assertEquals(ServerResult.Ok(listOf(Photo(PhotoId("p1"), false))), repository.timeline(oldestFirst).photos(YearMonth.of(2025, 6)))
+    }
+
+    @Test
+    fun `timeline failures are mapped`() = runTest {
+        routes["/api/timeline/buckets?albumId=$SUMMER&order=desc"] = MockResponse().setResponseCode(403)
+        val timeline = repository.timeline(expectedAlbums[0])
+        assertEquals(ServerResult.Failed(Problem.KeyLacksPermission), timeline.months())
+
+        routes["/api/timeline/buckets?albumId=$SUMMER&order=desc"] = MockResponse().setBody("""[{"timeBucket":"soon","count":1}]""")
+        assertEquals(ServerResult.Failed(Problem.Unreachable), timeline.months())
+
+        assertEquals(ServerResult.Failed(Problem.Unreachable), timeline.photos(YearMonth.of(2025, 1)))
+
+        sessions.session = null
+        assertEquals(ServerResult.Failed(Problem.NotSignedIn), timeline.months())
+        assertEquals(ServerResult.Failed(Problem.NotSignedIn), timeline.photos(YearMonth.of(2025, 1)))
     }
 
     @Test

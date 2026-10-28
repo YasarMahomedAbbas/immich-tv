@@ -2,6 +2,7 @@ package io.github.yasarmahomedabbas.immichtv.domain.albums
 
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.map
+import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
 
 /** The albums on the photo server. */
 interface AlbumRepository {
@@ -12,6 +13,9 @@ interface AlbumRepository {
 
     /** [album]'s counts and its first [limit] items. */
     suspend fun contents(album: Album, limit: Int): ServerResult<AlbumContents>
+
+    /** [album]'s photos by month, in the album's order. */
+    fun timeline(album: Album): Timeline
 }
 
 /** Everything on the album screen. */
@@ -34,4 +38,9 @@ class LoadAlbum(private val repository: AlbumRepository) {
         /** How many items the album screen's strip shows. */
         const val STRIP_SIZE = 30
     }
+}
+
+/** An album's photos by month, for browsing them. */
+class AlbumTimeline(private val repository: AlbumRepository) {
+    operator fun invoke(album: Album): Timeline = repository.timeline(album)
 }

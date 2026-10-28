@@ -84,4 +84,11 @@ class AlbumsTest {
         val repo = FakeAlbumRepository(contents = ServerResult.Failed(Problem.Unreachable))
         assertEquals(ServerResult.Failed(Problem.Unreachable), LoadAlbum(repo)(AlbumId("a1")))
     }
+
+    @Test
+    fun `album timeline asks the repository for that album's`() {
+        val repo = FakeAlbumRepository()
+        val timeline = AlbumTimeline(repo)(album())
+        assertTrue(timeline === repo.timelines[AlbumId("a1")])
+    }
 }

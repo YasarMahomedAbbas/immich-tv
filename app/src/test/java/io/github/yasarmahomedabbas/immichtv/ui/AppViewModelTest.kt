@@ -1,6 +1,7 @@
 package io.github.yasarmahomedabbas.immichtv.ui
 
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
+import io.github.yasarmahomedabbas.immichtv.domain.albums.album
 import io.github.yasarmahomedabbas.immichtv.domain.server.ApiKey
 import io.github.yasarmahomedabbas.immichtv.domain.server.FakeSessionStore
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
@@ -64,6 +65,21 @@ class AppViewModelTest {
         vm.openAlbum(AlbumId("a1"))
         assertEquals(AppScreen.Album(AlbumId("a1")), vm.screen.value)
 
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Main(Tab.Albums), vm.screen.value)
+    }
+
+    @Test
+    fun `browse photos opens the album's photos, and back returns to the album on browse photos`() = runTest(dispatcher) {
+        val vm = signedIn()
+        val summer = album(id = "a1")
+        vm.selectTab(Tab.Albums)
+        vm.openAlbum(summer.id)
+        vm.openAlbumPhotos(summer)
+        assertEquals(AppScreen.AlbumPhotos(summer), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Album(summer.id, focusBrowse = true), vm.screen.value)
         assertTrue(vm.back())
         assertEquals(AppScreen.Main(Tab.Albums), vm.screen.value)
     }

@@ -9,6 +9,8 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumRepository
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.map
+import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
+import io.github.yasarmahomedabbas.immichtv.domain.photos.TimelineMonth
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
 import io.github.yasarmahomedabbas.immichtv.domain.server.SessionStore
 import kotlinx.coroutines.Dispatchers
@@ -24,12 +26,16 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
 import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeParseException
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Albums from Immich v1.133+: `GET /api/albums`, `/api/albums/{id}` and `/api/users/me` (who
  * "me" is, for owned vs shared), and the album's timeline (`/api/timeline/buckets` and
- * `/api/timeline/bucket` with `albumId`) for its photo and video counts and first items.
+ * `/api/timeline/bucket` with `albumId`) for its photo and video counts, first items and its
+ * photos month by month.
  */
 internal class ImmichAlbumRepository(
     private val client: OkHttpClient,
@@ -62,23 +68,14 @@ internal class ImmichAlbumRepository(
     }
 
     override suspend fun contents(album: Album, limit: Int): ServerResult<AlbumContents> = signedIn { session ->
-        val order = album.order
-        val buckets = when (val result = get<List<BucketDto>>(session, "timeline/buckets", album.query())) {
+        val buckets = when (val result = buckets(session, album)) {
             is ServerResult.Ok -> result.value
             is ServerResult.Failed -> return@signedIn result
         }
         val inFlight = Semaphore(MAX_IN_FLIGHT)
         val months = coroutineScope {
             buckets.map { bucket ->
-                async {
-                    inFlight.withPermit {
-                        get<BucketAssetsDto>(
-                            session,
-                            "timeline/bucket",
-                            listOf("albumId" to album.id.value, "timeBucket" to bucket.timeBucket, "order" to order),
-                        )
-                    }
-                }
+                async { inFlight.withPermit { bucket(session, album, bucket.timeBucket) } }
             }.awaitAll()
         }
         val items = mutableListOf<Photo>()
@@ -89,13 +86,56 @@ internal class ImmichAlbumRepository(
                 is ServerResult.Ok -> month.value
                 is ServerResult.Failed -> return@signedIn month
             }
-            for (photo in assets.toPhotos()) {
+            for (photo in assets) {
                 if (photo.isVideo) videos++ else photos++
                 if (items.size < limit) items += photo
             }
         }
         ServerResult.Ok(AlbumContents(photos, videos, items))
     }
+
+    override fun timeline(album: Album): Timeline = AlbumTimeline(album)
+
+    /**
+     * [album]'s months from `/timeline/buckets`, and each month's items from `/timeline/bucket`.
+     * The bucket string Immich sent for a month is what goes back for it (v3 sends `YYYY-MM-DD`,
+     * older servers a full timestamp), so they are remembered from [months].
+     */
+    private inner class AlbumTimeline(private val album: Album) : Timeline {
+        private val bucketOf = ConcurrentHashMap<YearMonth, String>()
+
+        override suspend fun months(): ServerResult<List<TimelineMonth>> = signedIn { session ->
+            val buckets = when (val result = buckets(session, album)) {
+                is ServerResult.Ok -> result.value
+                is ServerResult.Failed -> return@signedIn result
+            }
+            try {
+                ServerResult.Ok(
+                    buckets.map { bucket ->
+                        val month = YearMonth.from(LocalDate.parse(bucket.timeBucket.take(10)))
+                        bucketOf[month] = bucket.timeBucket
+                        TimelineMonth(month, bucket.count)
+                    },
+                )
+            } catch (_: DateTimeParseException) {
+                ServerResult.Failed(Problem.Unreachable)
+            }
+        }
+
+        override suspend fun photos(month: YearMonth): ServerResult<List<Photo>> = signedIn { session ->
+            bucket(session, album, bucketOf[month] ?: "$month-01T00:00:00.000Z")
+        }
+    }
+
+    private suspend fun buckets(session: Session, album: Album): ServerResult<List<BucketDto>> =
+        get(session, "timeline/buckets", listOf("albumId" to album.id.value, "order" to album.order))
+
+    private suspend fun bucket(session: Session, album: Album, timeBucket: String): ServerResult<List<Photo>> =
+        get<BucketAssetsDto>(
+            session,
+            "timeline/bucket",
+            listOf("albumId" to album.id.value, "timeBucket" to timeBucket, "order" to album.order),
+        ).map { it.toPhotos() }
 
     private suspend fun myId(session: Session): ServerResult<String> {
         me?.let { (cachedFor, id) -> if (cachedFor == session) return ServerResult.Ok(id) }
@@ -149,8 +189,6 @@ internal class ImmichAlbumRepository(
 }
 
 private val Album.order get() = if (newestFirst) "desc" else "asc"
-
-private fun Album.query() = listOf("albumId" to id.value, "order" to order)
 
 private inline fun <reified T> decode(body: String?): T? = try {
     body?.let { immichJson.decodeFromString<T>(it) }

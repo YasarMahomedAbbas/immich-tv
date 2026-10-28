@@ -283,34 +283,34 @@ Record what this ticket settled, in a new § Components: the top menu recipe (lo
 
 Goal: Browse photos opens a 6-column grid of the album's previews with a heading per month, loaded month by month, built on a domain `Timeline` so #7 can show the whole library with the same grid.
 
-### [ ] 8.1 — Domain timeline
+### [x] 8.1 — Domain timeline
 
 File: `…/domain/photos/Timeline.kt`
 `data class TimelineMonth(val month: java.time.YearMonth, val count: Int)`; `interface Timeline { suspend fun months(): ServerResult<List<TimelineMonth>>; suspend fun photos(month: YearMonth): ServerResult<List<Photo>> }` (KDoc: a set of photos grouped by month, newest or oldest first as the source orders them; #7 gives the whole library one). `AlbumRepository` gains `fun timeline(album: Album): Timeline`.
 
-### [ ] 8.2 — The Immich implementation
+### [x] 8.2 — The Immich implementation
 
 File: `…/data/immich/ImmichAlbumRepository.kt`
 `timeline(album)` returns a `Timeline` whose `months()` is `GET timeline/buckets?albumId=&order=` mapped to `TimelineMonth(YearMonth.from(LocalDate.parse(timeBucket.take(10))), count)` (the bucket is `YYYY-MM-DD…`, the first of the month), and `photos(month)` is `GET timeline/bucket?albumId=&timeBucket=<the bucket string for that month>&order=` → `Photo`s from `id`/`isImage`. The bucket strings are remembered from `months()` so the exact value Immich sent is passed back; a month not seen yet falls back to `<yyyy-MM>-01T00:00:00.000Z`. `contents()` reuses the same bucket calls.
 
-### [ ] 8.3 — ViewModel
+### [x] 8.3 — ViewModel
 
 File: `…/ui/photos/PhotoGridViewModel.kt` (in `ui/photos/`, not `ui/album/`, so #7 reuses it)
-`PhotoGridViewModel(timeline: Timeline)`; state `PhotoGridState(val load: GridLoad, val sections: List<MonthSection>)`, `GridLoad { Loading; Loaded; Empty; Failed(problem) }`, `MonthSection(month: YearMonth, count: Int, photos: MonthPhotos)` with `MonthPhotos { NotLoaded; Loading; Loaded(list); Failed(problem) }`. On start: `months()` then the first month's photos. `loadMonth(month)` loads a month once (no-op if loading or loaded); `retry()` reloads months, or retries a failed month. Factory taking a `Timeline`.
+`PhotoGridViewModel(timeline: Timeline)`; state `PhotoGridState(val load: GridLoad, val sections: List<MonthSection>)`, `GridLoad { Loading; Loaded; Empty; Failed(problem) }`, `MonthSection(month: YearMonth, count: Int, photos: MonthPhotos)` with `MonthPhotos { NotLoaded; Loading; Loaded(list); Failed(problem) }`. On start: `months()` then the first month's photos. `loadMonth(month)` loads a month once (no-op if loading, loaded or failed); `retryMonth(month)` retries a failed month; `retry()` reloads the months after they failed. Factory taking a `Timeline`.
 
-### [ ] 8.4 — Screen
+### [x] 8.4 — Screen
 
 Files: `…/ui/photos/PhotoGrid.kt` (the reusable grid), `…/ui/album/AlbumPhotosScreen.kt`
-`PhotoGrid(state, onNeedMonth, onRetry, modifier)`: a `LazyVerticalGrid(GridCells.Fixed(6))`, 16dp gaps; per month a full-span heading ("June 2025" 28sp 700, count in `mfg`) then that month's `PhotoTile`s (square, 12dp corners, focusable, video badge, OK does nothing); a month not loaded yet shows `count` skeleton tiles and asks for its photos when it comes into view; a failed month shows a full-span "Couldn't load this month" with Try again. First tile takes focus once loaded. `AlbumPhotosScreen(albumName, state, onBack, …)`: back link "‹ <album name>", then the grid; whole-screen skeleton, empty ("This album is empty") and failed (`FailedState`) states. Previews for each state.
+`PhotoGrid(sections, onNeedMonth, onRetryMonth, modifier, onOpen)` and `PhotoGridSkeleton`: a `LazyVerticalGrid(GridCells.Fixed(6))`, 14dp gaps (the canvas's Photos board); per month a full-span heading ("June 2025" 30sp 800, "N photos" 20sp `mfg`, as on the Photos board) then that month's `PhotoTile`s (square, 12dp corners, focusable, video badge, OK does nothing); a month not loaded yet shows `count` skeleton tiles and asks for its photos when its heading or a skeleton tile is composed; a failed month shows a full-span "Couldn't load this month" with Try again. First tile takes focus once loaded. `AlbumPhotosScreen(albumName, viewModel, onBack)`: back link "‹ <album name>" (holds focus until the first tile is there), then the grid; whole-screen skeleton, empty ("This album is empty", action Back to the album) and failed (`FailedState`) states. Previews for each state.
 
-### [ ] 8.5 — Navigation
+### [x] 8.5 — Navigation
 
 Files: `…/ui/AppViewModel.kt`, `…/MainActivity.kt`, `…/ui/album/AlbumScreen.kt`, `…/AppContainer.kt`
 `AppScreen.AlbumPhotos(val album: Album)` (the album screen already holds it: its name for the back link, its id and order for the timeline); `openAlbumPhotos(album)`; `back()` from `AlbumPhotos` → `Album(album.id, focusBrowse = true)`. `AppScreen.Album` gains `focusBrowse: Boolean = false`: coming Back, the album screen focuses Browse photos instead of Start slideshow. Browse photos calls `openAlbumPhotos` (only once the album has loaded). Use case `AlbumTimeline(repo)` in `domain/albums/AlbumRepository.kt` (`invoke(album): Timeline`); `AppContainer` exposes `albumTimeline` so `ui/` never names `data/`.
 
-### [ ] 8.6 — Tests
+### [x] 8.6 — Tests
 
-Files: `test/…/ui/photos/PhotoGridViewModelTest.kt` (a `FakeTimeline`: months then first month; `loadMonth` once only; a failed month then retry; empty months → `Empty`; months failing → `Failed` then retry → `Loaded`), `test/…/data/immich/ImmichAlbumRepositoryTest.kt` (timeline months → `YearMonth`s and counts; `photos(month)` sends the exact bucket string and `order`; failures mapped), `test/…/ui/AppViewModelTest.kt` (open album photos; Back → `Album(id, focusBrowse = true)`; Back from that album → Albums).
+Files: `test/…/ui/photos/PhotoGridViewModelTest.kt` (a `FakeTimeline` in `test/…/domain/photos/`: months then first month; `loadMonth` once only; an unknown month ignored; a failed month then `retryMonth`; empty months → `Empty`; months failing → `Failed` then retry → `Loaded`), `test/…/data/immich/ImmichAlbumRepositoryTest.kt` (timeline months → `YearMonth`s and counts, both bucket formats; `photos(month)` sends the exact bucket string and `order`; an unseen month falls back to its first day; failures mapped), `test/…/domain/albums/AlbumsTest.kt` (`AlbumTimeline` asks the repository), `test/…/ui/AppViewModelTest.kt` (open album photos; Back → `Album(id, focusBrowse = true)`; Back from that album → Albums).
 
 ### Verify
 

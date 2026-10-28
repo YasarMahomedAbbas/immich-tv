@@ -42,6 +42,9 @@
     <string name="album_settings_hint">Press OK on a setting to change it. It is remembered for this album.</string>
     <string name="album_in_this_album">In this album</string>
     <string name="album_empty">This album is empty</string>
+    <string name="album_photos_empty_hint">Add photos to it in Immich and they show up here.</string>
+    <string name="album_photos_back">Back to the album</string>
+    <string name="photos_month_failed">Couldn\'t load this month.</string>
     <string name="setting_seconds">Each photo for</string>
     <plurals name="setting_seconds_value">
         <item quantity="one">%1$d second</item>
