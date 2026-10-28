@@ -70,6 +70,10 @@ kover {
                     "*.AppContainer*",
                     "*.ComposableSingletons*",
                     "*Screen*",
+                    // Thin wrappers over the AndroidKeyStore and SharedPreferences: they need a
+                    // device. The logic behind them is tested with fakes.
+                    "*.KeystoreCipher*",
+                    "*.SharedPreferencesStorage*",
                 )
             }
         }

@@ -143,7 +143,7 @@ Cover the cases in Test plan → Unit and MockWebServer. For the v3.3.5 body, ta
 
 Goal: a saved session survives a restart, with the key stored only encrypted.
 
-### [ ] 2.1 — Storage and cipher seams
+### [x] 2.1 — Storage and cipher seams
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/settings/Storage.kt`
 ```kotlin
@@ -152,7 +152,7 @@ internal interface SecretCipher { fun encrypt(plain: String): String; fun decryp
 internal class SharedPreferencesStorage(private val prefs: SharedPreferences) : StringStorage  // put uses one edit().apply(); null removes
 ```
 
-### [ ] 2.2 — Keystore cipher
+### [x] 2.2 — Keystore cipher
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/settings/KeystoreCipher.kt`
 `internal class KeystoreCipher(private val alias: String = "immich_tv_api_key") : SecretCipher`:
@@ -160,7 +160,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/settings/Keys
 - The output is `java.util.Base64` of `iv (12 bytes) + ciphertext`.
 - It never logs anything.
 
-### [ ] 2.3 — The session repository
+### [x] 2.3 — The session repository
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/settings/StoredSessionRepository.kt`
 `internal class StoredSessionRepository(private val storage: StringStorage, private val cipher: SecretCipher) : SessionStore`, on `Dispatchers.IO`.
@@ -168,11 +168,11 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/settings/Stor
 - `save` writes the URL and `cipher.encrypt(key)`.
 - `load` returns null if either key is missing. If `decrypt` throws (for example the Keystore key was lost), it returns null, so the app goes back to Setup. Otherwise it returns `Session(ServerAddress.parse(url) ?: return null, ApiKey(plain))`.
 
-### [ ] 2.4 — Coverage excludes
+### [x] 2.4 — Coverage excludes
 
 File: `app/build.gradle.kts`: add `"*.KeystoreCipher*"` and `"*.SharedPreferencesStorage*"` to the Kover `classes(...)` excludes, with a comment saying they need a device.
 
-### [ ] 2.5 — Tests
+### [x] 2.5 — Tests
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/data/settings/StoredSessionRepositoryTest.kt`. Use an in-memory `StringStorage`, plus a fake cipher that reverses and prefixes the string and can be switched to throw. Cover the cases in Test plan → Unit.
 
