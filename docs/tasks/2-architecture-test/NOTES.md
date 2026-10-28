@@ -19,3 +19,10 @@ Branch: `chore/2-architecture-test`
 - Tests: 16 passed / 0 failed (`LayerRulesTest` 15, `ArchitectureTest` 1). Full CI command (`testDebugUnitTest koverVerifyDebug lintDebug assembleDebug`) BUILD SUCCESSFUL; the 19 lint warnings are all pre-existing (manifest, banner, version catalog). Negative check: adding `import android.os.Bundle` to `domain/Domain.kt` made `ArchitectureTest` fail with `.../domain/Domain.kt:8: domain/ is plain Kotlin: ... (android.os.Bundle)`; reverted.
 - Outstanding: none.
 - Contradicted the plan: the checkpoint 1 negative check named `import okhttp3.OkHttpClient`, but OkHttp is not a dependency yet so the main source set would not compile; used `android.os.Bundle` instead and edited the Verify line to match. Also added a line-number test after a multi-line block comment (beyond the listed cases).
+
+## Review
+
+- Fixed: `LayerRules.blankCommentsAndStrings` blanked the code inside `${...}` string templates, so `"${io.github.yasarmahomedabbas.immichtv.data.X.NAME}"` in `ui/` or `"${android.os.Build.VERSION}"` in `domain/` passed; template code is now scanned. Nested block comments (`/* a /* b */ okhttp3.Call */`) ended at the first `*/` and failed on comment text; they now nest. Three `LayerRulesTest` cases, each failing before the fix (18 checker tests + `ArchitectureTest`, full CI command green).
+- Raised: none
+- API: none (no server calls)
+- Layers: clean

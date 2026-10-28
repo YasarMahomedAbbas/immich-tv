@@ -111,4 +111,22 @@ class LayerRulesTest {
         val violation = LayerRules.check(listOf(source("domain/Album.kt", "package $pkg.domain", "import okhttp3.Call")))
         assertEquals(listOf("$ROOT/domain/Album.kt:2: $PLAIN_DOMAIN (okhttp3.Call)"), violation.map { it.toString() })
     }
+
+    @Test
+    fun `a data name inside a string template in ui fails`() = assertViolations(
+        listOf(Violation("$ROOT/ui/home/HomeScreen.kt", 3, UI_DOMAIN_DATA, "$pkg.data.X.NAME")),
+        source("ui/home/HomeScreen.kt", "package $pkg.ui.home", "", "val s = \"id \${$pkg.data.X.NAME} \${f(\"}\")}\""),
+    )
+
+    @Test
+    fun `an android name inside a raw string template in domain fails`() = assertViolations(
+        listOf(Violation("$ROOT/domain/Album.kt", 4, PLAIN_DOMAIN, "android.os.Build.VERSION")),
+        source("domain/Album.kt", "package $pkg.domain", "", "val s = \"\"\"", "sdk \${android.os.Build.VERSION}", "\"\"\""),
+    )
+
+    @Test
+    fun `a nested block comment in domain passes`() = assertViolations(
+        emptyList(),
+        source("domain/Album.kt", "package $pkg.domain", "/* outer /* inner */ okhttp3.Call */", "val a = 1"),
+    )
 }

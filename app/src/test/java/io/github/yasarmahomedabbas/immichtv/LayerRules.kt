@@ -53,45 +53,86 @@ object LayerRules {
         return if (segment in setOf("ui", "domain", "data")) segment else "root"
     }
 
-    /** Replaces comments, string and char literals with spaces, keeping every newline. */
-    internal fun blankCommentsAndStrings(text: String): String {
+    /**
+     * Replaces comments, string and char literals with spaces, keeping every newline. Block
+     * comments nest, and the code inside a `${...}` string template is kept, since it can name
+     * a class like any other code.
+     */
+    internal fun blankCommentsAndStrings(text: String): String = Blanker(text).apply { code(inTemplate = false) }.out.toString()
+
+    private class Blanker(val text: String) {
         val out = StringBuilder(text.length)
         var i = 0
-        fun blankUntil(end: Int) {
-            for (j in i until end) out.append(if (text[j] == '\n') '\n' else ' ')
-            i = end
+
+        private fun keep() {
+            out.append(text[i])
+            i++
         }
-        while (i < text.length) {
-            val end = when {
-                text.startsWith("//", i) -> text.indexOf('\n', i).let { if (it < 0) text.length else it }
-                text.startsWith("/*", i) -> closeOf(text, "*/", i + 2)
-                text.startsWith("\"\"\"", i) -> closeOf(text, "\"\"\"", i + 3)
-                text[i] == '"' -> escapedCloseOf(text, '"', i + 1)
-                text[i] == '\'' -> escapedCloseOf(text, '\'', i + 1)
-                else -> -1
-            }
-            if (end < 0) {
-                out.append(text[i])
+
+        private fun blank(count: Int = 1) = repeat(count) {
+            if (i < text.length) {
+                out.append(if (text[i] == '\n') '\n' else ' ')
                 i++
-            } else {
-                blankUntil(end)
             }
         }
-        return out.toString()
-    }
 
-    private fun closeOf(text: String, close: String, from: Int): Int =
-        text.indexOf(close, from).let { if (it < 0) text.length else it + close.length }
-
-    private fun escapedCloseOf(text: String, close: Char, from: Int): Int {
-        var j = from
-        while (j < text.length && text[j] != '\n') {
-            when (text[j]) {
-                '\\' -> j += 2
-                close -> return j + 1
-                else -> j++
+        /** Copies code to the end, or, [inTemplate], up to the `}` that closes the template. */
+        fun code(inTemplate: Boolean) {
+            var depth = 0
+            while (i < text.length) {
+                when {
+                    text.startsWith("//", i) -> while (i < text.length && text[i] != '\n') blank()
+                    text.startsWith("/*", i) -> blockComment()
+                    text.startsWith("\"\"\"", i) -> string(raw = true)
+                    text[i] == '"' -> string(raw = false)
+                    text[i] == '\'' -> charLiteral()
+                    inTemplate && text[i] == '}' && depth == 0 -> return
+                    else -> {
+                        if (text[i] == '{') depth++ else if (text[i] == '}') depth--
+                        keep()
+                    }
+                }
             }
         }
-        return minOf(j, text.length)
+
+        private fun blockComment() {
+            var depth = 0
+            do {
+                when {
+                    text.startsWith("/*", i) -> depth++.also { blank(2) }
+                    text.startsWith("*/", i) -> depth--.also { blank(2) }
+                    else -> blank()
+                }
+            } while (i < text.length && depth > 0)
+        }
+
+        private fun string(raw: Boolean) {
+            blank(if (raw) 3 else 1)
+            while (i < text.length) {
+                when {
+                    raw && text.startsWith("\"\"\"", i) -> return blank(3)
+                    !raw && text[i] == '"' -> return blank()
+                    !raw && text[i] == '\n' -> return // unterminated: resume at the next line
+                    !raw && text[i] == '\\' -> blank(2)
+                    text.startsWith("\${", i) -> {
+                        blank(2)
+                        code(inTemplate = true)
+                        blank() // the closing brace
+                    }
+                    else -> blank()
+                }
+            }
+        }
+
+        private fun charLiteral() {
+            blank()
+            while (i < text.length && text[i] != '\n') {
+                when (text[i]) {
+                    '\\' -> blank(2)
+                    '\'' -> return blank()
+                    else -> blank()
+                }
+            }
+        }
     }
 }
