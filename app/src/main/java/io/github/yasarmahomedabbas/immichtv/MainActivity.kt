@@ -14,6 +14,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
 import io.github.yasarmahomedabbas.immichtv.ui.AppScreen
 import io.github.yasarmahomedabbas.immichtv.ui.AppViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
+import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
 import io.github.yasarmahomedabbas.immichtv.ui.main.PlaceholderTab
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
@@ -45,7 +47,10 @@ class MainActivity : ComponentActivity() {
                         tab = current.tab,
                         onSelectTab = app::selectTab,
                         onOpenSettings = app::openSettings,
-                    ) { PlaceholderTab("Albums") }
+                    ) {
+                        // Scoped to the activity, so the list and the focused album survive opening one.
+                        AlbumsScreen(viewModel(factory = AlbumsViewModel.factory(container)), onOpenAlbum = app::openAlbum)
+                    }
                     is AppScreen.Album -> PlaceholderTab(current.id.value)
                 }
             }

@@ -9,6 +9,32 @@
     <string name="tab_search">Search</string>
     <string name="coming_soon">Coming soon</string>
 
+    <string name="failed_title">Couldn\'t load this</string>
+    <string name="try_again">Try again</string>
+    <string name="problem_unreachable">Can\'t reach your Immich server. Check that the TV is on your home network or VPN, and that the server is running.</string>
+    <string name="problem_key_rejected">The server refused the API key. Open Settings and enter a new key from Immich → Account Settings → API Keys.</string>
+    <string name="problem_key_lacks_permission">This API key can\'t read your albums and photos. Give it album.read, asset.read and asset.view, or all permissions.</string>
+    <string name="problem_not_signed_in">Immich TV isn\'t connected to a server. Open Settings to connect.</string>
+
+    <plurals name="photo_count">
+        <item quantity="one">%1$s photo</item>
+        <item quantity="other">%1$s photos</item>
+    </plurals>
+    <string name="album_shared">Shared</string>
+    <string name="albums_filter_all">All albums</string>
+    <string name="albums_filter_mine">My albums</string>
+    <string name="albums_filter_shared">Shared with me</string>
+    <string name="albums_sort">Sort: %1$s</string>
+    <string name="albums_sort_recent">Recently updated</string>
+    <string name="albums_sort_name">A–Z</string>
+    <string name="albums_sort_most">Most photos</string>
+    <string name="albums_empty_title">No albums yet</string>
+    <string name="albums_empty_hint">Make one in Immich and it shows up here.</string>
+    <string name="albums_refresh">Refresh</string>
+    <string name="albums_filter_empty_title">Nothing here</string>
+    <string name="albums_filter_empty_hint">No albums match this filter.</string>
+    <string name="albums_show_all">Show all albums</string>
+
     <string name="setup_title">Connect to Immich</string>
     <string name="setup_hint">Server address and an API key from Immich → Account Settings → API Keys</string>
     <string name="setup_address">Server address</string>

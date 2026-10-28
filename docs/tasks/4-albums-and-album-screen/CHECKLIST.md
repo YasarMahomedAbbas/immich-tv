@@ -225,23 +225,23 @@ File: `test/…/ui/AppViewModelTest.kt`: launch with a session → `Main(Home)`;
 
 Goal: the Albums tab lists albums as the canvas's 5-column grid with filters, sort and the three extra states.
 
-### [ ] 6.1 — ViewModel
+### [x] 6.1 — ViewModel
 
 File: `…/ui/albums/AlbumsViewModel.kt`
-`data class AlbumsState(val load: AlbumsLoad, val filter: AlbumFilter = All, val sort: AlbumSort = RecentlyUpdated)`, `sealed interface AlbumsLoad { Loading; data class Loaded(val all: List<Album>); data class Failed(val problem: Problem) }`, derived `visible: List<Album>` via `filterAndSort`. `setFilter`, `cycleSort` (RecentlyUpdated → Name → MostItems → …), `retry()`. Factory from `AppContainer.loadAlbums`. Mirror `SetupViewModel`.
+`data class AlbumsState(val load: AlbumsLoad, val filter: AlbumFilter = All, val sort: AlbumSort = RecentlyUpdated)`, `sealed interface AlbumsLoad { Loading; data class Loaded(val all: List<Album>); data class Failed(val problem: Problem) }`, derived `visible: List<Album>` via `filterAndSort`, and `focused: AlbumId?` (set by `onFocused`, so Back from an album refocuses it; the ViewModel is activity-scoped). `setFilter`, `cycleSort` (RecentlyUpdated → Name → MostItems → …), `retry()`. Factory from `AppContainer.loadAlbums`. Mirror `SetupViewModel`.
 
-### [ ] 6.2 — Components
+### [x] 6.2 — Components
 
-Files: `…/ui/components/Chip.kt` (filter chip: `raised` at rest, `fg` + `on-fg` 800 when selected, full round, 20sp, amber focus), `…/ui/components/AlbumCard.kt` (16:10 cover via `PhotoTile` with 14dp corners and the focus outline on the cover, name 22sp 700, meta 18sp `mfg`: "1,032 photos · Shared"; `onClick`), `…/ui/components/StateCards.kt` (`EmptyState(title, hint, actionLabel, onAction)` and `FailedState(problem, onRetry)`: one secondary/primary action, the failed text says to check the home network or VPN; `KeyRejected`/`KeyLacksPermission` say so and name album.read / asset.read / asset.view), `…/ui/components/Skeleton.kt` (`raised` blocks shaped like the loaded layout, a slow alpha pulse).
+Files: `…/ui/components/Chip.kt` (filter chip: `raised` at rest, `fg` + `on-fg` 800 when selected, full round, 20sp, amber focus), `…/ui/components/AlbumCard.kt` (16:10 cover via `PhotoTile` with 14dp corners and the focus outline on the cover, name 22sp 700, meta 18sp `mfg`: "1,032 photos · Shared"; `onClick`), `…/ui/components/StateCards.kt` (`EmptyState(title, hint, actionLabel, onAction)` and `FailedState(problem, onRetry)`: one primary action, focused when shown, the failed text says to check the home network or VPN; `KeyRejected`/`KeyLacksPermission` say so and name album.read / asset.read / asset.view), `…/ui/components/Skeleton.kt` (`SkeletonBlock`: a `raised` block with a tile corner or fully round, a slow alpha pulse; screens shape it like the loaded layout).
 
-### [ ] 6.3 — Screen
+### [x] 6.3 — Screen
 
 File: `…/ui/albums/AlbumsScreen.kt`
-Filter chips (All albums / My albums / Shared with me) left, the sort button (`SecondaryButton` with `ic_sort`: "Sort: Recently updated | A–Z | Most photos") right; `LazyVerticalGrid(GridCells.Fixed(5))` with 32dp gaps; the first card takes focus when loaded; the focused card stays in view; remembers the focused album id across opening an album and coming Back. Empty (no albums at all): "No albums yet", hint "Make one in Immich and it shows up here.", action Refresh. A filter with nothing in it: "Nothing here" with action "Show all albums". Failed: `FailedState` with Try again. Skeleton: 10 card skeletons. Previews for loaded, each empty, failed and skeleton.
+Filter chips (All albums / My albums / Shared with me) left, the sort button (`SecondaryButton` with `ic_sort`: "Sort: Recently updated | A–Z | Most photos") right; `LazyVerticalGrid(GridCells.Fixed(5))` with 32dp gaps; the first card takes focus when loaded; the focused card stays in view; remembers the focused album id across opening an album and coming Back. Empty (no albums at all): "No albums yet", hint "Make one in Immich and it shows up here.", action Refresh. A filter with nothing in it: "Nothing here" with action "Show all albums". Failed: `FailedState` with Try again. Skeleton: the toolbar and 10 card skeletons. Previews for loaded, each empty, failed and skeleton.
 
-### [ ] 6.4 — Tests
+### [x] 6.4 — Tests
 
-File: `test/…/ui/albums/AlbumsViewModelTest.kt` (fake repo from checkpoint 2): Loading → Loaded; empty list; Failed(Unreachable) then `retry()` → Loaded; filter and sort change `visible` without a new load (the fake counts calls).
+File: `test/…/ui/albums/AlbumsViewModelTest.kt` (fake repo from checkpoint 2): Loading → Loaded; empty list; Failed(Unreachable) then `retry()` → Loaded; filter and sort change `visible` without a new load (the fake counts calls); Try again while loading is ignored; the focused album is remembered.
 
 ### Verify
 
