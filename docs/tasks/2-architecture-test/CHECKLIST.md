@@ -32,12 +32,12 @@ The app is a skeleton: `ImmichTvApp`, `MainActivity`, `ui/home/HomeScreen.kt`, `
 
 Goal: `domain/` and `data/` exist and `testDebugUnitTest` fails on any layer violation in the main source set.
 
-### [ ] 1.1 — Empty layer packages
+### [x] 1.1 — Empty layer packages
 
 Files: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/Domain.kt`, `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/Data.kt`
 Each file is a KDoc saying what the layer holds (take it from `CLAUDE.md` § Layers, in one or two sentences, and point to `ArchitectureTest`), then the `package` line and nothing else. Keep words like `android.`/`okhttp3.` out of the KDoc anyway, even though comments are stripped.
 
-### [ ] 1.2 — The rule checker
+### [x] 1.2 — The rule checker
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/LayerRules.kt`
 ```kotlin
@@ -54,12 +54,12 @@ object LayerRules {
 - Rules: (1) outside `data/`, only `ROOT/AppContainer.kt` may reference `...immichtv.data.` — rule text `"only AppContainer names a data/ class"`; for `ui/` and `domain/` files use `"ui/ and domain/ never import data/"`. (2) in `domain/`, no `android.`, `androidx.`, `okhttp3.`, `kotlinx.serialization.` — rule `"domain/ is plain Kotlin: no Android, OkHttp or kotlinx.serialization"`.
 - `Violation.toString()` gives `path:line: rule (reference)`.
 
-### [ ] 1.3 — Tests for the checker
+### [x] 1.3 — Tests for the checker
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/LayerRulesTest.kt`
 JUnit 4, one `@Test` per case listed under Test plan → Unit (synthetic `SourceFile`s), asserting the exact violation list (empty, or path + line + rule).
 
-### [ ] 1.4 — The ArchitectureTest over the real sources
+### [x] 1.4 — The ArchitectureTest over the real sources
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ArchitectureTest.kt`
 Read every `.kt` under `File("src/main/java")` (Gradle runs unit tests with the module dir as working dir); `assertTrue` the list is non-empty with a message naming the path; `assertEquals(emptyList<Violation>(), LayerRules.check(files))` with the violations joined one per line in the message.
@@ -67,7 +67,7 @@ Read every `.kt` under `File("src/main/java")` (Gradle runs unit tests with the 
 ### Verify
 
 - `./build.sh ./gradlew --console=plain testDebugUnitTest --tests '*LayerRulesTest' --tests '*ArchitectureTest'`
-- Temporarily add `import okhttp3.OkHttpClient` to `domain/Domain.kt`: `ArchitectureTest` fails naming that file and line; remove it again (not committed).
+- Temporarily add `import android.os.Bundle` to `domain/Domain.kt` (OkHttp is not on the classpath yet, so its import would not compile): `ArchitectureTest` fails naming that file and line; remove it again (not committed).
 - `./build.sh ./gradlew --console=plain testDebugUnitTest koverVerifyDebug lintDebug assembleDebug` passes.
 
 ---
