@@ -114,7 +114,14 @@ private fun SetupContent(
                 modifier = Modifier.focusRequester(connectFocus),
                 enabled = !state.connecting,
             )
-            state.problem?.let { Text(stringResource(it.message), color = colors.onSurface, fontSize = 22.sp) }
+            state.problem?.let {
+                val text = if (it == SetupProblem.ServerTooOld) {
+                    stringResource(it.message, state.serverVersion.orEmpty())
+                } else {
+                    stringResource(it.message)
+                }
+                Text(text, color = colors.onSurface, fontSize = 22.sp)
+            }
         }
     }
 }
@@ -125,6 +132,7 @@ private val SetupProblem.message: Int
         SetupProblem.MissingKey -> R.string.setup_problem_missing_key
         SetupProblem.Unreachable -> R.string.setup_problem_unreachable
         SetupProblem.NotPhotoServer -> R.string.setup_problem_not_photo_server
+        SetupProblem.ServerTooOld -> R.string.setup_problem_server_too_old
         SetupProblem.KeyRejected -> R.string.setup_problem_key_rejected
         SetupProblem.KeyLacksPermission -> R.string.setup_problem_key_lacks_permission
     }
@@ -163,6 +171,11 @@ private fun SetupUnreachablePreview() = SetupPreview(filled.copy(problem = Setup
 @Preview(device = Devices.TV_1080p)
 @Composable
 private fun SetupNotPhotoServerPreview() = SetupPreview(filled.copy(problem = SetupProblem.NotPhotoServer))
+
+@Preview(device = Devices.TV_1080p)
+@Composable
+private fun SetupServerTooOldPreview() =
+    SetupPreview(filled.copy(problem = SetupProblem.ServerTooOld, serverVersion = "1.118.0"))
 
 @Preview(device = Devices.TV_1080p)
 @Composable

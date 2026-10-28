@@ -22,8 +22,10 @@ class StoredSessionRepositoryTest {
     /** Reverses and prefixes, so the stored value is never the plaintext; can be told to fail. */
     private class FakeCipher : SecretCipher {
         var broken = false
+        var decrypts = 0
         override fun encrypt(plain: String) = "sealed:" + plain.reversed()
         override fun decrypt(sealed: String): String {
+            decrypts++
             check(!broken) { "key lost" }
             return sealed.removePrefix("sealed:").reversed()
         }
@@ -51,6 +53,36 @@ class StoredSessionRepositoryTest {
         assertEquals("https://photos.example.com", storage.values["server_url"])
     }
 
+    /** A new repository on the same storage, as after the app restarts: nothing cached. */
+    private fun restarted() = StoredSessionRepository(storage, cipher)
+
+    @Test
+    fun `a saved session loads back after a restart`() = runTest {
+        repository.save(session)
+        assertEquals(session, restarted().load())
+    }
+
+    @Test
+    fun `two loads decrypt once`() = runTest {
+        repository.save(session)
+        val fresh = restarted()
+
+        assertEquals(session, fresh.load())
+        assertEquals(session, fresh.load())
+        assertEquals(1, cipher.decrypts)
+    }
+
+    @Test
+    fun `a load after save returns the saved session without decrypting`() = runTest {
+        val other = Session(ServerAddress.parse("http://nas:2283")!!, ApiKey("other"))
+        repository.save(session)
+        repository.load()
+        repository.save(other)
+
+        assertEquals(other, repository.load())
+        assertEquals(0, cipher.decrypts)
+    }
+
     @Test
     fun `nothing stored is no session`() = runTest {
         assertNull(repository.load())
@@ -59,17 +91,22 @@ class StoredSessionRepositoryTest {
     @Test
     fun `a missing half is no session`() = runTest {
         storage.values["server_url"] = "https://photos.example.com"
-        assertNull(repository.load())
+        assertNull(restarted().load())
         storage.values.clear()
         storage.values["api_key_sealed"] = cipher.encrypt("k")
-        assertNull(repository.load())
+        assertNull(restarted().load())
     }
 
     @Test
-    fun `a key that can't be decrypted is no session`() = runTest {
+    fun `a key that can't be decrypted is no session, and is remembered as none`() = runTest {
         repository.save(session)
         cipher.broken = true
-        assertNull(repository.load())
+        val fresh = restarted()
+
+        assertNull(fresh.load())
+        cipher.broken = false
+        assertNull(fresh.load())
+        assertEquals(1, cipher.decrypts)
     }
 
     @Test

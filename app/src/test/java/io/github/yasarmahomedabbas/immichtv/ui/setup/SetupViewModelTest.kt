@@ -101,6 +101,20 @@ class SetupViewModelTest {
     }
 
     @Test
+    fun `a server that is too old shows its version, cleared by an edit`() = runTest(dispatcher) {
+        connector.result = { ConnectResult.ServerTooOld("1.118.0") }
+        val vm = viewModel()
+        vm.fill()
+        vm.connect()
+        advanceUntilIdle()
+
+        assertEquals(SetupProblem.ServerTooOld, vm.state.value.problem)
+        assertEquals("1.118.0", vm.state.value.serverVersion)
+        vm.onAddressChange("nas2")
+        assertNull(vm.state.value.serverVersion)
+    }
+
+    @Test
     fun `a bad address or a missing key shows its problem`() = runTest(dispatcher) {
         val vm = viewModel()
         vm.onApiKeyChange("key")

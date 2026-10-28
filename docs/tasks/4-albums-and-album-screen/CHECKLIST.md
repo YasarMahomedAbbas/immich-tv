@@ -49,27 +49,27 @@ Paths below are under `app/src/main/java/io/github/yasarmahomedabbas/immichtv/` 
 
 Goal: Connect refuses servers older than v1.133 with its own message, and the session is read from memory after the first load (every image request will ask for it).
 
-### [ ] 1.1 — The domain result
+### [x] 1.1 — The domain result
 
 File: `…/domain/server/Server.kt`
 Add `data class ServerTooOld(val version: String) : ConnectResult` (KDoc: the server is Immich, but older than the oldest version the app speaks). The floor itself lives in `data/`.
 
-### [ ] 1.2 — The version check
+### [x] 1.2 — The version check
 
 File: `…/data/immich/ImmichServerConnector.kt`
-After `ping` and before `me`, `GET apiUrl(server, "server/version")` with no key → `@Serializable private data class VersionDto(val major: Int, val minor: Int, val patch: Int)`. 200 and parsed: if `(major, minor, patch) < (1, 133, 0)` → `ConnectResult.ServerTooOld("$major.$minor.$patch")`; ≥ → continue to `me`. 5xx → `Unreachable`; any other code or unparseable → `NotPhotoServer`. Put the floor in a `private val MINIMUM = Triple(1, 133, 0)` style constant with a comment citing the timeline shape change at v1.133. Update the class KDoc (v1.133+).
+After `ping` and before `me`, `GET apiUrl(server, "server/version")` with no key → `@Serializable private data class VersionDto(val major: Int, val minor: Int, val patch: Int)`. 200 and parsed: if `(major, minor, patch) < (1, 133, 0)` → `ConnectResult.ServerTooOld("$major.$minor.$patch")`; ≥ → continue to `me`. 5xx → `Unreachable`; any other code or unparseable → `NotPhotoServer`. Put the floor in a `private val MINIMUM = VersionDto(1, 133, 0)` constant with a comment citing the timeline shape change at v1.133. Update the class KDoc (v1.133+).
 
-### [ ] 1.3 — Setup shows it
+### [x] 1.3 — Setup shows it
 
 Files: `…/ui/setup/SetupViewModel.kt`, `…/ui/setup/SetupScreen.kt`, `app/src/main/res/values/strings.xml`
 Add `SetupProblem.ServerTooOld` to the enum and `val serverVersion: String? = null` to the state, set with it. String `setup_problem_server_too_old`: "This Immich server runs v%1$s. Immich TV needs v1.133 or newer: update the server." Change `setup_problem_not_photo_server` to "(v1.133 or newer)". Add a preview.
 
-### [ ] 1.4 — Session cache
+### [x] 1.4 — Session cache
 
 File: `…/data/settings/StoredSessionRepository.kt`
 Keep the loaded `Session?` in a `@Volatile private var cached` (plus a `loaded` flag); `load()` returns it after the first read; `save()` updates it. A failed decrypt is cached as null too.
 
-### [ ] 1.5 — Tests
+### [x] 1.5 — Tests
 
 Files: `test/…/data/immich/ImmichServerConnectorTest.kt`, `test/…/data/settings/StoredSessionRepositoryTest.kt`, `test/…/ui/setup/SetupViewModelTest.kt`
 Dispatcher gains `/api/server/version` (default `{"major":3,"minor":3,"patch":5}`). Tests: 1.133.0 connects; 1.132.9 → `ServerTooOld("1.132.9")` and `/users/me` is never called; 404 → `NotPhotoServer`; 503 → `Unreachable`; the version request carries no key. The existing v1.118 test becomes "a v1.118 server is too old". Repository: two `load()`s decrypt once; `save` then `load` returns the saved session without decrypting. ViewModel maps `ServerTooOld`.

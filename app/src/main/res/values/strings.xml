@@ -13,7 +13,8 @@
     <string name="setup_connecting">Connecting…</string>
 
     <string name="setup_problem_unreachable">Can\'t reach the server. Check the address, and that the TV is on your home network or VPN.</string>
-    <string name="setup_problem_not_photo_server">That address answered, but not as an Immich server (v1.118 or newer).</string>
+    <string name="setup_problem_not_photo_server">That address answered, but not as an Immich server (v1.133 or newer).</string>
+    <string name="setup_problem_server_too_old">This Immich server runs v%1$s. Immich TV needs v1.133 or newer: update the server.</string>
     <string name="setup_problem_key_rejected">The server refused this API key. Check it in Immich → Account Settings → API Keys.</string>
     <string name="setup_problem_key_lacks_permission">This API key can\'t read your account. Give it the user.read permission, or all permissions.</string>
     <string name="setup_problem_invalid_address">Enter the server address, like http://192.168.1.10:2283.</string>

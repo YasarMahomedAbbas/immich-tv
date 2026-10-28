@@ -13,7 +13,20 @@ internal class StoredSessionRepository(
     private val cipher: SecretCipher,
 ) : SessionStore {
 
-    override suspend fun load(): Session? = withContext(Dispatchers.IO) {
+    // Every image request asks for the session; decrypting with the Keystore each time would be
+    // slow, so the first read is kept. A key that failed to decrypt is remembered as no session.
+    @Volatile private var cached: Session? = null
+    @Volatile private var loaded = false
+
+    override suspend fun load(): Session? {
+        if (loaded) return cached
+        val session = read()
+        cached = session
+        loaded = true
+        return session
+    }
+
+    private suspend fun read(): Session? = withContext(Dispatchers.IO) {
         val url = storage.get(SERVER_URL) ?: return@withContext null
         val sealed = storage.get(API_KEY_SEALED) ?: return@withContext null
         // A key that can't be opened (the Keystore key was lost, or the value is corrupt) means
@@ -34,6 +47,8 @@ internal class StoredSessionRepository(
                 API_KEY_SEALED to cipher.encrypt(session.apiKey.value),
             ),
         )
+        cached = session
+        loaded = true
     }
 
     private companion object {
