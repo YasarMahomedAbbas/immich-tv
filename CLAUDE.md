@@ -35,7 +35,7 @@ Every call to Immich (`data/`) must follow the API of the Immich version the ser
 - **API reference:** https://api.immich.app
 - **Release notes** (breaking API changes): https://github.com/immich-app/immich/releases
 - **The spec for the running version:** read the version from `<server>/api/server/version`, then use `open-api/immich-openapi-specs.json` at that tag in the Immich repo.
-- **Auth:** the `x-api-key` header, on API calls and on every image request. Never in a URL.
+- **Auth:** the `x-api-key` header, on API calls and on every image request. Never in a URL. Every request, image loading included, goes through `immichHttpClient()`: OkHttp would carry a custom header along a redirect to another host, and its interceptor drops the key there.
 
 When a response shape changes between versions, support both (the server may lag behind or run ahead) and add a test for each. MockWebServer accepts things a real Immich refuses; check API changes against the real server too.
 

@@ -44,3 +44,14 @@ Branch: `feat/3-connect-to-server`
 - Raised: none
 - API: the server runs v3.3.5 (`/api/server/version`); checked against that tag's spec. `GET /api/server/ping`: no security, `ServerPingResponse` with `res` required. Matches. `GET /api/users/me`: `api_key` scheme is the `x-api-key` header, permission `user.read`, `UserAdminResponseDto` with `name` required. Matches; the v3.3.5 test body has every required field.
 - Layers: clean
+
+## Doc drift
+
+- Applied: README.md:Install — the app needs Immich v1.118+ (cites the v1.118.0 release note: `/api/server-info/*` → `/api/server/*`) and a key with at least `user.read` (v3.3.5 spec, checked in review). Rung 3: a user making a scoped key or running an old server would otherwise hit the error first.
+- Applied: CLAUDE.md:Immich API, Auth — every request, image loading included, goes through `immichHttpClient()`, whose interceptor drops `x-api-key` on a redirect off the server's host. Rung 2: the image-loading ticket could plausibly build its own client (e.g. for the image loader) and leak the key.
+- Skipped: Keystore-encrypted session storage — README's "stored settings" still holds; the code and `StoredSessionRepository` say the rest.
+- Skipped: hand-rolled navigation (`AppScreen` in `AppViewModel`) — one `rg` finds it, and the choice is recorded in Planning.
+- Skipped: Kover exclusions for `KeystoreCipher`/`SharedPreferencesStorage` — commented in `app/build.gradle.kts`.
+- Skipped: Setup row, Settings gear slot and text field recipe — already added to `docs/design/README.md` by implement-plan; checked against `SetupScreen`, `HomeScreen` and `HouseTextField`.
+- Checked, no change: README architecture block, "plain http:// allowed" (`usesCleartextTraffic` in the manifest), "HTTP client tested against MockWebServer", the build commands.
+- Stale, fixed separately: none

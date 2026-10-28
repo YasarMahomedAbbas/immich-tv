@@ -15,6 +15,8 @@ The app talks only to your own server. It's built for a server reached over the 
 2. Or from a computer on the same network, with developer options and network debugging on: download `immich-tv-<version>.apk` from the [latest release](../../releases/latest) and run `adb connect <tv-ip>:5555 && adb install immich-tv-<version>.apk`.
 3. Open Immich TV and enter the server address and an API key (Immich web → Account Settings → API Keys).
 
+The app needs Immich v1.118 or newer, the release that moved `/api/server-info/*` to `/api/server/*` ([release notes](https://github.com/immich-app/immich/releases/tag/v1.118.0)). The API key needs at least the `user.read` permission, or all permissions.
+
 ## Architecture
 
 Three layers, each depending only on the one below it:
