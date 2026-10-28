@@ -8,8 +8,9 @@ Problem: after connecting, the app shows only a placeholder: there is no way to 
 
 - The top menu (Home · Albums · Photos · Search, the clock on the right, the Settings gear beside it) works with the D-pad; Home, Photos and Search are placeholders until their tickets.
 - **Albums**: every album the key can see, as a 5-column grid of cover cards with name, photo count and "Shared"; filters All albums / My albums / Shared with me; sort by recently updated, A–Z, most photos.
-- **Album**: cover mosaic, title, photo/video counts and date range, **Start slideshow** (focused when the screen opens; a placeholder until #5), **Browse photos** (a placeholder, see Out of scope), and the slideshow settings (time per photo, order, videos, show date & place) remembered on the device for each album.
+- **Album**: cover mosaic, title, photo/video counts and date range, **Start slideshow** (focused when the screen opens; a placeholder until #5), **Browse photos** (opens the album photo grid), and the slideshow settings (time per photo, order, videos, show date & place) remembered on the device for each album.
 - A strip of the album's photos at the bottom.
+- **Album photos** (behind Browse photos): a 6-column grid of the album's preview tiles with a heading per month, loaded month by month from the album timeline, with skeleton, empty and failed states; focus starts on the first tile, OK does nothing until #7, Back returns to the album with Browse photos focused. Built on a domain `Timeline` so #7 can reuse it.
 - Covers and photos load as preview thumbnails with the `x-api-key` header, through `immichHttpClient()`.
 - Skeleton, empty ("No albums yet") and failed states on both screens.
 - Connecting to an Immich server older than v1.133 is refused with a message that names the version.
@@ -26,20 +27,21 @@ Problem: after connecting, the app shows only a placeholder: there is no way to 
   - `GET /api/assets/{id}/thumbnail?size=preview` (asset.view) → image/jpeg. Header `x-api-key`.
   - Not used, and why: `/search/statistics` needs `asset.statistics`, which the configured key lacks (403, checked live); `/search/metadata`'s `albumIds`/`type`/`page` are deprecated in v3.2.0 and its `total` is only the page count.
 - Design: canvas https://claude.ai/artifact/8Tq2kuJDNjk3SFiALwbfZH, boards "6 · Albums" (`Albums.dc.html`), "2 · Album" (`Album.dc.html`) and the top menu on "1 · Home" (`Main.dc.html`); the manual `docs/design/README.md`.
-- Follow-ups: #5 wires Start slideshow and reads the settings; #6 uses the Videos setting; #7 the Photos tab; #9 the Home tab.
+- Follow-ups: #5 wires Start slideshow and reads the settings; #6 uses the Videos setting; #7 the Photos tab (reuses the photo grid and `Timeline`); #9 the Home tab.
+- The album photo grid has no design board; it follows the manual's grid and the strip's tile (12dp corners, amber focus), per the user's answer on the issue.
 
 ## Context
 
 Paths below are under `app/src/main/java/io/github/yasarmahomedabbas/immichtv/` (main, written `…/`) and `app/src/test/java/io/github/yasarmahomedabbas/immichtv/` (test, written `test/…/`).
 
-#3 built the one Immich client (`data/immich/ImmichHttp.kt`: `immichHttpClient()`, `apiUrl`, `immichJson`, `API_KEY_HEADER`), the connector and its MockWebServer test (`ImmichServerConnectorTest`, the analogue for every new call), the stored session (`StoredSessionRepository`), the use-case style (`ConnectToServer`), the ViewModel style (`SetupViewModel` + factory from `AppContainer`), hand-rolled navigation (`AppScreen` in `AppViewModel`), and the house buttons and `Modifier.focusOutline`. This ticket mirrors all of those. Decisions (taken by the pipeline on the user's behalf, see NOTES): the app's floor rises to Immich v1.133 so the album timeline has one shape; images load with Coil 3, whose interceptor in `data/` turns a domain `Preview` into the thumbnail URL plus header, so `ui/` never sees a URL; slideshow settings are kept per album on the device, defaults 8 s / oldest first / play muted / date & place on; Browse photos is a placeholder. Filtering and sorting run on the device from one `GET /albums`; photo/video counts and the strip come from the album's timeline buckets (the `isImage` column), the only source the key can read.
+#3 built the one Immich client (`data/immich/ImmichHttp.kt`: `immichHttpClient()`, `apiUrl`, `immichJson`, `API_KEY_HEADER`), the connector and its MockWebServer test (`ImmichServerConnectorTest`, the analogue for every new call), the stored session (`StoredSessionRepository`), the use-case style (`ConnectToServer`), the ViewModel style (`SetupViewModel` + factory from `AppContainer`), hand-rolled navigation (`AppScreen` in `AppViewModel`), and the house buttons and `Modifier.focusOutline`. This ticket mirrors all of those. Decisions (taken by the pipeline on the user's behalf, see NOTES): the app's floor rises to Immich v1.133 so the album timeline has one shape; images load with Coil 3, whose interceptor in `data/` turns a domain `Preview` into the thumbnail URL plus header, so `ui/` never sees a URL; slideshow settings are kept per album on the device, defaults 8 s / oldest first / play muted / date & place on; Browse photos opens an album photo grid (the user chose option 1), built on a domain `Timeline` of months so #7 can reuse grid and ViewModel for the whole library. Filtering and sorting run on the device from one `GET /albums`; photo/video counts and the strip come from the album's timeline buckets (the `isImage` column), the only source the key can read.
 
 ## Test plan
 
-- Unit: `ServerVersion` comparison; `filterAndSort` for each filter × sort (ties broken by name); `LoadAlbums`/`LoadAlbum` pass failures through; `SlideshowSettings.next*` cycling; `StoredSlideshowSettings` round-trip, defaults for an unknown album, a corrupt value falls back to defaults; `AlbumsViewModel` (loading → loaded/empty/failed, filter and sort changes, retry); `AlbumViewModel` (loading → loaded/failed, settings cycle and save, retry); `AppViewModel` (tabs, open album, Back from album → Albums, Back from a tab → Home, Back on Home exits); the `ImmichImages` interceptor maps a `Preview` to the thumbnail URL with the header and leaves other data alone.
-- MockWebServer: `/server/version` 3.3.5 and 1.133.0 connect, 1.132.0 and 1.118.0 → `ServerTooOld`, a 404 there → `NotPhotoServer`; `/albums` with a v3.3.5 body (owner in `albumUsers[0]`) and a v2.0.0 body (`ownerId`, embedded `assets`), each mapped to the same `Album`s incl. `ownedByMe`; nullable cover, missing dates; 401 → `KeyRejected`, 403 → `KeyLacksPermission`, 500 and a dead socket → `Unreachable`, garbage JSON → `Unreachable`; the album contents across two buckets (counts summed, strip capped at 30, `order` passed through), an empty album (`[]` buckets); every request carries `x-api-key` and exact paths/queries; a `Preview` thumbnail request carries the key and drops it on a cross-host redirect (the existing interceptor).
+- Unit: `ServerVersion` comparison; `filterAndSort` for each filter × sort (ties broken by name); `LoadAlbums`/`LoadAlbum` pass failures through; `SlideshowSettings.next*` cycling; `StoredSlideshowSettings` round-trip, defaults for an unknown album, a corrupt value falls back to defaults; `AlbumsViewModel` (loading → loaded/empty/failed, filter and sort changes, retry); `AlbumViewModel` (loading → loaded/failed, settings cycle and save, retry); `AppViewModel` (tabs, open album, open album photos, Back from album photos → Album, Back from album → Albums, Back from a tab → Home, Back on Home exits); `PhotoGridViewModel` (months load → first month's photos; next month loads on demand, once; a failed month and retry; empty timeline; failed months list); the `ImmichImages` interceptor maps a `Preview` to the thumbnail URL with the header and leaves other data alone.
+- MockWebServer: `/server/version` 3.3.5 and 1.133.0 connect, 1.132.0 and 1.118.0 → `ServerTooOld`, a 404 there → `NotPhotoServer`; `/albums` with a v3.3.5 body (owner in `albumUsers[0]`) and a v2.0.0 body (`ownerId`, embedded `assets`), each mapped to the same `Album`s incl. `ownedByMe`; nullable cover, missing dates; 401 → `KeyRejected`, 403 → `KeyLacksPermission`, 500 and a dead socket → `Unreachable`, garbage JSON → `Unreachable`; the album contents across two buckets (counts summed, strip capped at 30, `order` passed through), an empty album (`[]` buckets); the album `Timeline`: months from `/timeline/buckets` mapped to `YearMonth` with counts, one month's photos from `/timeline/bucket` with the exact `timeBucket`; every request carries `x-api-key` and exact paths/queries; a `Preview` thumbnail request carries the key and drops it on a cross-host redirect (the existing interceptor).
 - Real server (read-only, by self-verification): `GET /server/version`, `/users/me`, `/albums`, `/albums/{id}`, `/timeline/buckets` and `/timeline/bucket` with `albumId`, and `/assets/{id}/thumbnail?size=preview` for an album cover, each parsed by the app's DTOs.
-- On the TV (if `TV_ADB` is set): open the app → Home tab with the menu; D-pad to Albums; the grid loads covers; change filter and sort; open an album; Start slideshow has focus; cycle each setting, leave and reopen the album → settings kept; the strip loads; Back → Albums with the same card focused → Back → Home → Back exits; Settings gear opens Setup.
+- On the TV (if `TV_ADB` is set): open the app → Home tab with the menu; D-pad to Albums; the grid loads covers; change filter and sort; open an album; Start slideshow has focus; cycle each setting, leave and reopen the album → settings kept; the strip loads; Browse photos → the grid with month headings, focus on the first tile, scrolling down loads later months, Back → the album with Browse photos focused; Back → Albums with the same card focused → Back → Home → Back exits; Settings gear opens Setup.
 
 ---
 
@@ -277,10 +279,50 @@ Record what this ticket settled: the top menu recipe (logo in `fg`, selected pil
 
 ---
 
+## Checkpoint 8 — The album photo grid · commit: `feat(albums): browse an album's photos`
+
+Goal: Browse photos opens a 6-column grid of the album's previews with a heading per month, loaded month by month, built on a domain `Timeline` so #7 can show the whole library with the same grid.
+
+### [ ] 8.1 — Domain timeline
+
+File: `…/domain/photos/Timeline.kt`
+`data class TimelineMonth(val month: java.time.YearMonth, val count: Int)`; `interface Timeline { suspend fun months(): ServerResult<List<TimelineMonth>>; suspend fun photos(month: YearMonth): ServerResult<List<Photo>> }` (KDoc: a set of photos grouped by month, newest or oldest first as the source orders them; #7 gives the whole library one). `AlbumRepository` gains `fun timeline(album: Album): Timeline`.
+
+### [ ] 8.2 — The Immich implementation
+
+File: `…/data/immich/ImmichAlbumRepository.kt`
+`timeline(album)` returns a `Timeline` whose `months()` is `GET timeline/buckets?albumId=&order=` mapped to `TimelineMonth(YearMonth.from(LocalDate.parse(timeBucket.take(10))), count)` (the bucket is `YYYY-MM-DD…`, the first of the month), and `photos(month)` is `GET timeline/bucket?albumId=&timeBucket=<the bucket string for that month>&order=` → `Photo`s from `id`/`isImage`. The bucket strings are remembered from `months()` so the exact value Immich sent is passed back; a month not seen yet falls back to `<yyyy-MM>-01T00:00:00.000Z`. `contents()` reuses the same bucket calls.
+
+### [ ] 8.3 — ViewModel
+
+File: `…/ui/photos/PhotoGridViewModel.kt` (in `ui/photos/`, not `ui/album/`, so #7 reuses it)
+`PhotoGridViewModel(timeline: Timeline)`; state `PhotoGridState(val load: GridLoad, val sections: List<MonthSection>)`, `GridLoad { Loading; Loaded; Empty; Failed(problem) }`, `MonthSection(month: YearMonth, count: Int, photos: MonthPhotos)` with `MonthPhotos { NotLoaded; Loading; Loaded(list); Failed(problem) }`. On start: `months()` then the first month's photos. `loadMonth(month)` loads a month once (no-op if loading or loaded); `retry()` reloads months, or retries a failed month. Factory taking a `Timeline`.
+
+### [ ] 8.4 — Screen
+
+Files: `…/ui/photos/PhotoGrid.kt` (the reusable grid), `…/ui/album/AlbumPhotosScreen.kt`
+`PhotoGrid(state, onNeedMonth, onRetry, modifier)`: a `LazyVerticalGrid(GridCells.Fixed(6))`, 16dp gaps; per month a full-span heading ("June 2025" 28sp 700, count in `mfg`) then that month's `PhotoTile`s (square, 12dp corners, focusable, video badge, OK does nothing); a month not loaded yet shows `count` skeleton tiles and asks for its photos when it comes into view; a failed month shows a full-span "Couldn't load this month" with Try again. First tile takes focus once loaded. `AlbumPhotosScreen(albumName, state, onBack, …)`: back link "‹ <album name>", then the grid; whole-screen skeleton, empty ("This album is empty") and failed (`FailedState`) states. Previews for each state.
+
+### [ ] 8.5 — Navigation
+
+Files: `…/ui/AppViewModel.kt`, `…/MainActivity.kt`, `…/ui/album/AlbumScreen.kt`, `…/AppContainer.kt`
+`AppScreen.AlbumPhotos(val album: Album)` (the album screen already holds it: its name for the back link, its id and order for the timeline); `openAlbumPhotos(album)`; `back()` from `AlbumPhotos` → `Album(album.id, focusBrowse = true)`. `AppScreen.Album` gains `focusBrowse: Boolean = false`: coming Back, the album screen focuses Browse photos instead of Start slideshow. Browse photos calls `openAlbumPhotos` (only once the album has loaded). Use case `AlbumTimeline(repo)` in `domain/albums/AlbumRepository.kt` (`invoke(album): Timeline`); `AppContainer` exposes `albumTimeline` so `ui/` never names `data/`.
+
+### [ ] 8.6 — Tests
+
+Files: `test/…/ui/photos/PhotoGridViewModelTest.kt` (a `FakeTimeline`: months then first month; `loadMonth` once only; a failed month then retry; empty months → `Empty`; months failing → `Failed` then retry → `Loaded`), `test/…/data/immich/ImmichAlbumRepositoryTest.kt` (timeline months → `YearMonth`s and counts; `photos(month)` sends the exact bucket string and `order`; failures mapped), `test/…/ui/AppViewModelTest.kt` (open album photos; Back → `Album(id, focusBrowse = true)`; Back from that album → Albums).
+
+### Verify
+
+- `./build.sh ./gradlew --console=plain testDebugUnitTest --tests '*PhotoGridViewModelTest' --tests '*ImmichAlbumRepositoryTest' --tests '*AppViewModelTest' --tests '*ArchitectureTest'`
+- The full CI command: `./build.sh ./gradlew --console=plain testDebugUnitTest koverVerifyDebug lintDebug assembleDebug`.
+
+---
+
 ## Out of scope
 
 - Playing the slideshow (#5) and videos (#6): Start slideshow is a focused no-op; the Videos setting is stored only.
-- Browse photos for an album: a no-op button; a follow-up ticket is raised for an album photo grid (no design board yet).
+- Opening a photo from the album photo grid (#7 adds the viewer).
 - Opening a photo from the strip.
 - The Home tab's content (#9), the Photos tab (#7), Search (#8).
 - Servers older than v1.133: refused at Connect, not supported.
