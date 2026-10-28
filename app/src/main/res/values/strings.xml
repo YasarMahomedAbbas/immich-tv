@@ -35,6 +35,30 @@
     <string name="albums_filter_empty_hint">No albums match this filter.</string>
     <string name="albums_show_all">Show all albums</string>
 
+    <string name="album_back">Albums</string>
+    <string name="album_start_slideshow">Start slideshow</string>
+    <string name="album_browse_photos">Browse photos</string>
+    <string name="album_settings_heading">SLIDESHOW SETTINGS</string>
+    <string name="album_settings_hint">Press OK on a setting to change it. It is remembered for this album.</string>
+    <string name="album_in_this_album">In this album</string>
+    <string name="album_empty">This album is empty</string>
+    <string name="setting_seconds">Each photo for</string>
+    <plurals name="setting_seconds_value">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
+    <string name="setting_order">Order</string>
+    <string name="setting_order_oldest">Oldest first</string>
+    <string name="setting_order_shuffle">Shuffle</string>
+    <string name="setting_order_newest">Newest first</string>
+    <string name="setting_videos">Videos</string>
+    <string name="setting_videos_muted">Play muted</string>
+    <string name="setting_videos_sound">Play with sound</string>
+    <string name="setting_videos_skip">Skip videos</string>
+    <string name="setting_date_place">Show date &amp; place</string>
+    <string name="setting_on">On</string>
+    <string name="setting_off">Off</string>
+
     <string name="setup_title">Connect to Immich</string>
     <string name="setup_hint">Server address and an API key from Immich → Account Settings → API Keys</string>
     <string name="setup_address">Server address</string>

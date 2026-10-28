@@ -253,17 +253,17 @@ File: `test/…/ui/albums/AlbumsViewModelTest.kt` (fake repo from checkpoint 2):
 
 Goal: opening an album shows the canvas's Album board with real data and working, remembered settings.
 
-### [ ] 7.1 — ViewModel
+### [x] 7.1 — ViewModel
 
 File: `…/ui/album/AlbumViewModel.kt`
 `AlbumViewModel(id, loadAlbum, getSettings, saveSettings)`; state `AlbumLoad { Loading; Loaded(page: AlbumPage); Failed(problem) }` plus `settings: SlideshowSettings` (loaded at once, independent of the server). `cycleSeconds()`, `cycleOrder()`, `cycleVideos()`, `toggleDateAndPlace()` each update and save. `retry()`. Factory keyed by album id.
 
-### [ ] 7.2 — Screen
+### [x] 7.2 — Screen
 
 File: `…/ui/album/AlbumScreen.kt`
-Per the "2 · Album" board: a back link "‹ Albums" (secondary text button; OK = Back); the mosaic (560×616 cover spanning two rows + two 320×300 tiles, 18dp corners, 16dp gaps: the cover, then `firstItems` excluding the cover; missing tiles stay `surface`); title 64sp 800; "214 photos · 12 videos · June – August 2025" (zero parts dropped; one month → "June 2025"; same year → "June – August 2025"; across years → "December 2024 – January 2025"; formatted from `startDate`/`endDate` in the device zone, a pure `internal fun albumSummary(...)` in the ViewModel file so it is unit-tested); **Start slideshow** `PrimaryButton` with the play icon (requests focus on open; no-op until #5) and **Browse photos** `SecondaryButton` (no-op); "SLIDESHOW SETTINGS" 20sp `mfg` caps; four `SettingButton`s (new in `…/ui/components/SettingButton.kt`: `surface`, 16dp corners, 17sp `mfg` label over 23sp value, amber focus; OK cycles); the hint "Press OK on a setting to change it. It is remembered for this album." 18sp `mfg`; "In this album" 28sp and a `LazyRow` of 232dp `PhotoTile`s (12dp corners, focusable, OK does nothing yet). Empty album: the strip area says "This album is empty". Failed: `FailedState`. Skeleton mirrors the layout. Previews for each state.
+Per the "2 · Album" board: a back link "‹ Albums" (`BackLink`, new in `Buttons.kt`: no fill, `mfg` → `fg` on focus; OK = Back; holds focus while loading); the mosaic (560×616 cover spanning two rows + two 320×300 tiles, 18dp corners, 16dp gaps: the cover, then `firstItems` excluding the cover; missing tiles stay `surface`); title 64sp 800; "214 photos · 12 videos · June – August 2025" (zero parts dropped; one month → "June 2025"; same year → "June – August 2025"; across years → "December 2024 – January 2025"; formatted from `startDate`/`endDate` in the device zone, a pure `internal fun albumSummary(...)` in the ViewModel file so it is unit-tested); **Start slideshow** `PrimaryButton` (gains an optional `icon`) with the play icon (requests focus on open; no-op until #5) and **Browse photos** `SecondaryButton` (calls `onBrowsePhotos(album)`, wired in checkpoint 8); "SLIDESHOW SETTINGS" 20sp `mfg` caps; four `SettingButton`s (new in `…/ui/components/SettingButton.kt`: `surface`, 16dp corners, 18sp `mfg` label (the canvas's 17sp is under the manual's minimum) over 23sp value, amber focus; OK cycles); the hint "Press OK on a setting to change it. It is remembered for this album." 18sp `mfg`; "In this album" 28sp and a `LazyRow` of 232dp `PhotoTile`s (12dp corners, focusable, OK does nothing yet). Empty album: the strip area says "This album is empty". Failed: `FailedState`. Skeleton mirrors the layout. Previews for each state.
 
-### [ ] 7.3 — Tests
+### [x] 7.3 — Tests
 
 File: `test/…/ui/album/AlbumViewModelTest.kt`: Loading → Loaded; Failed → retry; settings load from the fake store and each cycle saves for this album only; `albumSummary` for zero videos, zero photos, one month, same year, across years, missing dates.
 
@@ -272,10 +272,10 @@ File: `test/…/ui/album/AlbumViewModelTest.kt`: Loading → Loaded; Failed → 
 - `./build.sh ./gradlew --console=plain testDebugUnitTest --tests '*AlbumViewModelTest'`
 - The full CI command: `./build.sh ./gradlew --console=plain testDebugUnitTest koverVerifyDebug lintDebug assembleDebug`.
 
-### [ ] 7.4 — The manual
+### [x] 7.4 — The manual
 
 File: `docs/design/README.md`
-Record what this ticket settled: the top menu recipe (logo in `fg`, selected pill, clock, gear), the chip, the album card meta, the setting button, the empty/failed card texts. Remove "until the top menu exists, Home shows it top-right".
+Record what this ticket settled, in a new § Components: the top menu recipe (logo in `fg`, selected pill, clock, gear), the icon button, the back link, the chip, the album card meta, the photo tile, the setting button, the empty/failed card texts, the skeleton. Remove "until the top menu exists, Home shows it top-right".
 
 ---
 

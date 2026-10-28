@@ -51,7 +51,21 @@ These live in `.claude/skills/design-canvas/assets/artboard.dc.html` for the can
 
 The top menu is Home · Albums · Photos · Search, with the clock on the right.
 
-Settings is a gear button at the right end, beside the clock; until the top menu exists, Home shows it top-right.
+Settings is a gear button at the right end, beside the clock.
+
+## Components
+
+What each shared part in `ui/components/` looks like. A call site picks a variant; it never passes a colour, shape or font size.
+
+- **Top menu** (`TopMenu`), 56dp tall: the logo (the image glyph and "Immich TV" 26sp 800, both `fg`: the canvas's amber logo would break rule 3), then the tab pills, a spacer, the clock (24sp `mfg`, the device's 12/24-hour format) and the Settings gear. A pill is 22sp, fully round; the selected one is `fg` with `on-fg` 800 text, the others have no fill and `mfg` text that turns `fg` on focus. OK selects; focus enters a main screen on the selected pill.
+- **Icon button** (`IconButton`): a 56dp `raised` circle with one 28dp icon, for the gear.
+- **Back link** (`BackLink`): "‹ Albums" top-left, 22sp 600, no fill, `mfg` at rest and `fg` on focus. It does what Back does.
+- **Chip** (`Chip`): 20sp, fully round; `raised` with `fg` 600 text at rest, `fg` with `on-fg` 800 text when selected.
+- **Album card** (`AlbumCard`): a 16:10 cover with 14dp corners (the focusable part), the name 22sp 700 on one line, then "1,032 photos · Shared" 18sp `mfg` ("Shared" only for a shared album; the count is photos and videos together).
+- **Photo tile** (`PhotoTile`): the preview cropped to fill, `surface` while it loads; a video has a small play badge bottom-left on a dark circle. Corners by `TileStyle`: 12 tiles, 14 album cards, 18 the album's cover mosaic.
+- **Setting button** (`SettingButton`): `surface`, 16dp corners, at least 230dp wide; the label 18sp 600 `mfg` (the canvas's 17sp is under the minimum) over the value 23sp 700. OK steps to the next value.
+- **Empty and failed states** (`EmptyState`, `FailedState`): a `surface` card with 18dp corners in the middle of the content area: a 32sp 800 title, a 22sp `mfg` hint, one primary button that takes focus. Failed says "Couldn't load this" and why: can't reach the server (check the home network or VPN), the key was refused (enter a new one in Settings), or the key lacks album.read, asset.read and asset.view; the button is Try again. The Albums empty state is "No albums yet" / "Make one in Immich and it shows up here." / Refresh; a filter with nothing in it is "Nothing here" / Show all albums.
+- **Skeleton** (`SkeletonBlock`): `raised` blocks with the corner of what they stand for (fully round for text lines and buttons), pulsing slowly; each screen lays them out like its loaded layout.
 
 A text field (`HouseTextField`) is `raised` with 18dp corners, an 18sp `mfg` label over a 22sp value, so it reads on a `surface` panel; OK on the remote opens the on-screen keyboard.
 
