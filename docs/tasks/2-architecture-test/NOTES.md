@@ -26,3 +26,10 @@ Branch: `chore/2-architecture-test`
 - Raised: none
 - API: none (no server calls)
 - Layers: clean
+
+## Doc drift
+
+- Applied: none in this stage. The one new fact (the `ArchitectureTest` exists, runs in CI, and checks names not shapes) is already in `CLAUDE.md` § Layers from implementation (rung 2: every session touching a layer needs to know which rules CI enforces and which are still for review); checked against `LayerRules.kt`: `ui/`/`domain/` → `data/`, Android/OkHttp/kotlinx.serialization in `domain/`, `data/` names outside `data/` and `AppContainer.kt`, imports and inline qualified names alike. Accurate.
+- Skipped: README § Development / testing: no mention of the `ArchitectureTest`. It runs inside `testDebugUnitTest`, which the README already lists, and a failure names the broken rule; `CLAUDE.md` covers it.
+- Skipped: the KDoc in the new `domain/Domain.kt` and `data/Data.kt` restates `CLAUDE.md` § Layers; consistent with it, nothing to change.
+- Stale, fixed separately: none. Noted, not fixed: README § Architecture and § Development describe pieces not yet in the code (`AppContainer`, the Immich REST client, MockWebServer tests). This is the planned architecture of a freshly scaffolded app that #3 builds next, not drift; rewriting it as "not yet" would be reverted by #3.
