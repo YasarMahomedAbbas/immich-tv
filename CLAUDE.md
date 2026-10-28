@@ -22,6 +22,8 @@ Tickets are GitHub issues; a `Needs: #a, #b` line names what must be closed firs
 ## Layers: the server is behind one door
 `ui/` → `domain/` ← `data/`, and `AppContainer` is the only place that names a `data/` class. The goal: swapping Immich for another photo server means rewriting `data/` and nothing else.
 
+`ArchitectureTest` (in `testDebugUnitTest`, so CI) fails on a `ui/` or `domain/` import of `data/`, on Android, OkHttp or kotlinx.serialization in `domain/`, and on any `data/` reference outside `data/` and `AppContainer`. It checks names, not shapes, so Immich field names in `domain/` are still for review.
+
 - **`domain/`** is plain Kotlin in the app's own words: albums, photos, videos, people, a slideshow, a server that can refuse. No Android, no OkHttp, no JSON, and nothing Immich-shaped: no endpoint paths, asset ids treated as URLs, field names like `exifInfo`, or Immich enum strings. It defines the repository interfaces `data/` implements.
 - **`data/`** is the only layer that talks to anything outside the process: HTTP, image loading headers, stored settings. Every Immich call, every response shape and every version difference stays here and is turned into domain models before it leaves.
 - **`ui/`** sees only `domain/`: ViewModels call use cases, screens render state. A screen never imports `data/`, builds a URL or reads an Immich field.
@@ -33,7 +35,7 @@ Every call to Immich (`data/`) must follow the API of the Immich version the ser
 - **API reference:** https://api.immich.app
 - **Release notes** (breaking API changes): https://github.com/immich-app/immich/releases
 - **The spec for the running version:** read the version from `<server>/api/server/version`, then use `open-api/immich-openapi-specs.json` at that tag in the Immich repo.
-- **Auth:** the `x-api-key` header, on API calls and on every image request. Never in a URL.
+- **Auth:** the `x-api-key` header, on API calls and on every image request. Never in a URL. Every request, image loading included, goes through `immichHttpClient()`: OkHttp would carry a custom header along a redirect to another host, and its interceptor drops the key there.
 
 When a response shape changes between versions, support both (the server may lag behind or run ahead) and add a test for each. MockWebServer accepts things a real Immich refuses; check API changes against the real server too.
 
