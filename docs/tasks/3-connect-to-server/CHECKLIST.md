@@ -187,7 +187,7 @@ File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/data/settings/Stor
 
 Goal: on the TV, the app opens on Setup the first time, on Home afterwards, and Settings leads back to Setup.
 
-### [ ] 3.1 — AppContainer
+### [x] 3.1 — AppContainer
 
 Files: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/AppContainer.kt`, `ImmichTvApp.kt`
 `class AppContainer(context: Context)` builds:
@@ -199,7 +199,7 @@ It exposes only domain types: `val connectToServer: ConnectToServer`, `val getSe
 
 The `data/` classes are `internal`, so `AppContainer` (same module) can name them.
 
-### [ ] 3.2 — App navigation state
+### [x] 3.2 — App navigation state
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModel.kt`
 ```kotlin
@@ -213,7 +213,7 @@ class AppViewModel(getSession: GetSession) : ViewModel() {
 ```
 `openSettings` reloads the session through `GetSession`. The ViewModel has a `companion` `factory(container)` built with `viewModelFactory { initializer { } }`.
 
-### [ ] 3.3 — Setup ViewModel
+### [x] 3.3 — Setup ViewModel
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/setup/SetupViewModel.kt`
 ```kotlin
@@ -229,21 +229,21 @@ class SetupViewModel(private val connect: ConnectToServer, current: Session?) : 
 - Editing a field clears `problem`.
 - `connect()` is ignored while `connecting` is true. It maps each failed `ConnectResult` to its `SetupProblem`.
 
-### [ ] 3.4 — Shared components
+### [x] 3.4 — Shared components
 
 Files:
 - `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/components/Buttons.kt`: `PrimaryButton(text, onClick, modifier, enabled)` and `SecondaryButton(text, onClick, modifier, icon: Painter? = null)` built on tv-material `Button`.
   - Shapes are fully round. Primary uses the `fg` fill with `on-fg` text; Secondary uses the `raised` fill with `fg` text.
   - The focus border is 4dp amber, 4dp off the edge (`ButtonDefaults.border(focusedBorder = Border(BorderStroke(4.dp, Focus), inset = (-4).dp, shape))`).
 - `.../ui/components/HouseTextField.kt`: `HouseTextField(value, onValueChange, label, modifier, keyboardOptions, keyboardActions, visualTransformation)`.
-  - Built on `BasicTextField`, with a `surface` fill, 18dp corners, a 22sp `fg` value and an 18sp `mfg` label.
-  - It shows the amber 4dp outline when focused (track with `onFocusChanged`).
+  - Built on `BasicTextField`, with a `raised` fill (it sits on the `surface` panel, where a `surface` fill would vanish), 18dp corners, a 22sp `fg` value and an 18sp `mfg` label.
+  - It shows the amber 4dp outline when focused (track with `onFocusChanged`), drawn 4dp outside its edge by the shared `Modifier.focusOutline` in the same file.
   - Centre (OK) on a focused field opens the IME (`LocalSoftwareKeyboardController`).
 - `app/src/main/res/drawable/ic_settings.xml`: a gear vector, 24dp, tinted at the call site with the theme colour.
 
 Follow `design-recipe`.
 
-### [ ] 3.5 — The setup screen
+### [x] 3.5 — The setup screen
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/setup/SetupScreen.kt`
 - Shape: a centred `surface` panel (18dp corners, max width 960dp) inside the safe area (48dp top, 96dp sides).
@@ -263,9 +263,9 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/setup/SetupScre
   - KeyLacksPermission: "This API key can't read your account. Give it the user.read permission, or all permissions."
   - InvalidAddress: "Enter the server address, like http://192.168.1.10:2283."
   - MissingKey: "Enter an API key."
-- `@Preview(device = Devices.TV_1080p)` for empty, filled, connecting and each problem.
+- `@Preview(device = Devices.TV_1080p)` for empty, filled, connecting and each problem. This needs `compose-ui-tooling-preview` (and `ui-tooling` for debug), added to the catalog and the app build, both from the Compose BOM.
 
-### [ ] 3.6 — Home gets the Settings entry; MainActivity routes
+### [x] 3.6 — Home gets the Settings entry; MainActivity routes
 
 Files: `ui/home/HomeScreen.kt`, `MainActivity.kt`
 - `HomeScreen(onOpenSettings: () -> Unit)`: keep the title. Add a `SecondaryButton("Settings", icon = gear)` at the top-right, in the top menu's slot (48dp top, 96dp right), and give it the initial focus.
@@ -275,14 +275,14 @@ Files: `ui/home/HomeScreen.kt`, `MainActivity.kt`
   - Home → `HomeScreen`.
 - `BackHandler` calls `appViewModel.back()`, and the activity finishes when it returns false.
 
-### [ ] 3.7 — The manual
+### [x] 3.7 — The manual
 
 File: `docs/design/README.md`:
 - § Screens: add a row, `Setup | a centred panel: title, hint, server address and API key fields (Show beside the key), Connect, the problem under it`.
 - After the top-menu line, add: "Settings is a gear button at the right end, beside the clock; until the top menu exists, Home shows it top-right."
 - § Open decisions: keep the QR line (still open).
 
-### [ ] 3.8 — Tests
+### [x] 3.8 — Tests
 
 Files: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModelTest.kt`, `.../ui/setup/SetupViewModelTest.kt`.
 

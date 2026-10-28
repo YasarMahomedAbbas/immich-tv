@@ -21,3 +21,19 @@ Branch: `feat/3-connect-to-server`
 - Open risks:
   - No `verify.env` on this machine, so the plan follows the v3.3.5 spec (the latest release) rather than the live server's version, and the real-server and TV checks will be skipped unless it appears.
   - tv-material has no text field, so the on-screen keyboard behaviour of a `BasicTextField` on the Chromecast is unproven until the TV check.
+
+## Implementation
+
+- Shipped:
+  - Domain: `ServerAddress.parse` (`domain/server/Server.kt:14`, `@ConsistentCopyVisibility` so `copy()` can't bypass it), the redacted `ApiKey` (`Server.kt:32`), `ConnectResult`, `ServerConnector`, `SessionStore`, and the `ConnectToServer`/`GetSession` use cases (`domain/server/ConnectToServer.kt`).
+  - Data: `apiUrl` strips a trailing `/api` (`data/immich/ImmichHttp.kt:27`); the client has 10s timeouts and no logging interceptor. `ImmichServerConnector` pings without the key (`data/immich/ImmichServerConnector.kt:32`), then reads `/users/me` with `x-api-key` (`:44`). `KeystoreCipher` (AES-256/GCM in the AndroidKeyStore, `data/settings/KeystoreCipher.kt:17`) and `StoredSessionRepository`, where a key that won't decrypt counts as no session (`data/settings/StoredSessionRepository.kt:16`).
+  - Wiring: `AppContainer` (`AppContainer.kt:16`), built in `ImmichTvApp.onCreate`.
+  - UI: `AppViewModel` routes Loading/Setup/Home, and Back from Setup opened in Settings goes Home (`ui/AppViewModel.kt:46`). `SetupViewModel` ignores Connect while connecting (`ui/setup/SetupViewModel.kt:48`). `SetupScreen` has previews for every state. `HomeScreen` gets the Settings gear top-right with the initial focus (`ui/home/HomeScreen.kt:30`). `MainActivity` finishes when `back()` returns false (`MainActivity.kt:30`).
+  - Components: `PrimaryButton`/`SecondaryButton` (`ui/components/Buttons.kt`), `HouseTextField` (OK opens the IME) and the shared `Modifier.focusOutline` (`ui/components/HouseTextField.kt:49`, `:98`), and the `ic_settings` gear.
+  - Manual: a Setup row, the Settings gear slot, and the text field recipe in `docs/design/README.md`.
+- Tests: 67 passed / 0 failed (full CI command: `testDebugUnitTest koverVerifyDebug lintDebug assembleDebug`, BUILD SUCCESSFUL). Line coverage is 88.9%. Lint has no errors; its warnings are Gradle/AGP version nags, a long vector path in `ic_settings`, and pre-existing manifest notes.
+- Outstanding: none in the checklist. The real-server and on-TV checks in the test plan belong to self-verification. Still unproven until then: whether D-pad focus alone pops the IME on a `BasicTextField` on the Chromecast, and whether a disabled Connect keeps focus while connecting.
+- Contradicted the plan:
+  - `@Preview`/`Devices.TV_1080p` need `compose-ui-tooling-preview`, which wasn't in the dependency list. Added it from the BOM, with `ui-tooling` as `debugImplementation`.
+  - A `surface` text field on a `surface` panel would be invisible, so `HouseTextField` is `raised`. Task 3.4 and the manual were updated to match.
+  - The house focus outline for non-button items became a shared `Modifier.focusOutline` in `HouseTextField.kt`.

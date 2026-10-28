@@ -47,8 +47,13 @@ These live in `.claude/skills/design-canvas/assets/artboard.dc.html` for the can
 | Slideshow | full screen; date and place bottom-left, controls bottom-centre (shown on a key press, fade after a few seconds), a thin progress bar on top |
 | Photos | top menu, a month rail on the left, a 6-column grid per month |
 | Search | top menu, the search field with the voice button, suggestion chips, People, results in a 7-column grid with Play as slideshow |
+| Setup | a centred panel: title, hint, server address and API key fields (Show beside the key), Connect, the problem under it |
 
 The top menu is Home · Albums · Photos · Search, with the clock on the right.
+
+Settings is a gear button at the right end, beside the clock; until the top menu exists, Home shows it top-right.
+
+A text field (`HouseTextField`) is `raised` with 18dp corners, an 18sp `mfg` label over a 22sp value, so it reads on a `surface` panel; OK on the remote opens the on-screen keyboard.
 
 ## Open decisions
 
