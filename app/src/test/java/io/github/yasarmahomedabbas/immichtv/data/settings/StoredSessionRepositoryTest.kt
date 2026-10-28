@@ -11,14 +11,6 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class StoredSessionRepositoryTest {
-    private class MemoryStorage : StringStorage {
-        val values = mutableMapOf<String, String>()
-        override fun get(key: String) = values[key]
-        override fun put(values: Map<String, String?>) {
-            for ((key, value) in values) if (value == null) this.values.remove(key) else this.values[key] = value
-        }
-    }
-
     /** Reverses and prefixes, so the stored value is never the plaintext; can be told to fail. */
     private class FakeCipher : SecretCipher {
         var broken = false

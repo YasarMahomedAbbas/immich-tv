@@ -132,18 +132,18 @@ Files: `test/…/domain/albums/AlbumsTest.kt` (filterAndSort, every filter × so
 
 Goal: each album has its own slideshow settings, kept on the device, with the canvas's defaults.
 
-### [ ] 3.1 — Domain
+### [x] 3.1 — Domain
 
 File: `…/domain/slideshow/SlideshowSettings.kt`
 `enum class SlideshowOrder { OldestFirst, Shuffle, NewestFirst }`, `enum class VideoMode { PlayMuted, PlayWithSound, Skip }`, `data class SlideshowSettings(val secondsPerPhoto: Int = 8, val order: SlideshowOrder = OldestFirst, val videos: VideoMode = PlayMuted, val showDateAndPlace: Boolean = true)` with `companion val SECONDS = listOf(8, 12, 20, 5)` (the canvas's cycle order) and `fun nextSeconds()`, `nextOrder()`, `nextVideos()`, `toggleDateAndPlace()` returning a copy (cycling in the canvas order; an unknown seconds value goes to 8). `interface SlideshowSettingsStore { suspend fun load(album: AlbumId): SlideshowSettings; suspend fun save(album: AlbumId, settings: SlideshowSettings) }`. Use cases `GetSlideshowSettings(store)`, `SaveSlideshowSettings(store)`.
 
-### [ ] 3.2 — Data
+### [x] 3.2 — Data
 
 File: `…/data/settings/StoredSlideshowSettings.kt` — `internal class StoredSlideshowSettings(storage: StringStorage) : SlideshowSettingsStore`
 One key per album, `slideshow.<albumId>`, value `seconds|ORDER|VIDEOS|true` (enum names). Missing or unparseable → `SlideshowSettings()`. On `Dispatchers.IO`.
 File: `…/AppContainer.kt`: a second prefs file `slideshow` via `SharedPreferencesStorage`; expose `getSlideshowSettings`, `saveSlideshowSettings`.
 
-### [ ] 3.3 — Tests
+### [x] 3.3 — Tests
 
 Files: `test/…/domain/slideshow/SlideshowSettingsTest.kt` (each `next*` cycles in order and wraps; defaults), `test/…/data/settings/StoredSlideshowSettingsTest.kt` (round-trip; two albums kept apart; unknown album → defaults; corrupt value → defaults) with an in-memory `StringStorage` (reuse the one in `StoredSessionRepositoryTest` by moving it to `test/…/data/settings/MemoryStorage.kt`).
 
