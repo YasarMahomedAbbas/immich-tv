@@ -1,9 +1,11 @@
 package io.github.yasarmahomedabbas.immichtv
 
 import android.content.Context
+import coil3.ImageLoader
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichAlbumRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichServerConnector
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichHttpClient
+import io.github.yasarmahomedabbas.immichtv.data.immich.immichImageLoader
 import io.github.yasarmahomedabbas.immichtv.data.settings.KeystoreCipher
 import io.github.yasarmahomedabbas.immichtv.data.settings.SharedPreferencesStorage
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSessionRepository
@@ -36,6 +38,9 @@ class AppContainer(context: Context) {
     private val slideshowSettings = StoredSlideshowSettings(
         SharedPreferencesStorage(context.getSharedPreferences("slideshow", Context.MODE_PRIVATE)),
     )
+    /** Loads a domain `Preview` with the key header; the app's one Coil image loader. */
+    fun imageLoader(context: Context): ImageLoader = immichImageLoader(context, http, sessions)
+
     val getSlideshowSettings = GetSlideshowSettings(slideshowSettings)
     val saveSlideshowSettings = SaveSlideshowSettings(slideshowSettings)
 }

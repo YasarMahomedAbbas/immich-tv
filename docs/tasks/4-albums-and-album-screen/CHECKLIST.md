@@ -157,28 +157,28 @@ Files: `test/…/domain/slideshow/SlideshowSettingsTest.kt` (each `next*` cycles
 
 Goal: a composable can show any `Preview`, fetched as `/assets/{id}/thumbnail?size=preview` with `x-api-key`, through `immichHttpClient()`, cached in memory and on disk.
 
-### [ ] 4.1 — Dependencies
+### [x] 4.1 — Dependencies
 
 Files: `gradle/libs.versions.toml`, `app/build.gradle.kts`
 `coil = "3.0.4"`; `coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }`, `coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }`; both `implementation`.
 
-### [ ] 4.2 — The interceptor
+### [x] 4.2 — The interceptor
 
 Files: `…/data/immich/ImmichImages.kt` (the pure `previewUrl`, `previewCacheKey`), `…/data/immich/PreviewInterceptor.kt`
 `internal class PreviewInterceptor(sessions: SessionStore) : coil3.intercept.Interceptor`: if `chain.request.data` is a `Preview`, load the session (none → `ErrorResult`), rewrite the request: `data(previewUrl(server, id))` (= `apiUrl(server, "assets/<id>/thumbnail")` + `size=preview`), `httpHeaders(NetworkHeaders.Builder().set(API_KEY_HEADER, key).build())`, `memoryCacheKey`/`diskCacheKey` = `previewCacheKey(id)` (`"preview:<id>"`) (so the key never ends up in a cache key), then `chain.withRequest(...).proceed()`. Other data passes through unchanged.
 In `PreviewInterceptor.kt`, `internal fun immichImageLoader(context: PlatformContext, client: OkHttpClient, sessions: SessionStore): ImageLoader` = `ImageLoader.Builder(context).components { add(PreviewInterceptor(sessions)); add(OkHttpNetworkFetcherFactory(callFactory = { client })) }.crossfade(true).build()` (memory cache default 25 %, disk cache `cacheDir/previews` 256 MB).
 KDoc: why an interceptor (the UI never builds a URL), and that the shared client's redirect interceptor still strips the key.
 
-### [ ] 4.3 — Wiring
+### [x] 4.3 — Wiring
 
 Files: `…/AppContainer.kt` (`fun imageLoader(context: Context): ImageLoader = immichImageLoader(...)`), `…/ImmichTvApp.kt` (implements `coil3.SingletonImageLoader.Factory`, `newImageLoader(context) = container.imageLoader(context)`).
 
-### [ ] 4.4 — The tile
+### [x] 4.4 — The tile
 
 File: `…/ui/components/PhotoTile.kt`
-`@Composable fun PhotoTile(photo: PhotoId?, modifier: Modifier, shape: Shape = RoundedCornerShape(12.dp), focusable: Boolean = false, onClick: () -> Unit = {})`: `AsyncImage(model = photo?.let(::Preview), contentScale = Crop)` on a `surface` placeholder; a video gets a small play badge (param `isVideo: Boolean = false`); focusable tiles use the house focus outline (`Modifier.focusOutline`). Variants for the 12dp tile and the 14dp album card corner, per the manual.
+`@Composable fun PhotoTile(photo: PhotoId?, modifier: Modifier, style: TileStyle = Tile, isVideo: Boolean = false, focusable: Boolean = false, onClick: () -> Unit = {})`: `AsyncImage(model = Preview(photo), contentScale = Crop)` on a `surface` placeholder; a video gets a small play badge; focusable tiles are a tv-material `Surface` with the house focus border (`houseFocusBorder(shape)`, new in `…/ui/components/Focus.kt`, now also used by the buttons). `TileStyle` variants: `Tile` 12dp, `AlbumCard` 14dp, `Mosaic` 18dp, per the manual's corners. Icons `ic_play`, `ic_search`, `ic_sort`, `ic_photo` added.
 
-### [ ] 4.5 — Tests
+### [x] 4.5 — Tests
 
 File: `test/…/data/immich/PreviewInterceptorTest.kt`
 Coil's `ImageRequest` needs an Android context, so the logic sits in pure functions in `ImmichImages.kt` that the interceptor calls: `internal fun previewUrl(server: ServerAddress, photo: PhotoId): String` and `internal fun previewCacheKey(photo: PhotoId): String`. Test them (exact path and `size=preview`; a trailing `/api` address gives the same URL; the cache key holds no key). A MockWebServer test fetches `previewUrl` with `immichHttpClient()` and the header and checks the key arrives, and is dropped on a redirect to a second server. `PreviewInterceptor.kt` (the interceptor and `immichImageLoader`) needs Android, stays thin and is excluded from Kover with a comment, like `KeystoreCipher`: add `"*.PreviewInterceptor*"` to `classes(...)` in `app/build.gradle.kts`. `ImmichImages.kt` is not excluded: it holds the tested functions.

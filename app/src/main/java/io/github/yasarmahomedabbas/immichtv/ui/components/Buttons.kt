@@ -1,6 +1,5 @@
 package io.github.yasarmahomedabbas.immichtv.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -11,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Border
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
@@ -43,7 +41,7 @@ private fun HouseButton(
     content: Color,
 ) {
     // Focus changes only the outline: the fill stays put so amber is the one focus signal.
-    val focusBorder = Border(BorderStroke(4.dp, MaterialTheme.colorScheme.border), inset = (-4).dp, shape = CircleShape)
+    val focusBorder = houseFocusBorder(CircleShape)
     Button(
         onClick = onClick,
         modifier = modifier,

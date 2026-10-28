@@ -74,6 +74,9 @@ kover {
                     // device. The logic behind them is tested with fakes.
                     "*.KeystoreCipher*",
                     "*.SharedPreferencesStorage*",
+                    // Coil's interceptor and image loader need an Android context; the URL and
+                    // cache key they use are pure functions in ImmichImages, tested there.
+                    "*.PreviewInterceptor*",
                 )
             }
         }
@@ -97,6 +100,8 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.okhttp)
     implementation(libs.serialization.json)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
