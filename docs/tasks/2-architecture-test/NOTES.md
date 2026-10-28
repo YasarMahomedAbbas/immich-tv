@@ -33,3 +33,14 @@ Branch: `chore/2-architecture-test`
 - Skipped: README § Development / testing: no mention of the `ArchitectureTest`. It runs inside `testDebugUnitTest`, which the README already lists, and a failure names the broken rule; `CLAUDE.md` covers it.
 - Skipped: the KDoc in the new `domain/Domain.kt` and `data/Data.kt` restates `CLAUDE.md` § Layers; consistent with it, nothing to change.
 - Stale, fixed separately: none. Noted, not fixed: README § Architecture and § Development describe pieces not yet in the code (`AppContainer`, the Immich REST client, MockWebServer tests). This is the planned architecture of a freshly scaffolded app that #3 builds next, not drift; rewriting it as "not yet" would be reverted by #3.
+
+## Self verification
+
+Result: passed
+
+- CI build: full CI command BUILD SUCCESSFUL; 19 tests passed, 0 failed, 0 skipped (`LayerRulesTest` 18, `ArchitectureTest` 1); `koverVerifyDebug` passed with an empty error report (the branch adds no main-source classes: `Domain.kt` and `Data.kt` are a `package` line only); lint 19 warnings, 0 errors, all pre-existing; `app-debug.apk` built.
+- Server: not in scope (the branch makes no Immich calls; `verify.env` also absent on this machine).
+- TV: not in scope (no runtime change: the new main-source files compile to nothing, the rest is test code and docs).
+- Verified: the layer rules are enforced in `testDebugUnitTest` (`ArchitectureTest` passes over the real `src/main/java`; implementation's negative check showed it fails on `android.os.Bundle` in `domain/`).
+- Failed: none
+- Not self-verifiable: none
