@@ -55,3 +55,22 @@ Branch: `feat/3-connect-to-server`
 - Skipped: Setup row, Settings gear slot and text field recipe — already added to `docs/design/README.md` by implement-plan; checked against `SetupScreen`, `HomeScreen` and `HouseTextField`.
 - Checked, no change: README architecture block, "plain http:// allowed" (`usesCleartextTraffic` in the manifest), "HTTP client tested against MockWebServer", the build commands.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: 69 tests passed / 0 failed (full CI command, BUILD SUCCESSFUL), line coverage 88.9% (`koverVerifyDebug` passes), lint clean, debug APK built.
+- Server: Immich v3.3.5 (`/api/server/version`); calls checked against that tag's `open-api/immich-openapi-specs.json`.
+- TV: not run (`TV_ADB` is empty in `verify.env`; `adb devices` lists nothing).
+- Verified:
+  - `GET /api/server/ping` with no key → 200 `{"res":"pong"}`, which `PingDto` parses (spec: no security, `res` required string).
+  - `GET /api/users/me` with the key in `x-api-key` → 200, a `UserAdminResponseDto` with `name` as a string, which `MeDto` reads; unknown fields are ignored (spec: `name` required, permission `user.read`).
+  - `GET /api/users/me` with a wrong key → 401 `Invalid API key` (→ `KeyRejected`); without a key → 401.
+  - The MockWebServer fixtures already match these shapes (checked in review); no fixture added.
+- Failed: none
+- Not self-verifiable:
+  - On a fresh install the app opens on Setup; D-pad moves address → key → Show → Connect with the amber outline visible; each field opens the on-screen keyboard (unproven: whether focus alone pops the IME on a `BasicTextField` on the Chromecast).
+  - A wrong key shows its message; correct values reach Home; the disabled Connect keeps focus while connecting.
+  - After a relaunch the app goes straight to Home; Settings → Setup is prefilled and Back returns Home; on first-run Setup, Back exits the app.
+  - No `AndroidRuntime` errors in logcat during the above.
