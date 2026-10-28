@@ -76,7 +76,7 @@ Read every `.kt` under `File("src/main/java")` (Gradle runs unit tests with the 
 
 Goal: `CLAUDE.md` § Layers says the rule is enforced and by what.
 
-### [ ] 2.1 — CLAUDE.md § Layers
+### [x] 2.1 — CLAUDE.md § Layers
 
 File: `CLAUDE.md`
 After the first paragraph of § Layers, one sentence: `ArchitectureTest` (in `testDebugUnitTest`, so CI) fails on a `ui/`/`domain/` import of `data/`, on Android, OkHttp or kotlinx.serialization in `domain/`, and on any `data/` reference outside `data/` and `AppContainer`; it checks names, not shapes, so Immich field names are still for review.

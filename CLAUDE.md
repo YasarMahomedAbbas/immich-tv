@@ -22,6 +22,8 @@ Tickets are GitHub issues; a `Needs: #a, #b` line names what must be closed firs
 ## Layers: the server is behind one door
 `ui/` → `domain/` ← `data/`, and `AppContainer` is the only place that names a `data/` class. The goal: swapping Immich for another photo server means rewriting `data/` and nothing else.
 
+`ArchitectureTest` (in `testDebugUnitTest`, so CI) fails on a `ui/` or `domain/` import of `data/`, on Android, OkHttp or kotlinx.serialization in `domain/`, and on any `data/` reference outside `data/` and `AppContainer`. It checks names, not shapes, so Immich field names in `domain/` are still for review.
+
 - **`domain/`** is plain Kotlin in the app's own words: albums, photos, videos, people, a slideshow, a server that can refuse. No Android, no OkHttp, no JSON, and nothing Immich-shaped: no endpoint paths, asset ids treated as URLs, field names like `exifInfo`, or Immich enum strings. It defines the repository interfaces `data/` implements.
 - **`data/`** is the only layer that talks to anything outside the process: HTTP, image loading headers, stored settings. Every Immich call, every response shape and every version difference stays here and is turned into domain models before it leaves.
 - **`ui/`** sees only `domain/`: ViewModels call use cases, screens render state. A screen never imports `data/`, builds a URL or reads an Immich field.
