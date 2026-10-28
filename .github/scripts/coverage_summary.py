@@ -7,4 +7,7 @@ print("### Coverage\n\n| Counter | Covered |\n|---|---|")
 for counter in root.findall("counter"):
     missed, covered = int(counter.get("missed")), int(counter.get("covered"))
     total = missed + covered
+    if total == 0:
+        print(f"| {counter.get('type').title()} | nothing measured yet |")
+        continue
     print(f"| {counter.get('type').title()} | {covered / total:.1%} ({covered}/{total}) |")
