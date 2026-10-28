@@ -37,3 +37,10 @@ Branch: `feat/3-connect-to-server`
   - `@Preview`/`Devices.TV_1080p` need `compose-ui-tooling-preview`, which wasn't in the dependency list. Added it from the BOM, with `ui-tooling` as `debugImplementation`.
   - A `surface` text field on a `surface` panel would be invisible, so `HouseTextField` is `raised`. Task 3.4 and the manual were updated to match.
   - The house focus outline for non-button items became a shared `Modifier.focusOutline` in `HouseTextField.kt`.
+
+## Review
+
+- Fixed: `x-api-key` followed a redirect to another server. OkHttp follows redirects and, across hosts, strips only `Authorization`, so an address that redirects `/api/users/me` elsewhere would have handed that host the key. A network interceptor in `immichHttpClient()` (`data/immich/ImmichHttp.kt`) now drops the key from any hop off the original host/port. It keeps the key on a same-host http → https upgrade, but drops it on a downgrade. Tests: a redirect to a second MockWebServer arrives without the key (it failed before the fix), and a same-server redirect keeps it.
+- Raised: none
+- API: the server runs v3.3.5 (`/api/server/version`); checked against that tag's spec. `GET /api/server/ping`: no security, `ServerPingResponse` with `res` required. Matches. `GET /api/users/me`: `api_key` scheme is the `x-api-key` header, permission `user.read`, `UserAdminResponseDto` with `name` required. Matches; the v3.3.5 test body has every required field.
+- Layers: clean

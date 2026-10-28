@@ -44,7 +44,7 @@ internal class ImmichServerConnector(private val client: OkHttpClient) : ServerC
     private fun me(session: Session): ConnectResult {
         val request = Request.Builder()
             .url(apiUrl(session.server, "users/me"))
-            .header("x-api-key", session.apiKey.value)
+            .header(API_KEY_HEADER, session.apiKey.value)
             .get()
             .build()
         return client.newCall(request).execute().use { response ->

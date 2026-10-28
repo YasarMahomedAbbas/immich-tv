@@ -134,6 +134,46 @@ class ImmichServerConnectorTest {
     }
 
     @Test
+    fun `a redirect to another server does not carry the key`() = runTest {
+        val elsewhere = MockWebServer().apply {
+            enqueue(MockResponse().setBody(ME_V3_3_5))
+            start()
+        }
+        try {
+            me = MockResponse().setResponseCode(302).setHeader("Location", elsewhere.url("/api/users/me"))
+
+            check()
+
+            val followed = elsewhere.takeRequest()
+            assertEquals("/api/users/me", followed.path)
+            assertNull(followed.getHeader("x-api-key"))
+        } finally {
+            elsewhere.shutdown()
+        }
+    }
+
+    @Test
+    fun `a redirect on the same server keeps the key`() = runTest {
+        var redirected = false
+        val dispatcher = server.dispatcher
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest) =
+                if (request.path == "/api/users/me" && !redirected) {
+                    redirected = true
+                    MockResponse().setResponseCode(302).setHeader("Location", "/api/users/me")
+                } else {
+                    dispatcher.dispatch(request)
+                }
+        }
+
+        assertEquals(ConnectResult.Connected::class, check()::class)
+
+        server.takeRequest()
+        server.takeRequest()
+        assertEquals(KEY, server.takeRequest().getHeader("x-api-key"))
+    }
+
+    @Test
     fun `a server that is gone is unreachable`() = runTest {
         val address = server.url("/").toString()
         server.shutdown()
