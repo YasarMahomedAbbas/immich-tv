@@ -34,3 +34,23 @@ Branch: `fix/22-release-finished-slideshows`
 - Skipped: `CLAUDE.md` — the store is about one area, not every ticket; the README and `AppViewModel`'s KDoc carry it.
 - Skipped: `docs/design/` — no visuals changed. No command, permission, navigation, named file or Immich call changed either.
 - Stale, fixed separately: none. On `origin/main` slideshows already didn't call `RefreshOnStart`, so that claim was loose before this branch; the same new sentence covers it, so it has no commit of its own.
+
+## Self verification
+
+Result: passed
+
+- CI build: full command not run here, per the user's speed note for 2026-10-30: it runs once in `raise-pr`. `assembleDebug` built the APK in Docker. Unit tests not re-run; the last run is in Implementation (`AppViewModelTest` 20 passed).
+- Server: not applicable, the diff touches no `data/` call and no Immich call changed.
+- TV: this branch's debug build installed on the Chromecast. Driven with the remote's keys: album show, library show and search results show, each with Back and a restart, and each with the activity recreated mid-show.
+- Verified:
+  - `MainActivity` uses `app.shows` (the behaviour no unit test covers): each show starts fresh and survives recreation, as below.
+  - Album show: starts at the album's first photo and advances. Back lands on the album screen with focus on Start slideshow. Started again after it had advanced, it is back at the first photo.
+  - Library show: hold OK on a tile in the Photos grid starts at that tile's photo. Back lands on the Photos tab with focus on the same tile. Started again, it is at that photo again.
+  - Search results show ("mountains", 100 matches): Back lands on the results with focus on Play as slideshow. Started again, it is at the first photo.
+  - Recreation mid-show, all three shows, by flipping night mode: six `finishDrawing of relaunch` lines in logcat, same process throughout, so the activity really was recreated. Album: the same later photo after the relaunch, not the first. Library and results: carried on from where they were, moving on to later photos. Back after recreating still lands as above (library and results driven; album after its second relaunch).
+  - No error lines for the app or `AndroidRuntime` in logcat over the whole run; Activities: 1 at the end.
+- Failed: none
+- Not self-verifiable:
+  - Memory release on the device: `dumpsys meminfo` is indicative only and shows no release by itself (Java heap 10.8 MB at launch, 15.4 MB after all the rounds, with albums, the Photos grid and search results also loaded). The proof of release is the unit test, as planned.
+  - Leaving a show other than by Back: only Back leaves a show on the TV, so this rests on the unit test.
+- Plan correction: this TV's night mode was already `yes`, so the test plan's `night yes` recreates nothing. The check flipped to `no` and back to `yes`, leaving it as found.
