@@ -111,7 +111,7 @@ Test: `SlideshowViewModelTest` (constructor, a list plays), `AppViewModelTest`, 
 
 Goal: searching by keyboard, chip or voice works on screen, with every state. Follow `design-recipe`.
 
-### [ ] 3.1 — The ViewModel
+### [x] 3.1 — The ViewModel
 
 File: `ui/search/SearchViewModel.kt` (new; mirror `AlbumViewModel`).
 
@@ -134,14 +134,14 @@ Functions: `edit(text)`, `submit()`, `submit(text)` (chip, voice), `choose(perso
 `internal val SUGGESTIONS` in order: "dog on the beach", "sunset", "snow", "birthday cake", "mountains". Strings, not resources, as these are queries to the server.
 Test: `ui/search/SearchViewModelTest.kt`.
 
-### [ ] 3.2 — Voice
+### [x] 3.2 — Voice
 
 File: `ui/search/VoiceInput.kt` (new): `@Composable fun rememberVoiceInput(onHeard: (String) -> Unit): () -> Unit`, launching `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` (`LANGUAGE_MODEL_FREE_FORM`) with `rememberLauncherForActivityResult`, catching `ActivityNotFoundException` so the mic does nothing rather than crash. `internal fun firstHeard(results: List<String>?): String?`, `internal fun isVoiceKey(key: Key): Boolean` (`Key.Search`, `Key.VoiceAssist`, `Key.Assist`).
 File: `ui/main/MainScreen.kt`: add a `search: @Composable () -> Unit` slot and `onVoiceKey: () -> Unit`; the root Column's `onPreviewKeyEvent` calls it on key up for a voice key while `tab == Tab.Search`, and consumes the down event.
 File: `MainActivity.kt`: create the `SearchViewModel` (key `search-$connection`) and voice input in the Main branch, and wire both. Update the previews.
 Test: `ui/search/VoiceInputTest.kt`.
 
-### [ ] 3.3 — The screen
+### [x] 3.3 — The screen
 
 File: `ui/search/SearchScreen.kt` (new): `SearchScreen(viewModel, onVoice, onPlay: (List<Slide>) -> Unit, focusResults: Boolean)` with `RefreshOnStart(viewModel::refreshPeople)`; content in one `LazyVerticalGrid(GridCells.Fixed(7))`, full-span items above the tiles, gaps 16dp, room for the focus outline as in `PhotoGrid`:
 
@@ -149,12 +149,12 @@ File: `ui/search/SearchScreen.kt` (new): `SearchScreen(viewModel, onVoice, onPla
 - "Try" 20sp `mfg`, then the `Chip`s; selected when it equals the current description.
 - People: "People" 26sp 700, a `LazyRow` of `PersonCircle` (120dp circle of `AsyncImage(PersonFace(id))`, amber focus, name 18sp 600 one line, ellipsised). Left out when there are no people.
 - Results when a subject is set: heading `“text”` or the person's name 30sp 800, count 22sp `mfg`, and `PrimaryButton` with the play icon "Play as slideshow", shown only when `slides.playable()` isn't empty, calling `onPlay(slides.playable())`. Tiles: `PhotoTile` at 4:3, focusable, badge on videos.
-- Count: `internal fun resultCount(subject, count, limit)`: "62 photos" (plurals), "100 best matches" at a search's cap, "1,000 newest photos" at a person's cap. Test it.
+- Count: `internal fun resultCount(subject, count, limit)` picks the wording (`ResultCount`, so it is tested without resources); the screen turns it into "62 photos" (plurals), "100 best matches" at a search's cap, "1,000 newest photos" at a person's cap.
 - Loading: 14 `SkeletonBlock` tiles at 4:3 under the heading, and the field keeps focus.
 - Empty: `EmptyState("Nothing found", "Try describing it another way.", "Clear search", clear)`, Failed: `FailedState(problem, retry)`, each in a full-span item with `Modifier.height(480.dp)`: `StateCard` fills its height, which a grid item doesn't bound.
-- `BackHandler(enabled = state.subject != null)`: `clear()`, then focus on the field. Results take focus on their first tile when they arrive; `focusResults` puts it on Play.
+- `BackHandler(enabled = state.subject != null)`: `clear()`, then focus on the field. Results take focus on their first tile when they arrive; `focusResults` puts it on Play. A new load while the remote was on something it takes away (a tile, Play, Try again) moves focus to the field.
 
-File: `res/values/strings.xml`: every label above; plurals reuse `photo_count`. File: `res/drawable/ic_mic.xml`, `ic_search.xml` if missing.
+File: `ui/components/Buttons.kt`: `VoiceButton`. File: `res/values/strings.xml`: every label above; plurals reuse `photo_count`. File: `res/drawable/ic_mic.xml`, `ic_search.xml` if missing.
 File: `ui/main/PlaceholderTab` stays for Home and Photos. File: `docs/design/README.md`: extend the Search row with the field's measures, the person circle and the system speech prompt.
 Previews: idle, loaded, skeleton, empty, failed.
 

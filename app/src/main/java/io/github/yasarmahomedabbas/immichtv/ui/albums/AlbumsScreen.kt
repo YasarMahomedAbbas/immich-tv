@@ -258,7 +258,7 @@ private val previewAlbums = listOf(
 @Composable
 private fun AlbumsPreview(state: AlbumsState) {
     ImmichTvTheme {
-        MainScreen(tab = Tab.Albums, onSelectTab = {}, onOpenSettings = {}) {
+        MainScreen(tab = Tab.Albums, onSelectTab = {}, onOpenSettings = {}, onVoiceKey = {}, search = {}) {
             AlbumsContent(state, {}, {}, {}, {}, {})
         }
     }

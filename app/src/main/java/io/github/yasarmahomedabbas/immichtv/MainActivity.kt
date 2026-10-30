@@ -23,6 +23,9 @@ import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.search.SearchScreen
+import io.github.yasarmahomedabbas.immichtv.ui.search.SearchViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.search.rememberVoiceInput
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowScreen
@@ -51,16 +54,23 @@ class MainActivity : ComponentActivity() {
                         onConnected = app::connected,
                         onBack = { app.back() },
                     )
-                    is AppScreen.Main -> MainScreen(
-                        tab = current.tab,
-                        onSelectTab = app::selectTab,
-                        onOpenSettings = app::openSettings,
-                    ) {
-                        // Scoped to the activity, so the list and the focused album survive opening one.
-                        AlbumsScreen(
-                            viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
-                            onOpenAlbum = app::openAlbum,
-                        )
+                    is AppScreen.Main -> {
+                        // Scoped to the activity, so the results survive a slideshow of them.
+                        val search: SearchViewModel = viewModel(key = "search-$connection", factory = SearchViewModel.factory(container))
+                        val voice = rememberVoiceInput { search.submit(it) }
+                        MainScreen(
+                            tab = current.tab,
+                            onSelectTab = app::selectTab,
+                            onOpenSettings = app::openSettings,
+                            onVoiceKey = voice,
+                            search = { SearchScreen(search, onVoice = voice, onPlay = {}, focusResults = current.focusResults) },
+                        ) {
+                            // Scoped to the activity, so the list and the focused album survive opening one.
+                            AlbumsScreen(
+                                viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
+                                onOpenAlbum = app::openAlbum,
+                            )
+                        }
                     }
                     is AppScreen.Album -> AlbumScreen(
                         viewModel = viewModel(
