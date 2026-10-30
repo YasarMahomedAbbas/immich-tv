@@ -5,7 +5,7 @@ An Android TV app for a Chromecast with Google TV that shows your photos from a 
 - **Albums**: filter and sort them, open one to see its photos, set up its slideshow and start it.
 - **Slideshow**: crossfades with a slow zoom, portrait photos on a blurred copy of themselves, the date and place in a corner, and the remote's left/right/OK to skip and pause. It plays an album on a loop, and the Videos setting decides its videos: played to their end, muted or with sound, or left out by Skip. It also plays the whole library's photos on a loop, leaving its videos out.
 - **Photos**: your own timeline by month, as Immich's Photos page shows it (partners' photos and photos only in albums others shared with you stay out). Jump by month, open a photo full screen and move left and right, or hold OK on a photo to start a slideshow from it.
-- **Screensaver**: when the TV goes idle it plays a random selection of your library's photos, or an album you choose in Settings, with a clock on the plain ground when the server can't be reached. It needs [one `adb` command](#screensaver) to turn on.
+- **Screensaver**: when the TV goes idle it plays a random selection of your library's photos, or an album you choose in Settings, with a clock on the plain ground when the server can't be reached. It's [turned on over `adb`](#screensaver), once.
 - **Search** (planned, #8): Immich's smart search ("dog on the beach"), by voice from the remote.
 
 The app talks only to your own server. It's built for a server reached over the home network or a VPN such as Tailscale, so plain `http://` addresses are allowed.
@@ -48,7 +48,7 @@ data/     The Immich REST client and stored settings
 
 A ViewModel that holds server data takes `AppViewModel.connection` in its key (see `MainActivity`): ViewModels live as long as the activity, so without it a screen keeps showing the old server's data after connecting to another.
 
-For the same reason a screen that shows server data calls `RefreshOnStart` with a quiet `refresh()` on its ViewModel, or it never sees changes made on the server. A quiet refresh reads one cheap summary and fetches more only if that changed, never shows the skeleton, keeps focus and scroll when nothing changed, and leaves the screen alone on failure. A slideshow is the exception: it reads its photos once, when it starts.
+For the same reason a screen that shows server data calls `RefreshOnStart` with a quiet `refresh()` on its ViewModel, or it never sees changes made on the server. A quiet refresh reads one cheap summary and fetches more only if that changed, never shows the skeleton, keeps focus and scroll when nothing changed, and leaves the screen alone on failure. The exceptions: a slideshow or the screensaver reads its photos once, when it starts, and Settings reads the albums once per server connection, its screensaver picker again on each entry, so neither sees a change made while the app stays open on it.
 
 Any change to an Immich call follows the API of the server's version (see `CLAUDE.md`).
 

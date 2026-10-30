@@ -42,3 +42,12 @@ Branch: `feat/10-immich-screensaver`
 - API: no call added or changed. `GET /albums`, `/albums/{id}`, `/timeline/buckets`, `/timeline/bucket` read against the v3.3.5 spec (the server's version): the query parameters the repositories send are all there; matches docs and schema.
 - Layers: clean
 - Tests: `SettingsViewModelTest` only, per today's speed note; the full CI command runs in `raise-pr`.
+
+## Doc drift
+
+- Applied: README.md:Architecture — the `RefreshOnStart` rule now names the branch's exceptions: the screensaver, and Settings and its picker, which don't call it (rung 3).
+- Applied: README.md:features — "one `adb` command" became "turned on over `adb`, once": the section shows three commands (rung 3).
+- Checked, true: the README's Screensaver section (component name, no debug `applicationId` suffix, 500 cap, 8 s, photos only, 60 s retry, any key wakes), the connection key on `SettingsViewModel`, the API key permissions (no new call), the CI line, and the manual's Settings, picker, Screensaver and `PickerRow` entries.
+- Skipped: Compose owners in a `DreamService`, the narrowed Kover patterns, `ScreensaverShow`'s fixed values: each is stated where the code is, by a comment or KDoc. `CLAUDE.md`'s one-line description of the app lacks the screensaver: it isn't a list a session relies on, and every session would pay for the line. Screensaver setting as a TV rule exception (any key wakes rather than Back): in the manual, where screen work looks.
+- Stale, fixed separately: README.md:Architecture — doc said every screen showing server data calls `RefreshOnStart`, code shows the slideshow never has (a4bbd1f).
+- Raised, not changed (code, not docs): `SettingsViewModel` loads once per connection and only the picker reloads, so the Settings screen can show an old album name or "Album no longer there" until the picker is opened, and a failed first read stays "An album" until then. `RefreshOnStart(viewModel::load)` would meet the rule, but `load()` isn't a quiet refresh after a failure (it shows the skeleton). The README records the behaviour as it is.
