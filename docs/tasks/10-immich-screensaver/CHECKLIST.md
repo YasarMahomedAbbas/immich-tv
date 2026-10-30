@@ -198,13 +198,13 @@ Files: `.../ui/settings/SettingsScreen.kt`, `.../ui/settings/ScreensaverPickerSc
 
 Goal: a reader can turn it on and off, and the manual knows the new screens.
 
-### [ ] 5.1 — README
+### [x] 5.1 — README
 
 File: `README.md`
 
 A feature line, plus a "Screensaver" section: the `adb shell settings put secure screensaver_components io.github.yasarmahomedabbas.immichtv/.ui.screensaver.ScreensaverService` command, run once, why it needs adb, how to go back (the previous value from `settings get`), and where to choose the album. Correct the service name if checkpoint 2 moved it.
 
-### [ ] 5.2 — The manual
+### [x] 5.2 — The manual
 
 File: `docs/design/README.md`
 

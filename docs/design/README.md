@@ -50,11 +50,14 @@ These live in `.claude/skills/design-canvas/assets/artboard.dc.html` for the can
 | Photos | top menu, a 200dp month rail on the left grouped by year (years aren't focusable; OK on a month jumps the grid there with its first tile focused; moving along the rail alone changes nothing), a 48dp gap, a 6-column grid per month; the rail's selection follows the focused tile. A `KeyHint` bottom-right while the grid is loaded: OK opens, hold OK starts a slideshow from there |
 | Photo | full screen with no safe area; the whole photo fitted on `bg`, no overlays. Left/right move through the timeline and stop at both ends; a video is a still with the play badge bottom-left at the slideshow's margins. Back returns to the last viewed tile |
 | Search | top menu, the search field with the voice button, suggestion chips, People, results in a 7-column grid with Play as slideshow |
+| Settings | back link (names where Back goes), title, two `SettingButton`s in a row: Server (the address) and Screensaver (what it plays). Neither is a primary button: nothing here is the one action. Focus enters on Server, or on Screensaver coming Back from its picker |
+| Screensaver picker | back link, title, a column of `PickerRow`s that scrolls with focus: "Random from my library", then the albums by name. OK saves and returns to Settings. Focus enters on the selected row, or the first if it's gone. The random row stays usable in every state: skeleton rows under it while loading, a failed card, or a hint when there are no albums |
+| Screensaver | the Slideshow's Playing, always photos only, shuffled, 8 s, with date, place and progress bar; nothing takes focus and any key wakes the TV. Plain `bg` while loading, with no skeleton on an idle TV. With no photos for any reason, a 96sp 700 `mfg` clock on plain `bg`, no panel, inside the safe area, moving each minute against burn-in, until a retry each minute brings the photos back. No empty or failed card: there's no one to press its button |
 | Setup | a centred panel: title, hint, server address and API key fields (Show beside the key), Connect, the problem under it |
 
 The top menu is Home · Albums · Photos · Search, with the clock on the right.
 
-Settings is a gear button at the right end, beside the clock.
+Settings is a gear button at the right end, beside the clock. It opens the Settings screen; Setup is behind its Server button.
 
 ## Components
 
@@ -69,7 +72,8 @@ What each shared part in `ui/components/` looks like. A call site picks a varian
 - **Photo tile** (`PhotoTile`): the preview cropped to fill, `surface` while it loads; a video has a small play badge bottom-left on a dark circle. Corners by `TileStyle`: 12 tiles, 14 album cards, 18 the album's cover mosaic.
 - **Month rail** (`MonthRail`): 200dp wide. A year is 18sp 700 `mfg`, not focusable. A month is 22sp with 12dp corners and 18×12dp padding, its name in the device's locale: the selected one `fg` with `on-fg` 800 text, the others `mfg` 600 with no fill, turning `fg` on focus. Focus coming in lands on the selected month.
 - **Key hint** (`KeyHint`): a `surface` pill, fully round, of 20sp 600 text, each key a small `fg` chip with `on-fg` 800 text. Never focusable.
-- **Setting button** (`SettingButton`): `surface`, 16dp corners, at least 230dp wide; the label 18sp 600 `mfg` (the canvas's 17sp is under the minimum) over the value 23sp 700. OK steps to the next value.
+- **Setting button** (`SettingButton`): `surface`, 16dp corners, at least 230dp wide; the label 18sp 600 `mfg` (the canvas's 17sp is under the minimum) over the value 23sp 700. OK steps to the next value on the album screen, and opens what it names on Settings.
+- **Picker row** (`PickerRow`): `surface`, 16dp corners, full width; the name 23sp 700 on one line and "Selected" 18sp `mfg` at the right when it is. OK chooses.
 - **Empty and failed states** (`EmptyState`, `FailedState`): a `surface` card with 18dp corners in the middle of the content area: a 32sp 800 title, a 22sp `mfg` hint, one primary button that takes focus. Failed says "Couldn't load this" and why: can't reach the server (check the home network or VPN), the key was refused (enter a new one in Settings), or the key lacks album.read, asset.read and asset.view; the button is Try again. The Albums empty state is "No albums yet" / "Make one in Immich and it shows up here." / Refresh; a filter with nothing in it is "Nothing here" / Show all albums.
 - **Panel over a photo** (`OverPhotoPanel`): `scrim` flat, by `OverPhotoStyle`: `Info` 55% with 18dp corners (date and place), `Pill` 55% fully round (the clock), `Controls` 80% fully round.
 - **Skeleton** (`SkeletonBlock`): `raised` blocks with the corner of what they stand for (fully round for text lines and buttons), pulsing slowly; each screen lays them out like its loaded layout.

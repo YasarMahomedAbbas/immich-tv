@@ -5,6 +5,7 @@ An Android TV app for a Chromecast with Google TV that shows your photos from a 
 - **Albums**: filter and sort them, open one to see its photos, set up its slideshow and start it.
 - **Slideshow**: crossfades with a slow zoom, portrait photos on a blurred copy of themselves, the date and place in a corner, and the remote's left/right/OK to skip and pause. It plays an album on a loop, and the Videos setting decides its videos: played to their end, muted or with sound, or left out by Skip. It also plays the whole library's photos on a loop, leaving its videos out.
 - **Photos**: your own timeline by month, as Immich's Photos page shows it (partners' photos and photos only in albums others shared with you stay out). Jump by month, open a photo full screen and move left and right, or hold OK on a photo to start a slideshow from it.
+- **Screensaver**: when the TV goes idle it plays a random selection of your library's photos, or an album you choose in Settings, with a clock on the plain ground when the server can't be reached. It needs [one `adb` command](#screensaver) to turn on.
 - **Search** (planned, #8): Immich's smart search ("dog on the beach"), by voice from the remote.
 
 The app talks only to your own server. It's built for a server reached over the home network or a VPN such as Tailscale, so plain `http://` addresses are allowed.
@@ -16,6 +17,20 @@ The app talks only to your own server. It's built for a server reached over the 
 3. Open Immich TV and enter the server address and an API key (Immich web → Account Settings → API Keys).
 
 The app needs Immich v1.133 or newer, the release that gave the timeline its current shape ([release notes](https://github.com/immich-app/immich/releases/tag/v1.133.0)); it refuses older servers when connecting. The API key needs `user.read`, `album.read`, `asset.read` and `asset.view` ([API reference](https://api.immich.app)), or all permissions.
+
+## Screensaver
+
+Google TV hides third-party screensavers from its settings, so this is turned on over `adb`, once, from a computer on the same network:
+
+```
+adb connect <tv-ip>:5555
+adb shell settings get secure screensaver_components
+adb shell settings put secure screensaver_components io.github.yasarmahomedabbas.immichtv/.ui.screensaver.ScreensaverService
+```
+
+Keep what the `get` printed: to go back to the previous screensaver, run the `put` again with that value instead.
+
+What it plays is chosen in the app, under the gear → Screensaver: **Random from my library** (the default, at most 500 photos, shuffled) or an album. Either way it shows photos only, shuffled, 8 seconds each, with the date and place. With no photos to show, because the server can't be reached or the album is gone or empty, it shows a clock and tries again each minute. Any key wakes the TV.
 
 ## Architecture
 

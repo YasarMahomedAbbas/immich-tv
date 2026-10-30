@@ -23,3 +23,14 @@ Branch: `feat/10-immich-screensaver`
   - open-risk: Compose in a `DreamService` with hand-made owners isn't done elsewhere in the app; checked on the TV.
   - A large library is read in full at each start before the cap applies, so a big library starts slower and briefly holds the whole list.
   - The TV window closes at 14:25 CET on 2026-10-30; after it the on-TV check is skipped and recorded so.
+
+## Implementation
+
+- Shipped: the source and its loading (`domain/slideshow/Screensaver.kt:48`, `data/settings/StoredScreensaverSettings.kt:13`); the dream (`ui/screensaver/ScreensaverService.kt:26`, `ui/screensaver/ScreensaverScreen.kt:52`) reusing the slideshow's `Playing` and `RunWhileStarted`, now `internal`; the clock and the minute's retry (`ui/screensaver/ScreensaverLogic.kt`, `retryWhileStopped` in `ui/slideshow/SlideshowViewModel.kt`); Settings and the picker (`ui/AppViewModel.kt:107`, `ui/settings/SettingsViewModel.kt:67`, `ui/settings/SettingsScreen.kt:36`, `ui/settings/ScreensaverPickerScreen.kt:56`, `ui/components/PickerRow.kt:24`); Kover's `*Screen*` narrowed (`app/build.gradle.kts`); the README's Screensaver section and the manual's rows.
+- Tests: 99 passed / 0 failed, running only the changed classes (`AppViewModelTest` 17, `SettingsViewModelTest` 9, `LoadScreensaverTest` 10, `StoredScreensaverSettingsTest` 5, `ArchitectureTest` 1, `ScreensaverLogicTest` 5, `SlideshowViewModelTest` 52). `assembleDebug` passed and the merged manifest lists the service.
+- Not run here: the full CI command (`koverVerifyDebug`, `lintDebug`, the whole unit suite). Today's speed note from the issue moves it to `raise-pr`, once. So the narrowed Kover patterns have not yet met the 80% gate, and lint hasn't seen the new screens.
+- Outstanding: none unticked. Seeing it dream, the D-pad on the new screens and the clock on the TV are self-verification's.
+- Contradicted the plan: nothing in the code. Filled in or adjusted while building:
+  - `"*ScreensaverScreen*"` wasn't needed in Kover: `"*ScreenKt*"` already covers it, so only `"*.ScreensaverService*"` is named. The checklist says so.
+  - The plan named three values for the Screensaver setting; a fourth, "An album", shows while the albums are loading or failed, because calling the album gone would be untrue before the list is known.
+  - Reading the albums again on entering the picker keeps a list already showing, also if that read fails, so focus isn't lost and no skeleton flashes. The skeleton and failed card are for when no list has loaded.
