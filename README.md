@@ -2,6 +2,7 @@
 
 An Android TV app for a Chromecast with Google TV that shows your photos from a self-hosted [Immich](https://immich.app/) server.
 
+- **Home**: today's memory, or else your most recently updated album, ready to play as a slideshow or open as photos; then a row of albums and a row of your newest photos (by date taken, so an old photo uploaded today isn't among them).
 - **Albums**: filter and sort them, open one to see its photos, set up its slideshow and start it.
 - **Slideshow**: crossfades with a slow zoom, portrait photos on a blurred copy of themselves, the date and place in a corner, and the remote's left/right/OK to skip and pause. It plays an album on a loop, and the Videos setting decides its videos: played to their end, muted or with sound, or left out by Skip. It also plays the whole library's photos on a loop, leaving its videos out.
 - **Photos**: your own timeline by month, as Immich's Photos page shows it (partners' photos and photos only in albums others shared with you stay out). Jump by month, open a photo full screen and move left and right, or hold OK on a photo to start a slideshow from it.
@@ -33,7 +34,7 @@ data/     The Immich REST client and stored settings
 
 A ViewModel that holds server data takes `AppViewModel.connection` in its key (see `MainActivity`): ViewModels live as long as the activity, so without it a screen keeps showing the old server's data after connecting to another.
 
-For the same reason a screen that shows server data calls `RefreshOnStart` with a quiet `refresh()` on its ViewModel, or it never sees changes made on the server. A quiet refresh reads one cheap summary and fetches more only if that changed, never shows the skeleton, keeps focus and scroll when nothing changed, and leaves the screen alone on failure.
+For the same reason a screen that shows server data calls `RefreshOnStart` with a quiet `refresh()` on its ViewModel, or it never sees changes made on the server. A quiet refresh reads one cheap summary and fetches more only if that changed, never shows the skeleton, keeps focus and scroll when nothing changed, and leaves the screen alone on failure. Home is the exception to the first part: it has no one summary for its memory, albums and photos, so it reads its whole page each time.
 
 Any change to an Immich call follows the API of the server's version (see `CLAUDE.md`).
 

@@ -40,3 +40,16 @@ Branch: `feat/9-the-home-screen`
 - Raised: none
 - API: `GET /api/memories` (`for`, `type`, response fields): matches the v3.3.5 and v1.133.0 specs; 200 live on v3.3.5 with `[]`. v1.133 declares `for` as date-time, and its repository compares it to `showAt`/`hideAt`; date-only is still not run against a real v1.133. `GET /api/timeline/buckets`, `/api/timeline/bucket`: parameters match the v3.3.5 spec, calls unchanged.
 - Layers: clean
+
+## Doc drift
+
+- Applied: README.md:features: added Home, which the list left out, and that its newest photos go by date taken (rung 3).
+- Applied: README.md:Architecture: a quiet refresh "reads one cheap summary" is false for Home, whose `refresh()` runs all of `LoadHome`; stated the exception (rung 3).
+- Applied: docs/design/README.md:Photo: Back also goes to Home when opened from Recently added, per `AppViewModel.back` (rung 4).
+- Checked, no change: the manual's Home values against `HomeScreen`/`LoadHome`, `OverPhotoStyle.Hero`, `TileStyle.Hero`, "‹ Home"; `memory.read` is in the v3.3.5 spec; no workflow or `build.sh` change.
+- Skipped: `CameFrom` Back routing: `AppViewModelTest` covers it and the enum's comment says it.
+- Skipped: Home's ViewModel sharing the Photos grid's, so it loads at launch: a comment in `MainActivity` says why.
+- Skipped: the memory grid reusing the album photos screen: the manual's Album photos row stays true, and `MainActivity` shows it.
+- Skipped: CLAUDE.md: nothing cross-cutting is new; its one-line app summary isn't false without Home.
+- Not a doc matter, for self-verification: the album screen's back link always says "‹ Albums" (`album_back`), though from Home's row Back goes to Home. The manual's "It does what Back does" holds; the label misleads.
+- Stale, fixed separately: none
