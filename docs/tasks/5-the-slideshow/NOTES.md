@@ -48,3 +48,20 @@ Branch: `feat/5-the-slideshow`
 - Skipped: `fullScreenRequest` and the memory-cache key `PreviewInterceptor` shares across sizes: only the slideshow requests full-screen images, and its effect on sharpness is still self-verification's to check on the TV. Whether it deserves a rule depends on that result.
 - Skipped: `AppScreen.Slideshow`, `LoadSlideshow`, `ClockStyle`: one `rg` finds them, and the README has no use-case table or screen list to update. The connection key rule in the README holds for `SlideshowViewModel`. `CLAUDE.md` needs no change: previews only, D-pad and layers all hold.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: passed
+
+- CI build: 219 tests passed, 0 failed, 0 skipped; line coverage 88.9% (664 of 747; the gate is 80); `lintDebug` passes with 19 warnings and no errors, none of them failing the build; APK built.
+- Server: Immich v3.3.5. Read-only GETs only.
+- TV: installed on the Chromecast; driven in Bamberg (9 photos), Deane Park (103 photos, 10 videos) and Cats (564 photos, 135 videos, the largest album).
+- Verified, server: `/timeline/buckets` and `/timeline/bucket` with `albumId`, `order=asc`, `timeBucket` exist in the v3.3.5 spec, and every column read has the expected type. Across all 15 albums (2,388 items, 263 videos), each column array is as long as `id`, the item count matches the album's, and there is no `localDateTime`. On a sample of 40 assets, `fileCreatedAt` + `localOffsetHours` gave the same day as the asset's `localDateTime`, and the portrait flag agreed with `width`/`height`, with no mismatches.
+- Verified, playing: Start slideshow plays full-screen. Oldest first ran 1 / 9 to 9 / 9 by date; newest first opens on the album's latest photo; shuffle put the photos in a different order. At 5 s per photo, changes came about 5.3 s apart (4 intervals, sampled about every 2 s, so this is approximate). Screenshots show the crossfade mid-way, and the zoom and drift moving a photo between shots.
+- Verified, look: portraits sit centred and sharp on a blurred, darkened copy; landscapes fill the screen. Photos already shown small in the album grid are still sharp full-screen, so the shared memory-cache key does no harm. The date panel, clock and progress bar show; the bar grows with position; Date & place off hides the panel.
+- Verified, remote: left and right skip and wrap both ways (1 / 9 to 9 / 9 and back). OK and the play/pause key (85) both pause and resume; more than 8 s paused holds the photo; skipping while paused stays paused. Controls show on a key and were gone by the next screenshots, 5 to 7 s later, also while paused. Back returns to the album with Start slideshow focused.
+- Verified, videos: the show's count equals the album's photos, without its videos: 103 for Deane Park, 564 for Cats.
+- Verified, device: `dumpsys window` shows `KEEP_SCREEN_ON` holding the screen while playing, and released when paused and after Back. Skipping 50 photos in Deane Park kept memory steady: total PSS 181,420 KB at the start and 181,658 KB after, staying between 179 and 184 MB, with Graphics flat at about 98 MB. Frames: 2.77% janky over those 50 skips; 0.69% janky over 32 s of Bamberg's portraits with crossfades (p50 31 ms, p99 48 ms, 1 missed vsync), so no dropped-frame storm. Logcat has no app errors or crash.
+- Failed: none
+- Not self-verifiable: place: still 0 of 2,388 items have a city or country, so place is proven only in tests; the panel has shown the date alone on the TV. Memory over 50 photos ran in Deane Park (103 photos), not the largest album: Cats was started and played its first photo, but not skipped through 50.
+- TV state: left on the launcher. The settings changed for the check on Bamberg (time, order, Date & place) were put back to 8 seconds, Oldest first, On. A debug build stays installed over the previous copy.

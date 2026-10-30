@@ -144,7 +144,7 @@ File: `…/ui/slideshow/SlideshowScreen.kt` (new), in a full-screen `Box` on the
 - **Controls**: `AnimatedVisibility` fade, bottom-centre 54dp, `scrim` at 80%, fully round: "‹ Album" label, previous, play/pause (76dp `fg` circle, 4dp amber outline 4dp off, always), next, "37 / 214". Indicators: nothing in it takes focus. New icons `ic_previous.xml`, `ic_next.xml`, `ic_pause.xml`.
 - **States**: `Loading`: black with a `SkeletonBlock` in the date panel's place, Back works. `Empty`: `EmptyState("No photos to play", "This album only has videos, or nothing yet.", "Back to album", onBack)`. `Failed`: `FailedState`, Try again. Strings in `res/values/strings.xml`.
 - `@Preview`s: landscape playing, portrait, paused with controls, no place, loading, empty, failed.
-- [ ] Seen working on the TV, per the test plan: for self-verification. Unit tests and the build can't see it.
+- [x] Seen working on the TV, per the test plan: for self-verification. Unit tests and the build can't see it.
 
 ### [x] 3.3 — The manual
 
