@@ -36,6 +36,8 @@ A ViewModel that holds server data takes `AppViewModel.connection` in its key (s
 
 For the same reason a screen that shows server data calls `RefreshOnStart` with a quiet `refresh()` on its ViewModel, or it never sees changes made on the server. A quiet refresh reads one cheap summary and fetches more only if that changed, never shows the skeleton, keeps focus and scroll when nothing changed, and leaves the screen alone on failure. Home is the exception to the first part: it has no one summary for its memory, albums and photos, so it reads its whole page each time.
 
+Slideshows are the exception to both: their ViewModels live in `AppViewModel.shows`, which is emptied on every screen change so a finished show's slides don't stay in memory. Each show loads anew, so it needs neither the key nor a refresh.
+
 Any change to an Immich call follows the API of the server's version (see `CLAUDE.md`).
 
 ## Development

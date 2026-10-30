@@ -1,5 +1,10 @@
 package io.github.yasarmahomedabbas.immichtv.ui
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
@@ -25,6 +30,8 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -47,6 +54,17 @@ class AppViewModelTest {
     private fun viewModel(stored: Session?) = AppViewModel(GetSession(FakeSessionStore(stored)), GetSlideshowSettings(settingsStore))
 
     private fun TestScope.signedIn() = viewModel(session).also { advanceUntilIdle() }
+
+    private class ShowProbe : ViewModel() {
+        var cleared = false
+
+        override fun onCleared() {
+            cleared = true
+        }
+    }
+
+    private fun AppViewModel.showProbe() =
+        ViewModelProvider(shows, viewModelFactory { initializer { ShowProbe() } })[ShowProbe::class.java]
 
     @Test
     fun `no session opens first-run setup`() = runTest(dispatcher) {
@@ -383,5 +401,68 @@ class AppViewModelTest {
         advanceUntilIdle()
         assertFalse(loading.back())
         assertEquals(AppScreen.Setup(firstRun = true, current = null), loading.screen.value)
+    }
+
+    @Test
+    fun `leaving a show by Back clears it`() = runTest(dispatcher) {
+        val vm = signedIn()
+        val starts = listOf<() -> Unit>(
+            { vm.openSlideshow(album(id = "a1"), SlideshowSettings()) },
+            { vm.openMemorySlideshow(memory) },
+            { vm.openResultsSlideshow(emptyList()) },
+            { vm.openTimelineSlideshow(PhotoId("p1")) },
+        )
+        for (start in starts) {
+            start()
+            val show = vm.showProbe()
+            assertFalse(show.cleared)
+
+            assertTrue(vm.back())
+            assertTrue(show.cleared)
+        }
+    }
+
+    @Test
+    fun `leaving a show another way clears it`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openTimelineSlideshow(PhotoId("p1"))
+        val show = vm.showProbe()
+
+        vm.selectTab(Tab.Albums)
+        assertTrue(show.cleared)
+    }
+
+    @Test
+    fun `the next show gets a new ViewModel`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openResultsSlideshow(emptyList())
+        val first = vm.showProbe()
+        vm.back()
+
+        vm.openResultsSlideshow(emptyList())
+        assertNotSame(first, vm.showProbe())
+    }
+
+    @Test
+    fun `a show asked again while it plays keeps its ViewModel`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openResultsSlideshow(emptyList())
+        val show = vm.showProbe()
+
+        assertSame(show, vm.showProbe())
+        assertFalse(show.cleared)
+    }
+
+    @Test
+    fun `clearing the app clears the show`() = runTest(dispatcher) {
+        val store = ViewModelStore()
+        val factory = viewModelFactory { initializer { viewModel(session) } }
+        val vm = ViewModelProvider(store, factory)[AppViewModel::class.java]
+        advanceUntilIdle()
+        vm.openResultsSlideshow(emptyList())
+        val show = vm.showProbe()
+
+        store.clear()
+        assertTrue(show.cleared)
     }
 }
