@@ -131,7 +131,7 @@ File: `…/MainActivity.kt`: `photos = { PhotosScreen(viewModel(key = "photos-$c
 
 Goal: moving through the grid moves the rail; choosing a month jumps there.
 
-### [ ] 3.1 — Grid positions and the selected month
+### [x] 3.1 — Grid positions and the selected month
 
 File: `…/ui/photos/PhotoGridViewModel.kt`
 
@@ -139,7 +139,7 @@ File: `…/ui/photos/PhotoGridViewModel.kt`
 - `internal fun gridIndexOfPhoto(sections, id: PhotoId): Int?`.
 - `PhotoGridState` gains `focusedMonth: YearMonth?`; `fun monthFocused(month: YearMonth)` sets it. Rail selection is `focusedMonth ?: sections.firstOrNull()?.month`. The focused month is used rather than the first visible item, which lags behind a focus moving down the screen.
 
-### [ ] 3.2 — Link them
+### [x] 3.2 — Link them
 
 File: `…/ui/photos/PhotoGrid.kt`: new parameters, default no-ops so the album screen is unchanged: `onMonthFocused: (YearMonth) -> Unit = {}`, `jumpTo: YearMonth? = null`, `onJumped: () -> Unit = {}`. Each month's first tile gets a `FocusRequester` from a `remember`ed map. On `jumpTo`: `scrollToItem(gridIndexOfMonth)`, wait a frame, `requestFocus` its first tile, `onJumped()`. A failed month has no tile: focus its Try again, through the same map. Replace the "nothing yet" KDoc on `onOpen`.
 

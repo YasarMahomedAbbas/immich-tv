@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Devices
@@ -36,7 +39,7 @@ private val RailGap = 48.dp
 fun PhotosScreen(viewModel: PhotoGridViewModel) {
     val state by viewModel.state.collectAsState()
     RefreshOnStart(viewModel::refresh)
-    PhotosContent(state, viewModel::loadMonth, viewModel::retryMonth, viewModel::retry, viewModel::refresh)
+    PhotosContent(state, viewModel::loadMonth, viewModel::retryMonth, viewModel::retry, viewModel::refresh, viewModel::monthFocused)
 }
 
 @Composable
@@ -46,6 +49,7 @@ private fun PhotosContent(
     onRetryMonth: (YearMonth) -> Unit,
     onRetry: () -> Unit,
     onRefresh: () -> Unit,
+    onMonthFocused: (YearMonth) -> Unit,
 ) {
     when (val load = state.load) {
         // Focus stays on the menu pill, which MainScreen gave it, until the first tiles are there.
@@ -62,8 +66,18 @@ private fun PhotosContent(
         )
         is GridLoad.Failed -> FailedState(load.problem, onRetry, Modifier.padding(bottom = 48.dp))
         GridLoad.Loaded -> Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(RailGap)) {
-            MonthRail(railEntries(state.sections), state.sections.firstOrNull()?.month, onChoose = {})
-            PhotoGrid(state.sections, onNeedMonth, onRetryMonth, Modifier.weight(1f))
+            // Left from the grid's first column reaches the rail by focus search, and up from its first row the menu.
+            var jumpTo by remember { mutableStateOf<YearMonth?>(null) }
+            MonthRail(railEntries(state.sections), state.selectedMonth, onChoose = { jumpTo = it })
+            PhotoGrid(
+                sections = state.sections,
+                onNeedMonth = onNeedMonth,
+                onRetryMonth = onRetryMonth,
+                modifier = Modifier.weight(1f),
+                onMonthFocused = onMonthFocused,
+                jumpTo = jumpTo,
+                onJumped = { jumpTo = null },
+            )
         }
     }
 }
@@ -86,7 +100,7 @@ private val previewSections = listOf(
 @Composable
 private fun PhotosPreview(state: PhotoGridState) {
     ImmichTvTheme {
-        MainScreen(Tab.Photos, {}, {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}) })
+        MainScreen(Tab.Photos, {}, {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}, {}) })
     }
 }
 

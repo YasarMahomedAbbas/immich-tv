@@ -1,5 +1,6 @@
 package io.github.yasarmahomedabbas.immichtv.ui.photos
 
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -8,9 +9,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,7 +55,12 @@ internal fun railEntries(sections: List<MonthSection>): List<RailEntry> = buildL
     }
 }
 
-/** The months by year, down the left of the Photos tab. Years are labels: only months take focus. */
+/**
+ * The months by year, down the left of the Photos tab. Years are labels: only months take focus.
+ * OK on a month chooses it; moving along the rail changes nothing else. Focus coming in lands on
+ * the [selected] month, kept in view as it changes; if that isn't laid out, on the nearest month.
+ */
+@OptIn(ExperimentalComposeUiApi::class) // focusProperties' enter: what focus restoring is built on.
 @Composable
 internal fun MonthRail(
     entries: List<RailEntry>,
@@ -55,8 +68,26 @@ internal fun MonthRail(
     onChoose: (YearMonth) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val listState = rememberLazyListState()
+    val selectedFocus = remember { FocusRequester() }
+    val selectedIndex = selected?.let { entries.indexOf(RailEntry.Month(it)) } ?: -1
+    LaunchedEffect(selectedIndex) {
+        val shown = listState.layoutInfo.visibleItemsInfo.any { it.index == selectedIndex }
+        // One above the month, so its year's label comes along when it starts the year.
+        if (selectedIndex >= 0 && !shown) listState.scrollToItem((selectedIndex - 1).coerceAtLeast(0))
+    }
     LazyColumn(
-        modifier = modifier.width(RailWidth).fillMaxHeight(),
+        state = listState,
+        modifier = modifier
+            .width(RailWidth)
+            .fillMaxHeight()
+            .focusProperties {
+                enter = {
+                    val shown = listState.layoutInfo.visibleItemsInfo.any { it.index == selectedIndex }
+                    if (shown) selectedFocus else FocusRequester.Default
+                }
+            }
+            .focusGroup(),
         contentPadding = PaddingValues(start = FocusRoom, end = FocusRoom, top = FocusRoom, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -67,7 +98,12 @@ internal fun MonthRail(
         ) { entry ->
             when (entry) {
                 is RailEntry.Year -> YearLabel(entry.year)
-                is RailEntry.Month -> MonthItem(entry.month, entry.month == selected, onClick = { onChoose(entry.month) })
+                is RailEntry.Month -> MonthItem(
+                    month = entry.month,
+                    selected = entry.month == selected,
+                    onClick = { onChoose(entry.month) },
+                    modifier = if (entry.month == selected) Modifier.focusRequester(selectedFocus) else Modifier,
+                )
             }
         }
     }

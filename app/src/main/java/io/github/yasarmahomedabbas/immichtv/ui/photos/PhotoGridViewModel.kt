@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
+import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
 import io.github.yasarmahomedabbas.immichtv.domain.photos.TimelineMonth
 import kotlinx.coroutines.Job
@@ -41,7 +42,43 @@ internal fun MonthSection.tiles(): List<Photo?> = when (photos) {
     else -> List(count) { null }
 }
 
-data class PhotoGridState(val load: GridLoad = GridLoad.Loading, val sections: List<MonthSection> = emptyList())
+/** @property focusedMonth the month the remote was last on in the grid, if it has been there. */
+data class PhotoGridState(
+    val load: GridLoad = GridLoad.Loading,
+    val sections: List<MonthSection> = emptyList(),
+    val focusedMonth: YearMonth? = null,
+) {
+    /**
+     * The month the rail shows as selected. The focused month rather than the first visible item,
+     * which lags behind a focus moving down the screen.
+     */
+    val selectedMonth: YearMonth?
+        get() = focusedMonth?.takeIf { month -> sections.any { it.month == month } } ?: sections.firstOrNull()?.month
+}
+
+/** How many grid items the section takes after its heading: its tiles, or one row when it failed. */
+private fun MonthSection.itemsAfterHeading(): Int = if (photos is MonthPhotos.Failed) 1 else tiles().size
+
+/** Where [month]'s heading is in the lazy grid, or null if it isn't in [sections]. */
+internal fun gridIndexOfMonth(sections: List<MonthSection>, month: YearMonth): Int? {
+    var index = 0
+    for (section in sections) {
+        if (section.month == month) return index
+        index += 1 + section.itemsAfterHeading()
+    }
+    return null
+}
+
+/** Where [id]'s tile is in the lazy grid, or null if it isn't in a loaded month. */
+internal fun gridIndexOfPhoto(sections: List<MonthSection>, id: PhotoId): Int? {
+    var index = 0
+    for (section in sections) {
+        val at = section.tiles().indexOfFirst { it?.id == id }
+        if (at >= 0 && section.photos !is MonthPhotos.Failed) return index + 1 + at
+        index += 1 + section.itemsAfterHeading()
+    }
+    return null
+}
 
 /**
  * The sections for [new], in its order: a month already known keeps its photos, with the new count
@@ -54,8 +91,8 @@ internal fun mergeMonths(old: List<MonthSection>, new: List<TimelineMonth>): Lis
 
 /**
  * A grid of any [Timeline]'s photos, a month at a time: the months, then the first month's
- * photos, then each later month when the grid asks for it. Album photos use it now; the Photos
- * tab (#7) will give it the whole library.
+ * photos, then each later month when the grid asks for it. Album photos give it one album; the
+ * Photos tab gives it the whole library.
  */
 class PhotoGridViewModel(private val timeline: Timeline) : ViewModel() {
     private val _state = MutableStateFlow(PhotoGridState())
@@ -65,6 +102,9 @@ class PhotoGridViewModel(private val timeline: Timeline) : ViewModel() {
     init {
         loadMonths()
     }
+
+    /** The remote is on a tile of [month]: the rail follows it. */
+    fun monthFocused(month: YearMonth) = _state.update { it.copy(focusedMonth = month) }
 
     /** Loads [month]'s photos unless they are loaded or on their way. */
     fun loadMonth(month: YearMonth) {
@@ -100,7 +140,7 @@ class PhotoGridViewModel(private val timeline: Timeline) : ViewModel() {
             }
             val old = _state.value.sections
             val sections = mergeMonths(old, months)
-            _state.value = PhotoGridState(if (sections.isEmpty()) GridLoad.Empty else GridLoad.Loaded, sections)
+            _state.update { it.copy(load = if (sections.isEmpty()) GridLoad.Empty else GridLoad.Loaded, sections = sections) }
             // A grid that was empty or failed has nothing loaded yet, and nothing asks for its first month.
             sections.firstOrNull()?.takeIf { it.photos == MonthPhotos.NotLoaded }?.let { fetch(it.month) }
             val counts = old.filter { it.photos is MonthPhotos.Loaded }.associate { it.month to it.count }

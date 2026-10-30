@@ -350,4 +350,30 @@ class PhotoGridViewModelTest {
         advanceUntilIdle()
         assertSame(loaded, vm.state.value)
     }
+
+    @Test
+    fun `the rail's month is the first until the remote is on another`() = runTest(dispatcher) {
+        val vm = PhotoGridViewModel(timeline)
+        advanceUntilIdle()
+        assertEquals(august, vm.state.value.selectedMonth)
+
+        vm.monthFocused(july)
+        assertEquals(july, vm.state.value.selectedMonth)
+    }
+
+    @Test
+    fun `a refresh keeps the focused month, and one no longer there goes back to the first`() = runTest(dispatcher) {
+        val vm = PhotoGridViewModel(timeline)
+        advanceUntilIdle()
+        vm.monthFocused(july)
+
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals(july, vm.state.value.selectedMonth)
+
+        timeline.months = months(august to 2)
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals(august, vm.state.value.selectedMonth)
+    }
 }
