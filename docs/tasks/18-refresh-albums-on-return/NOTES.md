@@ -31,3 +31,13 @@ Branch: `fix/18-refresh-albums-on-return`
 - API: no call changed. `GET /albums`, `GET /albums/{id}`, `GET /timeline/buckets`, `GET /timeline/bucket` match the v3.3.5 spec, the version the server runs (`AlbumDto`'s required fields are required there; `lastModifiedAssetTimestamp`, `startDate`, `endDate`, `order` optional; bucket `count` and `timeBucket` required).
 - Layers: clean
 - Not automated: the Compose focus and scroll code was read, not run, here; the TV checks are self-verification's.
+
+## Doc drift
+
+- Applied: `README.md:Architecture`: a screen showing server data calls `RefreshOnStart` with a quiet `refresh()`, and what quiet means (rung 3: nothing enforces it, and a new screen such as Photos or Search that loads once would bring this bug back).
+- Skipped: the album's order in the photo grid's ViewModel key: the comment at that line in `MainActivity` says why.
+- Skipped: `LoadAlbum.ifChanged`, `mergeMonths`, `lostFocus`, the focus handling: found by reading the screens, and covered by the README rule where it matters.
+- Skipped: `lifecycle-runtime-compose`: the version catalog says it.
+- Skipped: `docs/design/README.md`: no claim changed. The screens' shapes and the Refresh and Try again buttons stay as written; refresh adds no visible state.
+- Checked, still true: README's `AppViewModel.connection` key rule (every server-data key in `MainActivity` still takes it), its layer block, `CLAUDE.md`'s layer rules (`domain/` addition is plain Kotlin) and its CI command (the branch changed neither workflows nor `build.sh`).
+- Stale, fixed separately: none
