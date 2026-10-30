@@ -39,3 +39,12 @@ Branch: `feat/5-the-slideshow`
 - API: `GET /api/timeline/buckets` and `GET /api/timeline/bucket` (`albumId`, `order`, `timeBucket`) match the v3.3.5 spec and the real server; the columns read match `TimeBucketAssetResponseDto`, every array as long as `id`, no `localDateTime` on v3.3.5, as the code expects. `GET /api/assets/{id}/thumbnail?size=preview` unchanged, through `PreviewInterceptor` with the key as a header.
 - Layers: clean
 - Accepted, not changed: each start's `SlideshowViewModel` keeps its light slide list until the app closes (as Setup's does): no bitmaps, roughly half a MB per start of the largest album. Whether a small grid bitmap is refused for the full screen under the shared memory-cache key, and the crossfade's frame cost over a blurred portrait, are for self-verification on the TV.
+
+## Doc drift
+
+- Applied: `README.md`:features: the Albums and Slideshow lines still said planned / "once #5 ships"; now current, with the loop and that videos stay out until #6, since the Videos setting offers "Play muted" and a reader would expect it to work (rung 3).
+- Skipped: `docs/design/README.md`: the branch already updated it; its Slideshow row and `OverPhotoPanel` entry match the code (1.5 s fade, 1.08 zoom, 1% drift, 42% darkening, 4 s controls, 55% and 80% panels).
+- Skipped: the `localDateTime` / `fileCreatedAt` date split by server version: the KDoc on `takenOn` says it and tests cover both shapes; the README's minimum (v1.133) and key permissions are unchanged.
+- Skipped: `fullScreenRequest` and the memory-cache key `PreviewInterceptor` shares across sizes: only the slideshow requests full-screen images, and its effect on sharpness is still self-verification's to check on the TV. Whether it deserves a rule depends on that result.
+- Skipped: `AppScreen.Slideshow`, `LoadSlideshow`, `ClockStyle`: one `rg` finds them, and the README has no use-case table or screen list to update. The connection key rule in the README holds for `SlideshowViewModel`. `CLAUDE.md` needs no change: previews only, D-pad and layers all hold.
+- Stale, fixed separately: none
