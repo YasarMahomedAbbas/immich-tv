@@ -10,6 +10,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Album
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
+import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
 import io.github.yasarmahomedabbas.immichtv.domain.map
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
@@ -256,6 +257,13 @@ class SlideshowViewModel(
         fun factory(container: AppContainer, album: Album, settings: SlideshowSettings) = viewModelFactory {
             initializer {
                 SlideshowViewModel(settings) { container.loadSlideshow(album, settings.order, settings.videos).map { Playlist(it) } }
+            }
+        }
+
+        /** Home's memory, in the server's order, with [TimelineSettings]. */
+        fun fromMemory(memory: Memory) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(TimelineSettings) { ServerResult.Ok(Playlist(memory.slides)) }
             }
         }
 

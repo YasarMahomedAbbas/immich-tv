@@ -145,26 +145,26 @@ File: `docs/design/README.md`: the Home row in § Screens gains the hero's value
 
 Goal: every action on Home works, and Back from each returns to Home with focus where it was.
 
-### [ ] 4.1 — Navigation
+### [x] 4.1 — Navigation
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModel.kt`
 `enum class CameFrom { AlbumsTab, HomeRow, HomeHero }`. `Album`, `AlbumPhotos` and `Slideshow` gain `cameFrom: CameFrom = AlbumsTab`. New screens: `MemorySlideshow(memory: Memory)`, `MemoryPhotos(memory: Memory, title: String)`. `PhotoViewer` becomes `data class PhotoViewer(val fromHome: Boolean = false)`.
 Back: `Album` goes to `Main(Home)` when `HomeRow`, else `Main(Albums)`. `AlbumPhotos` and `Slideshow` go to `Main(Home)` when `HomeHero`, else to `Album(id, cameFrom = cameFrom, ...)` as today. `MemorySlideshow`, `MemoryPhotos` and `PhotoViewer(fromHome = true)` go to `Main(Home)`. `open*` functions take the origin, defaulting as today.
 
-### [ ] 4.2 — Slideshow source
+### [x] 4.2 — Slideshow source
 
-Files: `SlideshowScreen.kt` (`SlideshowSource.Home`, "‹ Home", with an empty string), `SlideshowViewModel.kt` (`fromMemory(memory)`: `TimelineSettings`, `Playlist(memory.slides)`, in the server's order).
+Files: `SlideshowScreen.kt` (`SlideshowSource.Home`, "‹ Home", with its own empty-state strings), `SlideshowViewModel.kt` (`fromMemory(memory)`: `TimelineSettings`, `Playlist(memory.slides)`, in the server's order).
 
-### [ ] 4.3 — Activity
+### [x] 4.3 — Activity
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
-Pass `home` to `MainScreen`, with `viewModel(key = "home-$connection", factory = HomeViewModel.factory(container))`. Hero memory: `MemorySlideshow`; `MemoryPhotos` through `AlbumPhotosScreen(title, PhotoGridViewModel.factory(memory.timeline()))`. Hero album: `Slideshow` and `AlbumPhotos` with `HomeHero`. Row: `Album` with `HomeRow`, its onward screens carrying it. Recent tile: on the `photos-$connection` ViewModel call `open(photo)`, then show `PhotoViewer(fromHome = true)`. See all: `selectTab(Tab.Albums)`.
+Pass `home` to `MainScreen`, with `viewModel(key = "home-$connection", factory = HomeViewModel.factory(container))`. Hero memory: `MemorySlideshow`; `MemoryPhotos` through `AlbumPhotosScreen(title, PhotoGridViewModel.factory(memory.timeline()))`. Hero album: `Slideshow` and `AlbumPhotos` with `HomeHero`, its show saying "‹ Home" since that is where Back goes. Row: `Album` with `HomeRow`, its onward screens carrying it. Recent tile: on the `photos-$connection` ViewModel call `open(photo)`, then show `PhotoViewer(fromHome = true)`. See all: `selectTab(Tab.Albums)`.
 
 ### [ ] 4.4 — Opening focus and Back onto Home
 
-File: `ui/main/MainScreen.kt` if needed: Home's focus request must win over `menuFocus`, as the Albums grid's does. Coming Back recreates the screen, and `HomeState.focused` restores focus.
+File: `ui/main/MainScreen.kt` if needed (it wasn't: Home waits a frame before its request, as the Albums grid does): Home's focus request must win over `menuFocus`, as the Albums grid's does. Coming Back recreates the screen, and `HomeState.focused` restores focus. Left unticked: only the TV can show it, so it is for self-verification.
 
-### [ ] 4.5 — Tests
+### [x] 4.5 — Tests
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModelTest.kt`: Back from each path above, and the Albums-tab paths unchanged.
 

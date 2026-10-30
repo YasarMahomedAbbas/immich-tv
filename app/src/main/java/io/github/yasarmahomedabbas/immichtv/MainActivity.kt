@@ -10,18 +10,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
+import io.github.yasarmahomedabbas.immichtv.domain.home.timeline
 import io.github.yasarmahomedabbas.immichtv.ui.AppScreen
 import io.github.yasarmahomedabbas.immichtv.ui.AppViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.CameFrom
+import io.github.yasarmahomedabbas.immichtv.ui.Tab
 import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumPhotosScreen
 import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumScreen
 import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.home.HomeScreen
+import io.github.yasarmahomedabbas.immichtv.ui.home.HomeViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
-import io.github.yasarmahomedabbas.immichtv.ui.main.PlaceholderTab
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoViewerScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotosScreen
@@ -59,19 +62,37 @@ class MainActivity : ComponentActivity() {
                         tab = current.tab,
                         onSelectTab = app::selectTab,
                         onOpenSettings = app::openSettings,
-                        home = { PlaceholderTab(stringResource(R.string.tab_home)) },
+                        home = {
+                            // The grid's ViewModel, so the viewer opened from a tile moves through the timeline.
+                            val photos: PhotoGridViewModel =
+                                viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline()))
+                            HomeScreen(
+                                // Scoped to the activity, so the page and the focused item survive leaving Home.
+                                viewModel = viewModel(key = "home-$connection", factory = HomeViewModel.factory(container)),
+                                onPlayMemory = app::openMemorySlideshow,
+                                onMemoryPhotos = app::openMemoryPhotos,
+                                onPlayAlbum = { album, settings -> app.openSlideshow(album, settings, CameFrom.HomeHero) },
+                                onAlbumPhotos = { app.openAlbumPhotos(it, CameFrom.HomeHero) },
+                                onOpenAlbum = { app.openAlbum(it, CameFrom.HomeRow) },
+                                onOpenRecent = { photo ->
+                                    photos.open(photo)
+                                    app.openPhotoViewer(fromHome = true)
+                                },
+                                onSeeAll = { app.selectTab(Tab.Albums) },
+                            )
+                        },
                         albums = {
                             // Scoped to the activity, so the list and the focused album survive opening one.
                             AlbumsScreen(
                                 viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
-                                onOpenAlbum = app::openAlbum,
+                                onOpenAlbum = { app.openAlbum(it) },
                             )
                         },
                         photos = {
                             // The viewer uses the same ViewModel, so the grid knows where it got to.
                             PhotosScreen(
                                 viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
-                                onOpenPhoto = app::openPhotoViewer,
+                                onOpenPhoto = { app.openPhotoViewer() },
                                 onStartSlideshow = app::openTimelineSlideshow,
                             )
                         },
@@ -82,8 +103,8 @@ class MainActivity : ComponentActivity() {
                             factory = AlbumViewModel.factory(container, current.id),
                         ),
                         onBack = { app.back() },
-                        onBrowsePhotos = app::openAlbumPhotos,
-                        onStartSlideshow = app::openSlideshow,
+                        onBrowsePhotos = { app.openAlbumPhotos(it, current.cameFrom) },
+                        onStartSlideshow = { album, settings -> app.openSlideshow(album, settings, current.cameFrom) },
                         focusBrowse = current.focusBrowse,
                     )
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
@@ -95,7 +116,15 @@ class MainActivity : ComponentActivity() {
                         ),
                         onBack = { app.back() },
                     )
-                    AppScreen.PhotoViewer -> PhotoViewerScreen(
+                    is AppScreen.MemoryPhotos -> AlbumPhotosScreen(
+                        albumName = current.title,
+                        viewModel = viewModel(
+                            key = "memory-photos-$connection-${current.memory.hashCode()}",
+                            factory = PhotoGridViewModel.factory(current.memory.timeline()),
+                        ),
+                        onBack = { app.back() },
+                    )
+                    is AppScreen.PhotoViewer -> PhotoViewerScreen(
                         viewModel = viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
                         onBack = { app.back() },
                     )
@@ -108,6 +137,17 @@ class MainActivity : ComponentActivity() {
                         settings = current.settings,
                         newPlayer = container::videoPlayer,
                         onBack = { app.back() },
+                        source = if (current.cameFrom == CameFrom.HomeHero) SlideshowSource.Home else SlideshowSource.Album,
+                    )
+                    is AppScreen.MemorySlideshow -> SlideshowScreen(
+                        viewModel = viewModel(
+                            key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            factory = SlideshowViewModel.fromMemory(current.memory),
+                        ),
+                        settings = TimelineSettings,
+                        newPlayer = container::videoPlayer,
+                        onBack = { app.back() },
+                        source = SlideshowSource.Home,
                     )
                     is AppScreen.TimelineSlideshow -> SlideshowScreen(
                         viewModel = viewModel(

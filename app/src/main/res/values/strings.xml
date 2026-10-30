@@ -111,4 +111,7 @@
     <string name="slideshow_back_photos">‹ Photos</string>
     <string name="slideshow_empty_hint_library">Your library only has videos, or nothing yet.</string>
     <string name="slideshow_empty_action_library">Back to photos</string>
+    <string name="slideshow_back_home">‹ Home</string>
+    <string name="slideshow_empty_hint_home">There are only videos here, or nothing yet.</string>
+    <string name="slideshow_empty_action_home">Back to home</string>
 </resources>
