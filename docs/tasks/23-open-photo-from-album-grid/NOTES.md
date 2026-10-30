@@ -26,3 +26,10 @@ Branch: `feat/23-open-photo-from-album-grid`
 - Tests: checkpoint runs only, per the user's speed note. Checkpoint 1: `LoadSlideshowFromPhotoTest` (11), `MemoryTest` (5), `LoadLibrarySlideshowTest` (6, unchanged), build successful. Checkpoints 2 and 3: `AppViewModelTest` 29 passed / 0 failed, `PhotoGridViewModelTest` 35 passed / 0 failed. The full CI command was not run here: it runs once, in `raise-pr`.
 - Outstanding: the on-TV check of 3.1 (focus lands on the restored tile, not Back) stays unticked for self-verification.
 - Contradicted the plan: checkpoint 2 can't compile without the activity's new branches, as the `when` over `AppScreen` is exhaustive. The helpers and those branches went in with checkpoint 2; checkpoint 3 wires the grid's callbacks. No behaviour change from the plan.
+
+## Review
+
+- Fixed: none
+- Raised: none
+- API: no call touched; `data/` is unchanged. The show from a tile reuses `slides()`, the grid its `timeline/buckets` and `timeline/bucket`, checked against v3.3.5 at planning (the running version, read again here).
+- Layers: clean
