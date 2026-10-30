@@ -55,19 +55,19 @@ Files: `gradle/libs.versions.toml`, `app/build.gradle.kts`
 
 Goal: `data/` can turn a domain `Video` into an authenticated stream; nothing plays yet.
 
-### [ ] 2.1 — The domain value
+### [x] 2.1 — The domain value
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/albums/Albums.kt`
 Next to `Preview`: `/** A video to play: what a screen hands the player. */ data class Video(val photo: PhotoId)`.
 
-### [ ] 2.2 — The stream
+### [x] 2.2 — The stream
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/immich/ImmichVideo.kt` (mirror `ImmichImages.kt`)
 `internal data class VideoStream(val url: String, val headers: Map<String, String>)` with a `toString` that omits the headers, so the key can't reach a log. `internal fun videoStream(session: Session, video: Video): VideoStream`: `apiUrl(session.server, "assets")` + path segments id, `video`, `playback`; headers `API_KEY_HEADER` to the key.
 
 Test: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/data/immich/ImmichVideoTest.kt`, with MockWebServer and `immichHttpClient()`, per the test plan.
 
-### [ ] 2.3 — The player
+### [x] 2.3 — The player
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/immich/ImmichVideoPlayer.kt` (mirror `PreviewInterceptor.kt`)
 `internal fun immichVideoPlayer(context: Context, client: OkHttpClient, sessions: SessionStore): ExoPlayer`. Build `ExoPlayer.Builder(context).setMediaSourceFactory(...)`. The factory wraps `ProgressiveMediaSource.Factory(ResolvingDataSource.Factory(OkHttpDataSource.Factory(client), resolver))`: `createMediaSource(item)` sets the item's URI to `video:<mediaId>`, so no address or key is in a `MediaItem`. The resolver, on the loader thread, does `runBlocking { sessions.load() }` (`IOException` if signed out), calls `videoStream`, and returns `dataSpec.withUri(...).withAdditionalHeaders(...)`. The client is the one `immichHttpClient()`, so a redirect off the server loses the key.
@@ -76,7 +76,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/AppContainer.kt`
 `fun videoPlayer(context: Context): ExoPlayer = immichVideoPlayer(context, http, sessions)`, next to `imageLoader`.
 
 File: `app/build.gradle.kts`
-Add `"*.ImmichVideoPlayer*"` to the Kover excludes, with a comment as for `PreviewInterceptor`: it needs an Android context, and the address and header are pure and tested in `ImmichVideo`.
+Add `"*.ImmichVideoPlayer*"` and `"*.VideoSourceFactory*"` (its private media source factory) to the Kover excludes, with a comment as for `PreviewInterceptor`: it needs an Android context, and the address and header are pure and tested in `ImmichVideo`.
 
 ### Verify
 
