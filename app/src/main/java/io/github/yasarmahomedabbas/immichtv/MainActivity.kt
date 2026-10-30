@@ -23,6 +23,8 @@ import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowScreen
+import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 
 class MainActivity : ComponentActivity() {
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
                         ),
                         onBack = { app.back() },
                         onBrowsePhotos = app::openAlbumPhotos,
+                        onStartSlideshow = app::openSlideshow,
                         focusBrowse = current.focusBrowse,
                     )
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
@@ -74,6 +77,15 @@ class MainActivity : ComponentActivity() {
                             key = "album-photos-$connection-${current.album.id.value}-${current.album.newestFirst}",
                             factory = PhotoGridViewModel.factory(container.albumTimeline(current.album)),
                         ),
+                        onBack = { app.back() },
+                    )
+                    is AppScreen.Slideshow -> SlideshowScreen(
+                        // A fresh ViewModel each time it starts, so it begins at the first photo.
+                        viewModel = viewModel(
+                            key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            factory = SlideshowViewModel.factory(container, current.album, current.settings),
+                        ),
+                        settings = current.settings,
                         onBack = { app.back() },
                     )
                 }

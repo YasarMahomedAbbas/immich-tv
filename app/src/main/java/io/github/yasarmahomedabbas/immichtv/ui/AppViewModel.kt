@@ -9,6 +9,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.Album as DomainAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,6 +37,9 @@ sealed interface AppScreen {
 
     /** Browse photos: [album]'s photos by month. */
     data class AlbumPhotos(val album: DomainAlbum) : AppScreen
+
+    /** [album] playing with [settings], as the album screen had them when it started. */
+    data class Slideshow(val album: DomainAlbum, val settings: SlideshowSettings) : AppScreen
 }
 
 /** Chooses Setup or Home at launch and moves between screens; Back walks up toward Home. */
@@ -69,6 +73,10 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
         _screen.value = AppScreen.AlbumPhotos(album)
     }
 
+    fun openSlideshow(album: DomainAlbum, settings: SlideshowSettings) {
+        _screen.value = AppScreen.Slideshow(album, settings)
+    }
+
     fun openSettings() {
         val from = _screen.value
         viewModelScope.launch {
@@ -87,6 +95,7 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
             is AppScreen.Setup -> if (current.firstRun) null else current.from
             is AppScreen.Album -> AppScreen.Main(Tab.Albums)
             is AppScreen.AlbumPhotos -> AppScreen.Album(current.album.id, focusBrowse = true)
+            is AppScreen.Slideshow -> AppScreen.Album(current.album.id)
             is AppScreen.Main -> if (current.tab == Tab.Home) null else HOME
             AppScreen.Loading -> null
         } ?: return false

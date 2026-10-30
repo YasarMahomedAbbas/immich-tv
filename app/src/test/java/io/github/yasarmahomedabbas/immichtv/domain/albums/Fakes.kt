@@ -4,6 +4,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.photos.FakeTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import kotlinx.coroutines.CompletableDeferred
 import java.time.Instant
 import java.time.LocalDate
@@ -66,4 +67,12 @@ class FakeAlbumRepository(
     val timelines = mutableMapOf<AlbumId, Timeline>()
 
     override fun timeline(album: Album): Timeline = timelines.getOrPut(album.id) { FakeTimeline() }
+
+    var slides: ServerResult<List<Slide>> = ServerResult.Ok(emptyList())
+    var slidesCalls = 0
+
+    override suspend fun slides(album: Album): ServerResult<List<Slide>> {
+        slidesCalls++
+        return slides
+    }
 }
