@@ -40,6 +40,9 @@ sealed interface AppScreen {
 
     /** [album] playing with [settings], as the album screen had them when it started. */
     data class Slideshow(val album: DomainAlbum, val settings: SlideshowSettings) : AppScreen
+
+    /** One photo of the Photos tab full-screen; which one is the grid's to say. */
+    data object PhotoViewer : AppScreen
 }
 
 /** Chooses Setup or Home at launch and moves between screens; Back walks up toward Home. */
@@ -77,6 +80,10 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
         _screen.value = AppScreen.Slideshow(album, settings)
     }
 
+    fun openPhotoViewer() {
+        _screen.value = AppScreen.PhotoViewer
+    }
+
     fun openSettings() {
         val from = _screen.value
         viewModelScope.launch {
@@ -96,6 +103,7 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
             is AppScreen.Album -> AppScreen.Main(Tab.Albums)
             is AppScreen.AlbumPhotos -> AppScreen.Album(current.album.id, focusBrowse = true)
             is AppScreen.Slideshow -> AppScreen.Album(current.album.id)
+            AppScreen.PhotoViewer -> AppScreen.Main(Tab.Photos)
             is AppScreen.Main -> if (current.tab == Tab.Home) null else HOME
             AppScreen.Loading -> null
         } ?: return false

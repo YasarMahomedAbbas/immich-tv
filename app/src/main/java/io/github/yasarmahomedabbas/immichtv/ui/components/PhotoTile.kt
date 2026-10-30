@@ -81,17 +81,19 @@ private fun BoxScope.TileContent(photo: PhotoId?, isVideo: Boolean) {
             modifier = Modifier.fillMaxSize(),
         )
     }
-    if (isVideo) {
-        val colors = MaterialTheme.colorScheme
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .padding(10.dp)
-                .size(36.dp)
-                .background(colors.background.copy(alpha = 0.7f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = colors.onSurface, modifier = Modifier.size(22.dp))
-        }
+    if (isVideo) VideoBadge(Modifier.align(Alignment.BottomStart).padding(10.dp))
+}
+
+/** Says a photo is a video's still: a small play icon on a dark circle. */
+@Composable
+internal fun VideoBadge(modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .size(36.dp)
+            .background(colors.background.copy(alpha = 0.7f), CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = colors.onSurface, modifier = Modifier.size(22.dp))
     }
 }

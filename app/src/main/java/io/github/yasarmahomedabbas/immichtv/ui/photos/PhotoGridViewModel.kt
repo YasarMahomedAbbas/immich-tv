@@ -42,11 +42,15 @@ internal fun MonthSection.tiles(): List<Photo?> = when (photos) {
     else -> List(count) { null }
 }
 
-/** @property focusedMonth the month the remote was last on in the grid, if it has been there. */
+/**
+ * @property focusedMonth the month the remote was last on in the grid, if it has been there.
+ * @property viewing the photo open full-screen, or last open: where the grid goes back to.
+ */
 data class PhotoGridState(
     val load: GridLoad = GridLoad.Loading,
     val sections: List<MonthSection> = emptyList(),
     val focusedMonth: YearMonth? = null,
+    val viewing: Photo? = null,
 ) {
     /**
      * The month the rail shows as selected. The focused month rather than the first visible item,
@@ -55,6 +59,44 @@ data class PhotoGridState(
     val selectedMonth: YearMonth?
         get() = focusedMonth?.takeIf { month -> sections.any { it.month == month } } ?: sections.firstOrNull()?.month
 }
+
+/** What moving through the timeline from the viewed photo meets. */
+private sealed interface ViewerStep {
+    data class Arrive(val photo: Photo) : ViewerStep
+    data class Wait(val month: YearMonth) : ViewerStep
+    data class TryAgain(val month: YearMonth) : ViewerStep
+    data object End : ViewerStep
+}
+
+/**
+ * One step ([by] is 1 or -1) from the viewed photo: its neighbour in the month, or past the month's
+ * end, the nearest photo of the next month with any in that direction.
+ */
+private fun PhotoGridState.step(by: Int): ViewerStep {
+    val id = viewing?.id ?: return ViewerStep.End
+    val at = sections.indexOfFirst { section -> section.loaded().any { it.id == id } }
+    if (at < 0) return ViewerStep.End
+    val photos = sections[at].loaded()
+    photos.getOrNull(photos.indexOfFirst { it.id == id } + by)?.let { return ViewerStep.Arrive(it) }
+    var next = at + by
+    while (next in sections.indices) {
+        val section = sections[next]
+        when (val month = section.photos) {
+            is MonthPhotos.Loaded -> if (month.photos.isNotEmpty()) {
+                return ViewerStep.Arrive(if (by > 0) month.photos.first() else month.photos.last())
+            }
+            is MonthPhotos.Failed -> return ViewerStep.TryAgain(section.month)
+            MonthPhotos.NotLoaded, MonthPhotos.Loading -> return ViewerStep.Wait(section.month)
+        }
+        next += by
+    }
+    return ViewerStep.End
+}
+
+private fun MonthSection.loaded(): List<Photo> = (photos as? MonthPhotos.Loaded)?.photos.orEmpty()
+
+/** The photo one step ([by] is 1 or -1) from the viewed one, if it is already here. */
+internal fun PhotoGridState.neighbour(by: Int): Photo? = (step(by) as? ViewerStep.Arrive)?.photo
 
 /** How many grid items the section takes after its heading: its tiles, or one row when it failed. */
 private fun MonthSection.itemsAfterHeading(): Int = if (photos is MonthPhotos.Failed) 1 else tiles().size
@@ -99,12 +141,39 @@ class PhotoGridViewModel(private val timeline: Timeline) : ViewModel() {
     val state: StateFlow<PhotoGridState> = _state.asStateFlow()
     private var refreshJob: Job? = null
 
+    /** The latest press that reached a month still on its way, and which month. */
+    private var pendingMove: Pair<YearMonth, Int>? = null
+
     init {
         loadMonths()
     }
 
     /** The remote is on a tile of [month]: the rail follows it. */
     fun monthFocused(month: YearMonth) = _state.update { it.copy(focusedMonth = month) }
+
+    /** Opens [photo] full-screen; it is also where the grid goes back to. */
+    fun open(photo: Photo) {
+        pendingMove = null
+        _state.update { it.copy(viewing = photo) }
+    }
+
+    /**
+     * Moves the open photo through the timeline ([by] is 1 or -1), with no wrap at either end. A month
+     * not here yet is fetched, and the move finishes when it arrives; a later press replaces it. A
+     * month that failed is tried again, staying put, so a later press can move into it.
+     */
+    fun viewerMove(by: Int) {
+        pendingMove = null
+        when (val step = _state.value.step(by)) {
+            is ViewerStep.Arrive -> _state.update { it.copy(viewing = step.photo) }
+            is ViewerStep.Wait -> {
+                pendingMove = step.month to by
+                loadMonth(step.month)
+            }
+            is ViewerStep.TryAgain -> retryMonth(step.month)
+            ViewerStep.End -> Unit
+        }
+    }
 
     /** Loads [month]'s photos unless they are loaded or on their way. */
     fun loadMonth(month: YearMonth) {
@@ -183,6 +252,11 @@ class PhotoGridViewModel(private val timeline: Timeline) : ViewModel() {
                 is ServerResult.Failed -> MonthPhotos.Failed(result.problem)
             }
             setPhotos(month, photos)
+            val (waitingFor, by) = pendingMove ?: return@launch
+            if (waitingFor == month) {
+                pendingMove = null
+                if (photos is MonthPhotos.Loaded) viewerMove(by)
+            }
         }
     }
 

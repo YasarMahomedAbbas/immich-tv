@@ -21,6 +21,7 @@ import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoViewerScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotosScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
@@ -62,8 +63,10 @@ class MainActivity : ComponentActivity() {
                             )
                         },
                         photos = {
+                            // The viewer uses the same ViewModel, so the grid knows where it got to.
                             PhotosScreen(
                                 viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
+                                onOpenPhoto = app::openPhotoViewer,
                             )
                         },
                     )
@@ -84,6 +87,10 @@ class MainActivity : ComponentActivity() {
                             key = "album-photos-$connection-${current.album.id.value}-${current.album.newestFirst}",
                             factory = PhotoGridViewModel.factory(container.albumTimeline(current.album)),
                         ),
+                        onBack = { app.back() },
+                    )
+                    AppScreen.PhotoViewer -> PhotoViewerScreen(
+                        viewModel = viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
                         onBack = { app.back() },
                     )
                     is AppScreen.Slideshow -> SlideshowScreen(

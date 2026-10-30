@@ -45,6 +45,7 @@
     <string name="album_photos_empty_hint">Add photos to it in Immich and they show up here.</string>
     <string name="album_photos_back">Back to the album</string>
     <string name="photos_month_failed">Couldn\'t load this month.</string>
+    <string name="photo_failed">Couldn\'t load this photo.</string>
     <string name="photos_empty_title">No photos yet</string>
     <string name="photos_empty_hint">Add some in Immich and they show up here.</string>
     <string name="setting_seconds">Each photo for</string>

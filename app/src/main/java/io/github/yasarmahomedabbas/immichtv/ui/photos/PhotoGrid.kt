@@ -38,6 +38,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import io.github.yasarmahomedabbas.immichtv.R
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
+import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.ui.components.PhotoTile
 import io.github.yasarmahomedabbas.immichtv.ui.components.SecondaryButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
@@ -58,6 +59,8 @@ private val FocusRoom = 8.dp
  * it; a month that failed says so with Try again. Focus goes to the first tile once it is there.
  * OK on a tile calls [onOpen]. [onMonthFocused] says which month the remote is on. A [jumpTo] month
  * is scrolled to with its first tile focused (its Try again, if it failed), then [onJumped] is called.
+ * The screen is torn down when a photo opens, so [restoreTo] says which tile to come back to, scrolled
+ * there and focused in place of the first; one no longer there falls back to the first.
  */
 @Composable
 fun PhotoGrid(
@@ -69,8 +72,10 @@ fun PhotoGrid(
     onMonthFocused: (YearMonth) -> Unit = {},
     jumpTo: YearMonth? = null,
     onJumped: () -> Unit = {},
+    restoreTo: PhotoId? = null,
 ) {
-    val gridState = rememberLazyGridState()
+    val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = restoreTo?.let { gridIndexOfPhoto(sections, it) } ?: 0)
+    val restoreFocus = remember { FocusRequester() }
     val firstOfMonth = remember { mutableMapOf<YearMonth, FocusRequester>() }
     val requesterOf = { month: YearMonth -> firstOfMonth.getOrPut(month) { FocusRequester() } }
     val focusFirst = {
@@ -79,9 +84,11 @@ fun PhotoGrid(
     val firstReady = (sections.firstOrNull()?.photos as? MonthPhotos.Loaded)?.photos?.isNotEmpty() == true
     var focusedOnce by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(firstReady) {
-        if (firstReady && !focusedOnce) {
+        if (focusedOnce) return@LaunchedEffect
+        val restoring = restoreTo?.let { gridIndexOfPhoto(sections, it) } != null
+        if (restoring || firstReady) {
             withFrameNanos { }
-            focusedOnce = focusFirst()
+            focusedOnce = if (restoring) runCatching { restoreFocus.requestFocus() }.isSuccess else focusFirst()
         }
     }
     // A refresh can take away the tile the remote is on; focus then starts again from the top.
@@ -111,7 +118,7 @@ fun PhotoGrid(
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
         sections.forEachIndexed { index, section ->
-            monthSection(section, isFirst = index == 0, requesterOf(section.month), { lastFocused = it }, onNeedMonth, onRetryMonth, onOpen, onMonthFocused)
+            monthSection(section, isFirst = index == 0, requesterOf(section.month), restoreTo, restoreFocus, { lastFocused = it }, onNeedMonth, onRetryMonth, onOpen, onMonthFocused)
         }
     }
 }
@@ -122,6 +129,8 @@ private fun LazyGridScope.monthSection(
     section: MonthSection,
     isFirst: Boolean,
     firstOfMonth: FocusRequester,
+    restoreTo: PhotoId?,
+    restoreFocus: FocusRequester,
     onTileFocused: (String) -> Unit,
     onNeedMonth: (YearMonth) -> Unit,
     onRetryMonth: (YearMonth) -> Unit,
@@ -159,6 +168,7 @@ private fun LazyGridScope.monthSection(
             modifier = Modifier
                 .aspectRatio(1f)
                 .then(if (index == 0) Modifier.focusRequester(firstOfMonth) else Modifier)
+                .then(if (photo != null && photo.id == restoreTo) Modifier.focusRequester(restoreFocus) else Modifier)
                 .onFocusChanged {
                     if (it.isFocused) {
                         onTileFocused(tileKey(section.month, index))

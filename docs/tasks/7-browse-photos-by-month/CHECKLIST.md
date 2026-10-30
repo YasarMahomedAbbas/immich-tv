@@ -158,7 +158,7 @@ File: `…/ui/photos/PhotosScreen.kt`: holds `jumpTo` and passes it along. Left 
 
 Goal: OK opens a photo, left/right move through the timeline, Back returns to the last viewed tile.
 
-### [ ] 4.1 — Moving through the timeline
+### [x] 4.1 — Moving through the timeline
 
 File: `…/ui/photos/PhotoGridViewModel.kt`
 
@@ -168,7 +168,7 @@ File: `…/ui/photos/PhotoGridViewModel.kt`
 - `viewing` is also where the grid goes back to.
 - `refresh()` keeps `viewing`.
 
-### [ ] 4.2 — The viewer
+### [x] 4.2 — The viewer
 
 File: `…/ui/components/FullScreenImage.kt` (new): `fun fullScreenRequest(context: Context, id: PhotoId): ImageRequest`, moved from `SlideshowScreen.kt`, which now imports it: the same request shares the bitmap.
 
@@ -184,7 +184,7 @@ File: `…/ui/AppViewModel.kt`: `data object PhotoViewer : AppScreen`; `fun open
 
 File: `…/MainActivity.kt`: `is AppScreen.PhotoViewer`, with the same `viewModel` key as the tab (`"photos-$connection"`), so it is the same instance. `AlbumPhotosScreen` stays without `onOpen`.
 
-### [ ] 4.3 — Back to where you were
+### [x] 4.3 — Back to where you were
 
 File: `…/ui/photos/PhotoGrid.kt`: new parameter `restoreTo: PhotoId? = null`. `rememberLazyGridState(initialFirstVisibleItemIndex = restoreTo?.let { gridIndexOfPhoto(sections, it) } ?: 0)`. That tile gets a `FocusRequester` and the focus after a frame, in place of the first tile; if it's gone, the first tile as today (`lostFocus`).
 

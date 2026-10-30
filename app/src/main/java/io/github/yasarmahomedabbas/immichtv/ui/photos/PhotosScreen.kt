@@ -36,10 +36,21 @@ private val RailGap = 48.dp
 
 /** The Photos tab's content, under the top menu: the whole library by month, a rail beside the grid. */
 @Composable
-fun PhotosScreen(viewModel: PhotoGridViewModel) {
+fun PhotosScreen(viewModel: PhotoGridViewModel, onOpenPhoto: () -> Unit) {
     val state by viewModel.state.collectAsState()
     RefreshOnStart(viewModel::refresh)
-    PhotosContent(state, viewModel::loadMonth, viewModel::retryMonth, viewModel::retry, viewModel::refresh, viewModel::monthFocused)
+    PhotosContent(
+        state = state,
+        onNeedMonth = viewModel::loadMonth,
+        onRetryMonth = viewModel::retryMonth,
+        onRetry = viewModel::retry,
+        onRefresh = viewModel::refresh,
+        onMonthFocused = viewModel::monthFocused,
+        onOpen = { photo ->
+            viewModel.open(photo)
+            onOpenPhoto()
+        },
+    )
 }
 
 @Composable
@@ -50,6 +61,7 @@ private fun PhotosContent(
     onRetry: () -> Unit,
     onRefresh: () -> Unit,
     onMonthFocused: (YearMonth) -> Unit,
+    onOpen: (Photo) -> Unit,
 ) {
     when (val load = state.load) {
         // Focus stays on the menu pill, which MainScreen gave it, until the first tiles are there.
@@ -74,9 +86,11 @@ private fun PhotosContent(
                 onNeedMonth = onNeedMonth,
                 onRetryMonth = onRetryMonth,
                 modifier = Modifier.weight(1f),
+                onOpen = onOpen,
                 onMonthFocused = onMonthFocused,
                 jumpTo = jumpTo,
                 onJumped = { jumpTo = null },
+                restoreTo = state.viewing?.id,
             )
         }
     }
@@ -100,7 +114,7 @@ private val previewSections = listOf(
 @Composable
 private fun PhotosPreview(state: PhotoGridState) {
     ImmichTvTheme {
-        MainScreen(Tab.Photos, {}, {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}, {}) })
+        MainScreen(Tab.Photos, {}, {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}, {}, {}) })
     }
 }
 

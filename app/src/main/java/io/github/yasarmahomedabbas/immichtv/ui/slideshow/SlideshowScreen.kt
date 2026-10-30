@@ -1,6 +1,5 @@
 package io.github.yasarmahomedabbas.immichtv.ui.slideshow
 
-import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -64,16 +63,11 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import coil3.imageLoader
 import coil3.request.ErrorResult
-import coil3.request.ImageRequest
 import coil3.request.SuccessResult
-import coil3.request.crossfade
-import coil3.size.Precision
-import coil3.size.Scale
 import io.github.yasarmahomedabbas.immichtv.R
 import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
-import io.github.yasarmahomedabbas.immichtv.domain.albums.Preview as PhotoPreview
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Place
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
@@ -84,6 +78,7 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
 import io.github.yasarmahomedabbas.immichtv.ui.components.OverPhotoPanel
 import io.github.yasarmahomedabbas.immichtv.ui.components.OverPhotoStyle
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
+import io.github.yasarmahomedabbas.immichtv.ui.components.fullScreenRequest
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -100,10 +95,6 @@ private val OverlayEdge = 54.dp
 private val PlayButton = 76.dp
 private val FocusGap = 4.dp
 private val FocusWidth = 4.dp
-
-// What a slide's image is decoded for: the Chromecast's screen, however big the preview is.
-private const val SCREEN_WIDTH_PX = 1920
-private const val SCREEN_HEIGHT_PX = 1080
 
 /**
  * The full-screen slideshow: the album's photos crossfading, each moving slowly, with the date and
@@ -258,16 +249,6 @@ private fun Preload(slide: Slide?, onReady: (PhotoId) -> Unit, onFailed: (PhotoI
         }
     }
 }
-
-/** One request for a slide's image, for the preload and the layers alike, so they share the bitmap. */
-private fun fullScreenRequest(context: Context, id: PhotoId): ImageRequest =
-    ImageRequest.Builder(context)
-        .data(PhotoPreview(id))
-        .size(SCREEN_WIDTH_PX, SCREEN_HEIGHT_PX)
-        .scale(Scale.FILL)
-        .precision(Precision.INEXACT)
-        .crossfade(false)
-        .build()
 
 /**
  * At most two slides are composed: the one on screen and the one fading in over it. A new slide
