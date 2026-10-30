@@ -281,7 +281,7 @@ class SlideshowViewModel(
     }
 }
 
-/** A library show can't be set up: the defaults (8 s, date and place on), newest to oldest. */
+/** A library show can't be set up: the defaults (8 s, date and place on, videos muted), newest to oldest. */
 val TimelineSettings = SlideshowSettings(order = SlideshowOrder.NewestFirst)
 
 /** The date ("23 August 2025") and place ("Lisbon, Portugal") to show, each null when unknown. */

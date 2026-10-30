@@ -13,3 +13,10 @@ Branch: `feat/26-videos-in-photos-slideshow`
 - API: no call added or changed. On the live v3.3.5 server: 44 videos in 555 timeline items; a timeline video's playback with the key and a range gives 206 `video/mp4`. `isImage` and `video/playback` are in the v1.133.0 and v3.3.5 specs.
 - Speed note on the issue (2026-10-30): run only the changed classes' unit tests while implementing and fixing; the full CI command once, in `raise-pr`; the on-TV check limited to this ticket, under the lock for 10 minutes at most, released before fixing.
 - Open risks: a video the Chromecast can't decode is skipped (#6); only the TV check shows how many of these 44 are affected.
+
+## Implementation
+
+- Shipped: `LoadLibrarySlideshow` keeps videos in place and starts at the held item, photo or video (`domain/slideshow/Slideshow.kt:47-51`); `TimelineSettings`' KDoc says videos are muted (`ui/slideshow/SlideshowViewModel.kt:284`); the manual's Slideshow row and the README's Slideshow and Photos lines say the same.
+- Tests: `LoadLibrarySlideshowTest` 7 passed / 0 failed; `SlideshowViewModelTest` 54 passed / 0 failed. Only these two classes ran. The full CI command did not run here: the speed note on the issue moves it to `raise-pr`.
+- Outstanding: none in the checklist. The on-TV and real-server checks in the test plan belong to self-verification.
+- Contradicted the plan: task 1.4 said the README needed no change. Its Slideshow line said the library show leaves videos out and its Photos line said hold OK "on a photo"; both updated, and the task text with them.

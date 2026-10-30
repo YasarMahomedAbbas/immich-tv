@@ -41,16 +41,12 @@ class LoadSlideshow(private val repository: AlbumRepository, private val random:
 }
 
 /**
- * What a slideshow of the whole library plays, newest to oldest, beginning at [invoke]'s photo: the
- * first photo at or after it, since a library show leaves videos out. A video with no photo after
- * it, or a photo no longer there, begins at the newest.
+ * What a slideshow of the whole library plays, newest to oldest with its videos in place, beginning
+ * at [invoke]'s item, photo or video. An item no longer there begins at the newest.
  */
 class LoadLibrarySlideshow(private val repository: LibraryRepository) {
     suspend operator fun invoke(from: PhotoId): ServerResult<Playlist> =
         repository.slides().map { all ->
-            val photos = all.filterNot { it.photo.isVideo }
-            val at = all.indexOfFirst { it.photo.id == from }
-            val first = if (at < 0) null else all.drop(at).firstOrNull { !it.photo.isVideo }
-            Playlist(photos, start = first?.let(photos::indexOf) ?: 0)
+            Playlist(all, start = all.indexOfFirst { it.photo.id == from }.coerceAtLeast(0))
         }
 }

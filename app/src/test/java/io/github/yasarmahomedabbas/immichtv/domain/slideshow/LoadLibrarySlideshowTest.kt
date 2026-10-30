@@ -20,20 +20,20 @@ class LoadLibrarySlideshowTest {
         (LoadLibrarySlideshow(repository)(PhotoId(from)) as ServerResult.Ok).value
 
     @Test
-    fun `it plays the photos, without the videos, starting at the chosen one`() = runTest {
+    fun `it plays everything in timeline order, videos in their place, starting at the chosen photo`() = runTest {
         val playlist = playlist("b")
-        assertEquals(listOf("a", "b", "c"), playlist.slides.map { it.photo.id.value })
+        assertEquals(listOf("a", "b", "v1", "c", "v2"), playlist.slides.map { it.photo.id.value })
         assertEquals(1, playlist.start)
     }
 
     @Test
-    fun `from a video it starts at the next photo`() = runTest {
+    fun `from a video it starts at that video`() = runTest {
         assertEquals(2, playlist("v1").start)
     }
 
     @Test
-    fun `from a video at the very end it wraps to the first photo`() = runTest {
-        assertEquals(0, playlist("v2").start)
+    fun `from a video at the very end it starts there`() = runTest {
+        assertEquals(4, playlist("v2").start)
     }
 
     @Test
@@ -42,9 +42,16 @@ class LoadLibrarySlideshowTest {
     }
 
     @Test
-    fun `only videos gives nothing to play`() = runTest {
-        repository.slides = ServerResult.Ok(listOf(slide("v1", isVideo = true)))
-        assertEquals(Playlist(emptyList(), 0), playlist("v1"))
+    fun `only videos plays them`() = runTest {
+        val v1 = slide("v1", isVideo = true)
+        repository.slides = ServerResult.Ok(listOf(v1))
+        assertEquals(Playlist(listOf(v1), 0), playlist("v1"))
+    }
+
+    @Test
+    fun `an empty library has nothing to play`() = runTest {
+        repository.slides = ServerResult.Ok(emptyList())
+        assertEquals(Playlist(emptyList(), 0), playlist("a"))
     }
 
     @Test

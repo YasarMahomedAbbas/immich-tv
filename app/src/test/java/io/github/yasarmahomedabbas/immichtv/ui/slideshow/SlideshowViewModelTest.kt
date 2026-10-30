@@ -11,6 +11,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.VideoMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -121,6 +122,35 @@ class SlideshowViewModelTest {
         assertEquals(3, vm.state.value.position)
         vm.skipForward()
         assertEquals("a", vm.shown)
+    }
+
+    @Test
+    fun `a playlist starting on a video shows it, and counts videos in its position`() = runTest(dispatcher) {
+        val slides = listOf(slide("a"), video("v"), slide("b"))
+        val vm = SlideshowViewModel(TimelineSettings) { ServerResult.Ok(Playlist(slides, start = 1)) }
+        advanceUntilIdle()
+
+        assertEquals("v", vm.shown)
+        assertEquals(2, vm.state.value.position)
+        assertEquals(3, vm.state.value.slides.size)
+    }
+
+    @Test
+    fun `dropping a video before the current slide keeps the position true`() = runTest(dispatcher) {
+        val slides = listOf(video("v"), slide("a"), slide("b"))
+        val vm = SlideshowViewModel(TimelineSettings) { ServerResult.Ok(Playlist(slides, start = 2)) }
+        advanceUntilIdle()
+
+        vm.imageFailed(photo("v"))
+
+        assertEquals("b", vm.shown)
+        assertEquals(2, vm.state.value.position)
+        assertEquals(2, vm.state.value.slides.size)
+    }
+
+    @Test
+    fun `a library show plays its videos muted`() {
+        assertEquals(VideoMode.PlayMuted, TimelineSettings.videos)
     }
 
     @Test

@@ -34,27 +34,27 @@ Problem: A slideshow started from the Photos tab leaves videos out and, held on 
 
 Goal: a library show holds every timeline item in place and starts at the held one, photo or video.
 
-### [ ] 1.1 — The use case keeps videos
+### [x] 1.1 — The use case keeps videos
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/Slideshow.kt`
 
 `LoadLibrarySlideshow.invoke(from: PhotoId): ServerResult<Playlist>` keeps its signature and becomes `repository.slides().map { all -> Playlist(all, start = all.indexOfFirst { it.photo.id == from }.coerceAtLeast(0)) }`. KDoc: what a library show plays, newest to oldest and videos in place, beginning at the chosen item; an item no longer there begins at the newest. Reword `withoutVideos`'s KDoc only if it still names the library (it doesn't today).
 
-### [ ] 1.2 — Its tests
+### [x] 1.2 — Its tests
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/LoadLibrarySlideshowTest.kt`
 
 Replace the photos-only cases, on the existing `a, b, v1, c, v2` fake: `it plays everything in timeline order, videos in their place, starting at the chosen photo` (all five ids, start 1); `from a video it starts at that video` (`v1` → 2); `from a video at the very end it starts there` (`v2` → 4); `only videos plays them` (`Playlist([v1], 0)`, replacing "only videos gives nothing to play"). Keep `a photo no longer there starts at the first` and `a failure passes through`. Add `an empty library has nothing to play` (`Playlist(emptyList(), 0)`).
 
-### [ ] 1.3 — The show from a video, and its progress
+### [x] 1.3 — The show from a video, and its progress
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/slideshow/SlideshowViewModelTest.kt`
 
 Beside `a playlist with a start plays from there, and moves on and back from there`, with `Playlist(listOf(slide("a"), video("v"), slide("b")), start = 1)`: `a playlist starting on a video shows it, and counts videos in its position` (`shown == "v"`, `position == 2`, `slides.size == 3`). Then `dropping a video before the current slide keeps the position true`: from `[video("v"), slide("a"), slide("b")]` with `start = 2`, `videoFailed` can't name a non-current video, so use `imageFailed(photo("v"))`, its preview failing: `shown == "b"`, `position == 2`, `slides.size == 2`. Add `a library show plays its videos muted`: `assertEquals(VideoMode.PlayMuted, TimelineSettings.videos)`. Production code in `SlideshowViewModel.kt` changes only in `TimelineSettings`' KDoc, which gains "videos muted".
 
-### [ ] 1.4 — The manual and the README
+### [x] 1.4 — The manual and the README
 
-File: `docs/design/README.md`, Slideshow row: replace "with fixed defaults and photos only" by "with fixed defaults, its videos muted and in their place; held on a video it starts at that video". Memory and search wording stays. `README.md`'s Photos line needs no change: re-read it to confirm.
+File: `docs/design/README.md`, Slideshow row: replace "with fixed defaults and photos only" by "with fixed defaults, its videos muted and in their place; held on a video it starts at that video". Memory and search wording stays. `README.md`: re-reading it disproved "needs no change": its Slideshow line said the library show leaves videos out and its Photos line said hold OK "on a photo". Both updated.
 
 ### Verify
 
