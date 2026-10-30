@@ -35,3 +35,10 @@ Branch: `feat/6-play-videos-in-slideshow`
   - 4.2 relied on the `TextureView` being transparent until its first frame and on composing it once the size is known. A reused view keeps the last video's last frame, and `onVideoSizeChanged` isn't sure to fire again for a same-size video, so the view is always composed and its alpha stays 0 until `onRenderedFirstFrame` for this video.
   - 4.2's `onFailed: (serverFailure)` became `(PhotoId, serverFailure)`, and the other reports take a `PhotoId` too: each names the video the player has, so a late one is ignored as the ViewModel's rule intends.
   - 2.3: `"*.VideoSourceFactory*"` joined the Kover excludes, since the factory is its own class.
+
+## Review
+
+- Fixed: `SlideshowVideoPreview` threw `No player in a preview` as soon as it was rendered. `Stage` composes `VideoLayer` for any current video (the 4.2 change), so it called the preview's throwing `newPlayer`, and the comment saying no layer would ask had gone stale. `Stage` now composes no video layer under `LocalInspectionMode`. Tooling only, never on a device; the Compose layer has no test harness, so this fix has no test.
+- Raised: none
+- API: `GET /api/assets/{id}/video/playback` (`playAssetVideo`): matches the v3.3.5 spec read from the running server's version: path, GET, optional `key` and `slug` never sent, `application/octet-stream`, `asset.view`; the key goes as the `x-api-key` header.
+- Layers: clean

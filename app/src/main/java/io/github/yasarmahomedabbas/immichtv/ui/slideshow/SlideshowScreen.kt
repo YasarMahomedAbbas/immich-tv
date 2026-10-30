@@ -49,6 +49,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -343,7 +344,8 @@ private fun Stage(
             )
         }
     }
-    if (current.photo.isVideo) {
+    // A tool's preview has no player to ask for: it shows the video's still.
+    if (current.photo.isVideo && !LocalInspectionMode.current) {
         VideoLayer(
             slide = current,
             run = state.run,
@@ -616,7 +618,7 @@ private val previewSlides = List(214) { previewSlide(it) }
 
 @Composable
 private fun SlideshowPreview(state: SlideshowState, settings: SlideshowSettings = SlideshowSettings()) {
-    // A preview's images never load, so no video layer ever asks for its player.
+    // Stage composes no video layer in a preview, so nothing asks for this player.
     ImmichTvTheme {
         SlideshowContent(state, settings, {}, {}, {}, {}, {}, { error("No player in a preview") }, {}, {}, {}, { _, _ -> })
     }
