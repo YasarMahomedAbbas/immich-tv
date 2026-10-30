@@ -63,5 +63,5 @@ Branch: `feat/4-albums-and-album-screen`
 - Skipped: hand-rolled navigation, the in-memory session, the memory of the bucket string, the album dates and `ownerId` shapes — each is commented at the code and tested or found with one `rg`.
 - Skipped: counts from the timeline rather than `/search/statistics` — NOTES and the repository's code cover it; only matters when changing that code.
 - Skipped: CLAUDE.md trim — no line is newly enforced by the code.
-- Checked, still true: CI command, `build.sh` lines, coverage claim (80%, Compose screens excluded), `immichHttpClient()` for image loading, preview-size images, design rule 10 and the component sizes (sampled).
+- Checked, still true: CI command, `build.sh` lines, coverage claim (80%, Compose screens excluded), `immichHttpClient()` for image loading, preview-size images, design rule 10 and the manual's sizes for the new components.
 - Stale, fixed separately: README.md:features — listed the slideshow, Photos and Search as if built; now marked planned with #5, #7, #8.

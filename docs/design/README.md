@@ -45,7 +45,7 @@ These live in `.claude/skills/design-canvas/assets/artboard.dc.html` for the can
 | Home | top menu, a memory hero, rows (Albums, Recently added) |
 | Albums | top menu, filter chips + sort, a 5-column grid of album cards |
 | Album | back link, cover mosaic, title and counts, Start slideshow, Browse photos, slideshow settings, a strip of photos |
-| Album photos | back link, a 6-column grid per month (`PhotoGrid`, which Photos reuses) |
+| Album photos | back link, a 6-column grid per month (`PhotoGrid`, built for Photos to reuse in #7) |
 | Slideshow | full screen; date and place bottom-left, controls bottom-centre (shown on a key press, fade after a few seconds), a thin progress bar on top |
 | Photos | top menu, a month rail on the left, a 6-column grid per month |
 | Search | top menu, the search field with the voice button, suggestion chips, People, results in a 7-column grid with Play as slideshow |
