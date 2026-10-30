@@ -23,3 +23,11 @@ Branch: `fix/18-refresh-albums-on-return`
 - Tests: full CI command green (testDebugUnitTest, koverVerifyDebug, lintDebug, assembleDebug): 206 passed / 0 failed, 0 skipped.
 - Outstanding: none unticked. The Compose focus and scroll code (the 1.3, 2.3 and 3.2 screen changes) compiles and passes lint but has no automated test, as the project has no Compose UI tests; the TV checks in the test plan are for self-verification.
 - Contradicted the plan: nothing in the code contradicted it. Three refinements, with the checklist text updated: `AlbumGrid`'s effect is keyed on the order as well as the list, or a filter leaving the same list would be remembered late and the next refresh would jump to the top; it waits a frame before reading `layoutInfo`, which otherwise describes the old list; `reread` is a suspend function run one after another inside `refreshJob`, so a refresh counts as running until they finish.
+
+## Review
+
+- Fixed: a loaded month whose re-read failed kept the new count, so the next refresh saw no change and never re-read it: the heading said 3, the grid showed 2, until the app was killed. The month now goes back to its old count on failure, as the screen was, and the next refresh tries again (`ui/photos/PhotoGridViewModel.kt`; the test that had asserted the mismatch now asserts this and fails without the fix).
+- Raised: none
+- API: no call changed. `GET /albums`, `GET /albums/{id}`, `GET /timeline/buckets`, `GET /timeline/bucket` match the v3.3.5 spec, the version the server runs (`AlbumDto`'s required fields are required there; `lastModifiedAssetTimestamp`, `startDate`, `endDate`, `order` optional; bucket `count` and `timeBucket` required).
+- Layers: clean
+- Not automated: the Compose focus and scroll code was read, not run, here; the TV checks are self-verification's.

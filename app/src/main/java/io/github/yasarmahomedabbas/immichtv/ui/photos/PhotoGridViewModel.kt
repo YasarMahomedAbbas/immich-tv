@@ -105,14 +105,20 @@ class PhotoGridViewModel(private val timeline: Timeline) : ViewModel() {
             sections.firstOrNull()?.takeIf { it.photos == MonthPhotos.NotLoaded }?.let { fetch(it.month) }
             val counts = old.filter { it.photos is MonthPhotos.Loaded }.associate { it.month to it.count }
             for (section in sections) {
-                if (counts[section.month].let { it != null && it != section.count }) reread(section.month)
+                val shownCount = counts[section.month]
+                if (shownCount != null && shownCount != section.count) reread(section.month, shownCount)
             }
         }
     }
 
-    private suspend fun reread(month: YearMonth) {
-        val result = timeline.photos(month)
-        if (result is ServerResult.Ok) setPhotos(month, MonthPhotos.Loaded(result.value))
+    /** On failure the month goes back to [shownCount], so it still reads as changed next refresh. */
+    private suspend fun reread(month: YearMonth, shownCount: Int) {
+        when (val result = timeline.photos(month)) {
+            is ServerResult.Ok -> setPhotos(month, MonthPhotos.Loaded(result.value))
+            is ServerResult.Failed -> _state.update { state ->
+                state.copy(sections = state.sections.map { if (it.month == month) it.copy(count = shownCount) else it })
+            }
+        }
     }
 
     private fun loadMonths() {

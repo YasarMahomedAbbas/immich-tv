@@ -240,7 +240,7 @@ class PhotoGridViewModelTest {
     }
 
     @Test
-    fun `a failed read again keeps the old photos`() = runTest(dispatcher) {
+    fun `a failed read again leaves the month as it was, and the next refresh tries again`() = runTest(dispatcher) {
         val vm = PhotoGridViewModel(timeline)
         advanceUntilIdle()
 
@@ -249,7 +249,14 @@ class PhotoGridViewModelTest {
         vm.refresh()
         advanceUntilIdle()
 
-        assertEquals(MonthSection(august, 3, MonthPhotos.Loaded(augustPhotos)), vm.section(august))
+        assertEquals(MonthSection(august, 2, MonthPhotos.Loaded(augustPhotos)), vm.section(august))
+
+        val more = augustPhotos + Photo(PhotoId("p3"), false)
+        timeline.photos[august] = ServerResult.Ok(more)
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertEquals(MonthSection(august, 3, MonthPhotos.Loaded(more)), vm.section(august))
     }
 
     @Test
