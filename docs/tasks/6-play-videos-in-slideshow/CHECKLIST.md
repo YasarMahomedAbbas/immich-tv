@@ -34,12 +34,12 @@ Problem: the album's Videos setting offers "Play muted", "Play with sound" and "
 
 Goal: `LoadSlideshow` obeys the setting and the Media3 dependency builds. Until checkpoint 4, a kept video shows as a still preview on the photo timer.
 
-### [ ] 1.1 — Filter by mode
+### [x] 1.1 — Filter by mode
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/Slideshow.kt`
 `suspend operator fun invoke(album: Album, order: SlideshowOrder, videos: VideoMode): ServerResult<List<Slide>>`. Drop `photo.isVideo` only when `videos == VideoMode.Skip`; remove the old comment. Update the call in `SlideshowViewModel.load()` to pass `settings.videos`, and `LoadSlideshowTest`, adding the keep and drop cases per mode.
 
-### [ ] 1.2 — Dependencies
+### [x] 1.2 — Dependencies
 
 Files: `gradle/libs.versions.toml`, `app/build.gradle.kts`
 `media3 = "1.5.1"`; `media3-exoplayer` and `media3-datasource-okhttp` (group `androidx.media3`), both `implementation`. No `media3-ui`.

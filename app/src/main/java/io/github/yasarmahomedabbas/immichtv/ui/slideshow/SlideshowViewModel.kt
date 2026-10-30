@@ -158,7 +158,7 @@ class SlideshowViewModel(
         ready.clear()
         _state.value = SlideshowState()
         viewModelScope.launch {
-            _state.value = when (val result = loadSlideshow(album, settings.order)) {
+            _state.value = when (val result = loadSlideshow(album, settings.order, settings.videos)) {
                 is ServerResult.Ok -> SlideshowState(
                     load = if (result.value.isEmpty()) SlideshowLoad.Empty else SlideshowLoad.Playing,
                     slides = result.value,
