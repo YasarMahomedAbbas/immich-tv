@@ -33,3 +33,12 @@ Branch: `feat/23-open-photo-from-album-grid`
 - Raised: none
 - API: no call touched; `data/` is unchanged. The show from a tile reuses `slides()`, the grid its `timeline/buckets` and `timeline/bucket`, checked against v3.3.5 at planning (the running version, read again here).
 - Layers: clean
+
+## Doc drift
+
+- Applied: README.md:features, Albums line — a photo opens full screen and hold OK starts a show, in an album's grid and a memory's (rung 3, using the app).
+- Applied: docs/design/README.md:Photo row — left/right also move through a memory, which the branch's edit had left out (rung 4, the area's manual). The branch's other manual rows were checked against the code and hold: the hint, the shows' labels and settings, memory shows being photos only (`LoadHome` filters them), and #23's open decision removed.
+- Skipped: a grid and its viewer sharing one ViewModel key — `albumGrid` and `memoryGrid` in `MainActivity` say so, and they are the only way to build those grids.
+- Skipped: `returning` and the show's use of the grid's order — the KDoc on `AppScreen` and `LoadSlideshowFromPhoto` says it, the tests enforce it, and the manual has the behaviour.
+- Skipped: README's architecture and server sections, and `CLAUDE.md` — still true: no new layer, permission, server call or command; new ViewModel keys take `connection` as README requires.
+- Stale, fixed separately: none
