@@ -283,6 +283,12 @@ private fun FieldRow(
     ) {
         SearchField(text, onEdit, onSubmit, modifier.then(fieldModifier))
         VoiceButton(stringResource(R.string.search_voice), onVoice, modifier)
+        Text(
+            stringResource(R.string.search_voice_hint),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 22.sp,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
