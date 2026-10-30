@@ -27,3 +27,10 @@ Branch: `fix/22-release-finished-slideshows`
 - Raised: none
 - API: no endpoint touched
 - Layers: clean
+
+## Doc drift
+
+- Applied: `README.md`:Architecture — the `connection` key claim no longer held for slideshows, so a paragraph names them as the exception and says where their ViewModels live (rung 3). A new kind of show would otherwise be given the key instead of `AppViewModel.shows`.
+- Skipped: `CLAUDE.md` — the store is about one area, not every ticket; the README and `AppViewModel`'s KDoc carry it.
+- Skipped: `docs/design/` — no visuals changed. No command, permission, navigation, named file or Immich call changed either.
+- Stale, fixed separately: none. On `origin/main` slideshows already didn't call `RefreshOnStart`, so that claim was loose before this branch; the same new sentence covers it, so it has no commit of its own.
