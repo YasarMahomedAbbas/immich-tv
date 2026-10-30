@@ -16,7 +16,8 @@ Branch: `feat/10-immich-screensaver`
   - A deleted album's choice is kept, so it plays again if the album returns.
   - The clock moves about once a minute to avoid burn-in.
   - Self-verification changes the TV's screensaver setting to test this: it records the old value and restores it, under the adb lock and the latest TV window on the issue (14:25 CET on 2026-10-30).
-- Decided while writing the checklist (not asked, for review): the slideshow's progress bar stays on the screensaver, as the same slideshow; the ground alone shows while loading, with no skeleton on an idle TV; Kover's `*Screen*` exclusion is narrowed, because it would otherwise hide every `*Screensaver*` class from the coverage gate.
+- Decided while writing the checklist (not asked; approved by the pipeline on the user's behalf with the plan): the slideshow's progress bar stays on the screensaver, as the same slideshow; the dark ground alone shows while loading, with no skeleton on an idle TV; Kover's `*Screen*` exclusion is narrowed, because it would otherwise hide every `*Screensaver*` class from the coverage gate.
+- Plan approved: by the pipeline on the user's behalf, including the three choices above; the user has not reviewed it.
 - Open risks:
   - open-risk: whether this Google TV build accepts a third-party component through `screensaver_components` and starts it on idle is only known on the TV; the ticket states it, nothing here has tried it.
   - open-risk: Compose in a `DreamService` with hand-made owners isn't done elsewhere in the app; checked on the TV.
