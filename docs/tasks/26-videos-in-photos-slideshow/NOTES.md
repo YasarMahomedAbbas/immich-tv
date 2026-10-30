@@ -33,3 +33,19 @@ Branch: `feat/26-videos-in-photos-slideshow`
 - No drift found. The branch's implementation commit already corrected `README.md` (Slideshow, Photos) and `docs/design/README.md` (Slideshow row); checked against the code: the library show keeps videos in place and starts at the held item (`LoadLibrarySlideshow`), muted by the `VideoMode.PlayMuted` default in `TimelineSettings`, hold OK has no photo-only guard (`PhotosScreen`), memory and search shows stay photos only (`LoadHome`, `SearchScreen`). `CLAUDE.md` makes no claim the branch touches, and no doc names `LoadLibrarySlideshow` or `TimelineSettings`.
 - Skipped: a library show's videos being muted because of the settings default: the KDoc on `TimelineSettings` says it and the manual states the behaviour, so a future session wouldn't get it wrong.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: not run here (speed note on the issue: the full command runs once, in `raise-pr`). `assembleDebug` built the APK installed below. Unit tests from implementation: `LoadLibrarySlideshowTest` 7 passed, `SlideshowViewModelTest` 54 passed. No code changed in this stage.
+- Server: Immich v3.3.5. No call added or changed.
+- TV: debug build installed on the Chromecast, TV lock held 12:58-13:06 UTC. Driven: the Photos tab's show from a video tile and from a photo tile, pause, previous/next, Back, and a pass over every video.
+- Verified, server: with the app's query (`visibility=timeline`, `withStacked=true`, `order=desc`), all 10 months have every `timeline/bucket` column as long as `id`, 555 items, 44 videos. `id`, `isImage` and `duration` are arrays in the v3.3.5 spec, and `GET /api/assets/{id}/video/playback` and `GET /api/timeline/bucket` are there. Playback for a timeline video: 206 `video/mp4` with `x-api-key` and a range, 401 without the key.
+- Verified, hold OK on a video: the show opened on the held video (the January tile at position 26), played it to its end after about 34 s and moved on to the next video, whose controls read 27 / 555. The progress bar sat at 26/555 of the width.
+- Verified, hold OK on a photo: the show opened on that photo (25 / 555), then reached the video after it in its place and went on to 27.
+- Verified, controls: pause held on a video and across a move to a photo, with no advance over 11 s; resume played on; left and right crossed videos and photos with the right position; Back from a video returned to the Photos grid with the amber outline on the starting tile, also after moving far from it (position 421).
+- Verified, sound: by code only. `PlayMuted` disables the audio track (`SlideshowScreen`), and `TimelineSettings` keeps that default (unit test). Nobody listened.
+- Decode count, from a short check: 0 of 44 videos failed. All 44 are H.264 by their file headers (43 `video/mp4` Baseline, 1 `video/quicktime` High 4.0, at most 1920x1080). Each was shown for about 2 s: the total stayed 555 (a failed video is dropped from the show, which lowers it), the position landed exactly on 421, and logcat had no player, codec or app errors. A failure later than 2 s into a video, or on a very slow load, would not show here, and frames were not checked video by video.
+- Failed: none
+- Not self-verifiable: a video that won't decode being skipped on the TV: none of the server's videos failed, so this path ran only in unit tests. Sound: listen to a Photos-tab show and check it is silent.
