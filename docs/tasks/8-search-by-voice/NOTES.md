@@ -52,3 +52,27 @@ Branch: `feat/8-search-by-voice`
 - Skipped: the 60 s search timeout and the `visibility` field: code comments at the point of use say why.
 - Skipped: CLAUDE.md: no new cross-cutting rule. The face thumbnail isn't a preview-size exception worth a line: it is its own small endpoint, in `data/`, and goes through the same client. The architecture block, RefreshOnStart and the `connection` key rule still hold (`SearchScreen`, `MainActivity`).
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: 306 tests passed, 0 failed, 0 skipped; line coverage 88.8% (minimum 80%); `koverVerifyDebug` and `lintDebug` pass; APK built.
+- Server: Immich v3.3.5, read from the running server; spec read at that tag.
+- TV: installed on the Chromecast; the check ran 11:14:54 to 11:20 UTC under the lock, and the window then closed. Only the field, the keyboard, the mic's reachability and a simulated Search key were driven. The final build was installed but never reached the Search tab: keys sent right after its cold start were lost, and it landed on other tabs.
+- Verified, server: `POST /api/search/smart` 200 (100 items) and `POST /api/search/metadata` with `personIds` 200 (50 items, `total` 50, `nextPage` null, so not a hidden cap); `GET /api/people?size=1000` 200 (12 people, 2 named, 0 hidden); `GET /api/people/{id}/thumbnail` 200, `image/jpeg`. Every field read is present with the spec's type (`orientation` a string, `width`/`height` integers). Only 200 is treated as success in `read()`, and 200 is what both POSTs answer. Empty `query` gives 400, as the code expects; the domain never sends one.
+- Verified, TV: the Search tab draws with field, amber mic, chips and the People row with real faces, focus outline visible; OK on the field opens the keyboard (read-only build). A crash check through logcat ran after the last batch and found nothing, but that batch never entered Search.
+- Failed: found on the TV, fixed in code, fix not fully seen: moving focus to the field opened the keyboard, and the arrows then moved inside it, so the mic and chips could not be reached. Read-only until OK stopped the keyboard opening on focus (seen: `mInputShown=false` on focus, `true` after OK). That build showed the second half: RIGHT and DOWN stayed on the field, so the mic and chips were still unreachable. Arrows now go to the focus manager (`fieldFocusMove`). This last change was never seen on the TV. `SearchFieldKeysTest` covers the key mapping only; the repo has no Compose UI test setup, so focus really leaving the field is unproven.
+- Not self-verifiable (the window closed; check on the TV by hand): RIGHT from the field to the mic and DOWN to the chips; a chip searches and shows results; typing and submitting; the on-screen mic and the speech prompt; a person's photos; Play as slideshow, Back with focus on Play; Back from results clears them, then Back again goes Home.
+
+### Points left open by earlier stages
+
+1. **The remote's physical mic button: unproven, not passed.** This "Done when" item is still open. `input keyevent KEYCODE_SEARCH` shows only that the app handles a simulated key: it reached the voice code and the system showed a "Complete action using" chooser (Google, or Speech Recognition and Synthesis; Just once, Always). Nobody pressed the real button. As the plan says, the hint is dropped from the screen and the manual, the key handling stays, and the README's Search bullet does not claim the button. State the gap in the PR.
+   - New finding: that chooser stands between the app and the speech prompt on this TV. The speech prompt itself was never seen, and no option was chosen, so the TV's defaults are unchanged. Voice may need a choice on first use; a person should try it.
+2. **Focus to the field opening the keyboard: on Back from results and when a load removes the focused item, not observed.** No search ran on the TV. What was seen: D-pad focus onto the field did open the keyboard on the original build, and did not once the field was read-only until OK. Those two paths use the same field and start read-only, so they should not open it, but that is reasoning, not a result.
+3. **Status 200 from the two POST search calls: confirmed** on the real server, with the bodies the code sends, including `visibility`.
+4. **Archived photos: not proven on the real server.** It has no archived photos, so the exclusion rests on the Immich source and the request tests. The real responses held only `visibility: timeline`, which is consistent but proves nothing about exclusion.
+
+### TV lock incident
+
+At 11:14:10 UTC this stage ran `adb install -r` and `am start` without holding the lock, while #6's pipeline held it (a wait loop of mine timed out, and I read that as having got the lock). It replaced #6's build on the TV with this branch's, about 44 s before #6 released. #6's newest TV capture on disk is from 11:13:50 UTC, before the install, and the montage it made at 11:14:31 UTC has no capture after the install behind it, so its recorded evidence looks unaffected; that is from file times, not from #6's pipeline. #6's lock itself was not touched. The TV now has this branch's debug build, and was sent Home.
