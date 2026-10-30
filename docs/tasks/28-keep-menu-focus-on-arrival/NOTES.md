@@ -25,7 +25,7 @@ Branch: `fix/28-keep-menu-focus-on-arrival`
 - With a pill-only rule: 5 passed / 1 failed, Try again, so that test holds the widening in place.
 - Outstanding: none in the checklist. The on-TV paths are self-verification's, and the Try again path (g) may not be catchable there.
 - Contradicted the plan: (A) a pill-only rule left no element focused after Try again; (B) the planned rail route (Left to another pill, then Down) can't reach the rail. Both resolved by the user's answer above. Also: a hand-stepped clock didn't pick up the test's own state writes in the Try again route, so `settle()` now calls `Snapshot.sendApplyNotifications()`. Not explained from the earlier run: going straight from Failed to Loaded with focus on the rail; that route isn't tested.
-- Build note: Robolectric fetches its Android jars from Maven Central at test time (`android-all-instrumented` 14 and 15, though the test asks for SDK 34) into the container's home, which `build.sh` doesn't keep, so every local run downloads them again. Central answered 429 to some of today's requests from this machine, failing every case in `PhotoGridFocusTest` with "Failed to fetch maven artifact". For this stage the checksum-verified jars were mounted into the container by hand; no repo file changed for it.
+- Build note (as it stood at this stage; replaced in Review by `syncRobolectricJars` and the jars pinned in `gradle/libs.versions.toml`): Robolectric fetched its Android jars from Maven Central at test time (`android-all-instrumented` 14 and 15, though the test asks for SDK 34) into the container's home, which `build.sh` doesn't keep, so every local run downloaded them again. Central answered 429 to some of today's requests from this machine, failing every case in `PhotoGridFocusTest` with "Failed to fetch maven artifact". For this stage the checksum-verified jars were mounted into the container by hand; no repo file changed for it.
 - Seen, out of scope: the Albums grid's own first focus was not looked at.
 
 ## Review
@@ -37,3 +37,12 @@ Branch: `fix/28-keep-menu-focus-on-arrival`
 - Tests: `PhotoGridFocusTest` 6 passed, `ArchitectureTest` 1 passed, per the user's speed note. Offline mode was proved by the failures without each jar ("Path is not a file", no download attempted).
 - Not proved: Gradle's own download of the SDK 34 jar. Central kept answering 429 for it from this machine (all 11 attempts through `build.sh`). The SDK 35 jar did resolve without the seed, but Gradle may have reused the seeded copy by checksum, so that isn't proof of a download either. The passing run took that jar from the checksum-verified local copy, through an init script outside the repo. Until Gradle has fetched it once, `./build.sh` needs Central to answer. A 429 on the first fetch still fails a run, now in `syncRobolectricJars` with the URL named; a cached run makes no such request, and `setup-gradle` only writes its cache from the default branch, so PR runs before the merge fetch both jars.
 - Not run: the full CI command, so `koverVerifyDebug` and the whole suite alongside Robolectric are unproved until `raise-pr`.
+
+## Doc drift
+
+- Applied: `README.md`:Development — the claim that Compose screens need a device was false once `PhotoGridFocusTest` ran them under Robolectric; they are still not counted, as Kover's excludes show. Rung 3.
+- Applied: `README.md`:Development — Robolectric runs offline, Gradle fetches its jars through `syncRobolectricJars`, and a bump means updating the two pinned jar versions. The catalog comment says this too, but Dependabot's weekly grouped PRs will bump Robolectric with nobody reading that comment. Rung 3.
+- Applied: `docs/tasks/28-keep-menu-focus-on-arrival/NOTES.md`:Implementation — marked the build note as the behaviour before Review's fix, passed on from self-review.
+- Skipped: the Top menu rule and `mayTakeFocus` — self-review already put the rule in `docs/design/README.md`; the checked claims there and the `MainScreen` KDoc hold.
+- Skipped: `CLAUDE.md` — the jar pinning only matters on a Robolectric bump, not on every ticket, and its build and test commands are unchanged.
+- Stale, fixed separately: none
