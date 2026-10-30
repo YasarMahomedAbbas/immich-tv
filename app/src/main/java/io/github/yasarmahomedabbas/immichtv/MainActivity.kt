@@ -108,6 +108,7 @@ class MainActivity : ComponentActivity() {
                         onBrowsePhotos = { app.openAlbumPhotos(it, current.cameFrom) },
                         onStartSlideshow = { album, settings -> app.openSlideshow(album, settings, current.cameFrom) },
                         focusBrowse = current.focusBrowse,
+                        cameFrom = current.cameFrom,
                     )
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
                         albumName = current.album.name,

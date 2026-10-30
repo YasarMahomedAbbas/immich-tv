@@ -192,4 +192,27 @@ class HomeViewModelTest {
     fun `an empty page has nothing to focus`() {
         assertNull(HomePage(null, emptyList(), emptyList()).focusTarget(HomeFocus.Play))
     }
+
+    @Test
+    fun `up from any album card reaches see all and see all goes on to the hero`() {
+        assertEquals(HomeFocus.SeeAll, page.upFrom(HomeFocus.AlbumCard(summer.id)))
+        assertEquals(HomeFocus.ViewPhotos, page.upFrom(HomeFocus.SeeAll))
+    }
+
+    @Test
+    fun `with no hero up from see all is left to geometry`() {
+        assertNull(page.copy(hero = null).upFrom(HomeFocus.SeeAll))
+    }
+
+    @Test
+    fun `right stops at the last item of a row only`() {
+        val first = album(id = "first")
+        val photos = listOf(Photo(PhotoId("a"), false), Photo(PhotoId("b"), false))
+        val full = page.copy(albums = listOf(first, summer), recent = photos)
+        assertEquals(true, full.endsRow(HomeFocus.AlbumCard(summer.id)))
+        assertEquals(false, full.endsRow(HomeFocus.AlbumCard(first.id)))
+        assertEquals(true, full.endsRow(HomeFocus.Recent(PhotoId("b"))))
+        assertEquals(false, full.endsRow(HomeFocus.Recent(PhotoId("a"))))
+        assertEquals(false, full.endsRow(HomeFocus.SeeAll))
+    }
 }

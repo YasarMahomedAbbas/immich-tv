@@ -32,7 +32,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
@@ -159,6 +161,7 @@ private fun HomeContent(state: HomeState, onFocused: (HomeFocus) -> Unit, onRetr
  * grid's does, and again if a refresh takes away what the remote was on. Each block is brought into
  * view whole as focus enters it, so a row's title comes with it and moving up returns to the hero.
  */
+@OptIn(ExperimentalComposeUiApi::class) // FocusRequester.Cancel: how a row's last item stops Right.
 @Composable
 private fun HomeLoaded(
     page: HomePage,
@@ -168,6 +171,8 @@ private fun HomeLoaded(
     actions: HomeActions,
 ) {
     val targetFocus = remember { FocusRequester() }
+    val seeAllFocus = remember { FocusRequester() }
+    val viewPhotosFocus = remember { FocusRequester() }
     val albumRow = rememberLazyListState(page.albums.indexOfFirst { HomeFocus.AlbumCard(it.id) == target }.coerceAtLeast(0))
     val recentRow = rememberLazyListState(page.recent.indexOfFirst { HomeFocus.Recent(it.id) == target }.coerceAtLeast(0))
     LaunchedEffect(Unit) {
@@ -184,6 +189,21 @@ private fun HomeLoaded(
     }
     val focusOn: Modifier.(HomeFocus) -> Modifier = { focus ->
         then(if (focus == target) Modifier.focusRequester(targetFocus) else Modifier)
+            .then(
+                when (focus) {
+                    HomeFocus.SeeAll -> Modifier.focusRequester(seeAllFocus)
+                    HomeFocus.ViewPhotos -> Modifier.focusRequester(viewPhotosFocus)
+                    else -> Modifier
+                },
+            )
+            .focusProperties {
+                when (page.upFrom(focus)) {
+                    HomeFocus.SeeAll -> up = seeAllFocus
+                    HomeFocus.ViewPhotos -> up = viewPhotosFocus
+                    else -> Unit
+                }
+                if (page.endsRow(focus)) right = FocusRequester.Cancel
+            }
             .onFocusChanged { if (it.isFocused) onFocused(focus) }
     }
     Column(

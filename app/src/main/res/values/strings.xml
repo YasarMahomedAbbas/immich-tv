@@ -49,6 +49,7 @@
     <string name="albums_show_all">Show all albums</string>
 
     <string name="album_back">Albums</string>
+    <string name="album_back_home">Home</string>
     <string name="album_start_slideshow">Start slideshow</string>
     <string name="album_browse_photos">Browse photos</string>
     <string name="album_settings_heading">SLIDESHOW SETTINGS</string>

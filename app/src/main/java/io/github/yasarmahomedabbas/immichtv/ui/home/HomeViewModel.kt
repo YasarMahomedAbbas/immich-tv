@@ -39,6 +39,24 @@ sealed interface HomeFocus {
 /** [focused] is where the remote was last, so coming Back to Home puts focus where it was. */
 data class HomeState(val load: HomeLoad = HomeLoad.Loading, val focused: HomeFocus = HomeFocus.Play)
 
+/**
+ * Where Up goes when geometry would get it wrong. See all sits at the far right, so going by geometry
+ * no card in the row reaches it: a card's Up goes to it instead, and it goes on to the hero, not the
+ * gear above it. Null leaves it to geometry. Found on the TV.
+ */
+internal fun HomePage.upFrom(focus: HomeFocus): HomeFocus? = when (focus) {
+    is HomeFocus.AlbumCard -> HomeFocus.SeeAll
+    HomeFocus.SeeAll -> if (hero != null) HomeFocus.ViewPhotos else null
+    else -> null
+}
+
+/** The last item of a row, where Right stops instead of leaking up to the top menu's gear. */
+internal fun HomePage.endsRow(focus: HomeFocus): Boolean = when (focus) {
+    is HomeFocus.AlbumCard -> albums.lastOrNull()?.id == focus.id
+    is HomeFocus.Recent -> recent.lastOrNull()?.id == focus.id
+    else -> false
+}
+
 /** Where focus goes on this page: [focused] while it is still there, else Play, else the first thing shown; null on an empty page. */
 internal fun HomePage.focusTarget(focused: HomeFocus): HomeFocus? {
     val there = when (focused) {
