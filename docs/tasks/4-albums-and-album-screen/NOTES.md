@@ -51,3 +51,17 @@ Branch: `feat/4-albums-and-album-screen`
   - D-pad Down from the last row of a month, when the next month is still non-focusable skeleton tiles: it must move on to the next month, at worst after a second press.
 - API: `GET /server/version`, `/users/me`, `/albums`, `/albums/{id}`, `/timeline/buckets`, `/timeline/bucket` and `/assets/{id}/thumbnail?size=preview` match the v3.3.5 spec (the version the server runs) for method, path, parameters, required response fields and the permissions named. Live `/albums` and `/timeline/buckets` responses match the fixtures' shape. `/albums/{id}` and `/timeline/bucket` were checked against the spec only; the live check of them is self-verification's.
 - Layers: clean, with one note left as the plan approved it: `strings.xml` names Immich's permission names (`album.read`, `asset.read`, `asset.view`) and the v1.133 floor in user-facing messages, so another photo server would need those strings changed too.
+
+## Doc drift
+
+- Applied: README.md:Install — floor v1.118 → v1.133 (cites the v1.133.0 release note) and key permissions `user.read`, `album.read`, `asset.read`, `asset.view` (checked against the v3.3.5 spec); rung 3.
+- Applied: README.md:features — Albums line now says what the screen does and that Start slideshow waits for #5; rung 3.
+- Applied: README.md:Architecture — a ViewModel holding server data is keyed by `AppViewModel.connection`; no test enforces it and the next screens would miss it; rung 3.
+- Applied: CLAUDE.md:Immich API — "support both" goes back only to `MINIMUM`, the floor; rung 2.
+- Applied: docs/design/README.md:Screens — Browse photos on Album, and the new Album photos row; rung 4.
+- Skipped: Coil and `Preview` as the way to load images — `PhotoTile` and `PreviewInterceptor` show it, and the layer rule already forbids building URLs.
+- Skipped: hand-rolled navigation, the in-memory session, the memory of the bucket string, the album dates and `ownerId` shapes — each is commented at the code and tested or found with one `rg`.
+- Skipped: counts from the timeline rather than `/search/statistics` — NOTES and the repository's code cover it; only matters when changing that code.
+- Skipped: CLAUDE.md trim — no line is newly enforced by the code.
+- Checked, still true: CI command, `build.sh` lines, coverage claim (80%, Compose screens excluded), `immichHttpClient()` for image loading, preview-size images, design rule 10 and the component sizes (sampled).
+- Stale, fixed separately: README.md:features — listed the slideshow, Photos and Search as if built; now marked planned with #5, #7, #8.
