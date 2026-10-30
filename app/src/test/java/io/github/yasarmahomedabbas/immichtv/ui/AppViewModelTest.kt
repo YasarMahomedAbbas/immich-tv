@@ -15,6 +15,8 @@ import io.github.yasarmahomedabbas.immichtv.domain.server.FakeSessionStore
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.ServerAddress
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.FakeSlideshowSettingsStore
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +43,7 @@ class AppViewModelTest {
     private val session = Session(ServerAddress.parse("nas:2283")!!, ApiKey("key"))
     private val home = AppScreen.Main(Tab.Home)
     private val memory = Memory(LocalDate.of(2025, 10, 30), emptyList())
+    private val settingsStore = FakeSlideshowSettingsStore()
 
     @Before
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -48,7 +51,7 @@ class AppViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel(stored: Session?) = AppViewModel(GetSession(FakeSessionStore(stored)))
+    private fun viewModel(stored: Session?) = AppViewModel(GetSession(FakeSessionStore(stored)), GetSlideshowSettings(settingsStore))
 
     private fun TestScope.signedIn() = viewModel(session).also { advanceUntilIdle() }
 
@@ -241,6 +244,104 @@ class AppViewModelTest {
 
         assertTrue(vm.back())
         assertEquals(home, vm.screen.value)
+    }
+
+    @Test
+    fun `browse photos entered afresh is not returning`() = runTest(dispatcher) {
+        val vm = signedIn()
+        val summer = album(id = "a1")
+        vm.openAlbumPhotos(summer)
+        vm.openAlbumPhotoViewer(summer)
+        vm.back()
+        vm.back()
+        vm.openAlbumPhotos(summer)
+        assertEquals(AppScreen.AlbumPhotos(summer, returning = false), vm.screen.value)
+    }
+
+    @Test
+    fun `a photo of an album's grid opens, and back returns to its tile, for every origin`() = runTest(dispatcher) {
+        val summer = album(id = "a1")
+        for (origin in CameFrom.entries) {
+            val vm = signedIn()
+            vm.openAlbumPhotos(summer, origin)
+            vm.openAlbumPhotoViewer(summer, origin)
+            assertEquals(AppScreen.AlbumPhotoViewer(summer, origin), vm.screen.value)
+
+            assertTrue(vm.back())
+            assertEquals(AppScreen.AlbumPhotos(summer, origin, returning = true), vm.screen.value)
+        }
+    }
+
+    @Test
+    fun `a show from an album's grid carries the saved settings, and back returns to its tile, for every origin`() = runTest(dispatcher) {
+        val summer = album(id = "a1")
+        val saved = SlideshowSettings(secondsPerPhoto = 20, showDateAndPlace = false)
+        settingsStore.saved[summer.id] = saved
+        for (origin in CameFrom.entries) {
+            val vm = signedIn()
+            vm.openAlbumPhotos(summer, origin)
+            vm.openAlbumPhotoSlideshow(summer, PhotoId("p1"), origin)
+            advanceUntilIdle()
+            assertEquals(AppScreen.AlbumPhotoSlideshow(summer, PhotoId("p1"), saved, origin), vm.screen.value)
+
+            assertTrue(vm.back())
+            assertEquals(AppScreen.AlbumPhotos(summer, origin, returning = true), vm.screen.value)
+        }
+    }
+
+    @Test
+    fun `back from a returning grid goes where it always does`() = runTest(dispatcher) {
+        val summer = album(id = "a1")
+        val expected = mapOf(
+            CameFrom.AlbumsTab to AppScreen.Album(summer.id, focusBrowse = true, cameFrom = CameFrom.AlbumsTab),
+            CameFrom.HomeRow to AppScreen.Album(summer.id, focusBrowse = true, cameFrom = CameFrom.HomeRow),
+            CameFrom.HomeHero to home,
+        )
+        for ((origin, screen) in expected) {
+            val vm = signedIn()
+            vm.openAlbumPhotos(summer, origin)
+            vm.openAlbumPhotoViewer(summer, origin)
+            vm.back()
+
+            assertTrue(vm.back())
+            assertEquals(screen, vm.screen.value)
+        }
+    }
+
+    @Test
+    fun `back while the show's settings load stays where it went`() = runTest(dispatcher) {
+        val vm = signedIn()
+        val summer = album(id = "a1")
+        vm.openAlbumPhotos(summer)
+        vm.openAlbumPhotoSlideshow(summer, PhotoId("p1"))
+
+        assertTrue(vm.back())
+        advanceUntilIdle()
+        assertEquals(AppScreen.Album(summer.id, focusBrowse = true), vm.screen.value)
+    }
+
+    @Test
+    fun `a photo of a memory's grid opens, and back returns to its tile, then home`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openMemoryPhotos(memory, "One year ago today")
+        vm.openMemoryPhotoViewer(memory, "One year ago today")
+        assertEquals(AppScreen.MemoryPhotoViewer(memory, "One year ago today"), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.MemoryPhotos(memory, "One year ago today", returning = true), vm.screen.value)
+        assertTrue(vm.back())
+        assertEquals(home, vm.screen.value)
+    }
+
+    @Test
+    fun `a show from a memory's grid plays, and back returns to its tile`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openMemoryPhotos(memory, "One year ago today")
+        vm.openMemoryPhotoSlideshow(memory, "One year ago today", PhotoId("p1"))
+        assertEquals(AppScreen.MemoryPhotoSlideshow(memory, "One year ago today", PhotoId("p1")), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.MemoryPhotos(memory, "One year ago today", returning = true), vm.screen.value)
     }
 
     @Test

@@ -2,9 +2,12 @@ package io.github.yasarmahomedabbas.immichtv.domain.home
 
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
+import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
 import io.github.yasarmahomedabbas.immichtv.domain.photos.TimelineMonth
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.playlistFrom as playlistOf
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -28,3 +31,6 @@ fun Memory.timeline(): Timeline = object : Timeline {
     override suspend fun photos(month: YearMonth): ServerResult<List<Photo>> =
         ServerResult.Ok(if (month == this.month) photos else emptyList())
 }
+
+/** This memory as a show beginning at [from], in the order of its grid. */
+fun Memory.playlistFrom(from: PhotoId): Playlist = playlistOf(slides, slides, from)

@@ -11,6 +11,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Album
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
+import io.github.yasarmahomedabbas.immichtv.domain.home.playlistFrom
 import io.github.yasarmahomedabbas.immichtv.domain.map
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
@@ -264,6 +265,20 @@ class SlideshowViewModel(
         fun fromMemory(memory: Memory) = viewModelFactory {
             initializer {
                 SlideshowViewModel(TimelineSettings) { ServerResult.Ok(Playlist(memory.slides)) }
+            }
+        }
+
+        /** A memory from the photo [from] onward, in its grid's order, with [TimelineSettings]. */
+        fun fromMemoryPhoto(memory: Memory, from: PhotoId) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(TimelineSettings) { ServerResult.Ok(memory.playlistFrom(from)) }
+            }
+        }
+
+        /** An album from the photo [from] onward, in its grid's order, with its time, videos and date and place. */
+        fun fromAlbumPhoto(container: AppContainer, album: Album, from: PhotoId, settings: SlideshowSettings) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(settings) { container.loadSlideshowFromPhoto(album, from, settings.videos) }
             }
         }
 
