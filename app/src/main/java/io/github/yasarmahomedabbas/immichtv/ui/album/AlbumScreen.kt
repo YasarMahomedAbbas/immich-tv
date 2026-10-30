@@ -56,6 +56,7 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
 import io.github.yasarmahomedabbas.immichtv.ui.components.TileStyle
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 import java.time.Instant
+import java.time.LocalDate
 
 private val MosaicCover = 560.dp
 private val MosaicSide = 320.dp
@@ -312,8 +313,8 @@ private val previewAlbum = Album(
     shared = false,
     ownedByMe = true,
     updatedAt = Instant.parse("2025-09-01T00:00:00Z"),
-    startDate = Instant.parse("2025-06-03T10:00:00Z"),
-    endDate = Instant.parse("2025-08-28T10:00:00Z"),
+    startDate = LocalDate.of(2025, 6, 3),
+    endDate = LocalDate.of(2025, 8, 28),
     newestFirst = true,
 )
 

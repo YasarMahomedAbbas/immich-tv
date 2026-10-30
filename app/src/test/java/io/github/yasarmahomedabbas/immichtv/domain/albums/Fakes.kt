@@ -5,6 +5,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.photos.FakeTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
 import java.time.Instant
+import java.time.LocalDate
 
 /** An album with sensible defaults; override what a test is about. */
 fun album(
@@ -24,8 +25,8 @@ fun album(
     shared = !ownedByMe,
     ownedByMe = ownedByMe,
     updatedAt = Instant.parse(updatedAt),
-    startDate = startDate?.let(Instant::parse),
-    endDate = endDate?.let(Instant::parse),
+    startDate = startDate?.let { LocalDate.parse(it.take(10)) },
+    endDate = endDate?.let { LocalDate.parse(it.take(10)) },
     newestFirst = newestFirst,
 )
 

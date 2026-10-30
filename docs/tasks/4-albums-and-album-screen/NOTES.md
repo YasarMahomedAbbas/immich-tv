@@ -38,3 +38,16 @@ Branch: `feat/4-albums-and-album-screen`
 - Tests: 163 passed / 0 failed, 0 skipped; koverVerifyDebug, lintDebug and assembleDebug pass. `CanvasDensityTest` fails 3 of its 5 tests when `canvasDensity` returns the system density. No test covers `ImmichTvTheme` applying it (no Robolectric or instrumented tests here); that is for the TV.
 - Outstanding: no unticked tasks. Not yet seen on the TV: the new screens and Setup at the new density, for self-verification. tv-material parts with built-in dp sizes now scale too and may look small next to the canvas's values. The keyed ViewModels for each opened album and album grid stay in the activity's store for the session.
 - Contradicted the plan: the TV's screen is 960×540 dp (1920×1080 px at density 2.0), but the manual, the checklist and the code read canvas px as dp, so everything drew at twice its size. Decided (user, on the issue): option 1, one app-wide change in the theme, added as checkpoint 9. Rejected: the same fix as its own ticket, and halving every value and rewriting the manual and canvas in 960×540 dp.
+
+## Review
+
+- Fixed:
+  - Album dates read a month early west of UTC: Immich sends the local day as midnight UTC (spec: "UTC representation of (local)"; all 30 live values are midnight), and the summary converted it to the device's zone, so 1 August showed as July in New York. `Album.startDate`/`endDate` are now `LocalDate`s, read in `data/`; the v3.3.5 fixture now sends midnight as the real server does.
+  - After connecting to another server or key in Settings, the Albums tab, album screens and grids still showed what they had loaded from the old one, because their ViewModels live as long as the activity. They are now keyed by `AppViewModel.connection`, which goes up on each connect.
+  - After a filter or sort change the grid stayed scrolled to wherever its first album landed, hiding the albums above it. A new list now starts from the top (`AlbumGrid`). No test: this is Compose scroll behaviour and the project has no Compose UI tests, so self-verification must check it on the TV.
+- Raised: https://github.com/YasarMahomedAbbas/immich-tv/issues/18 (albums and album screens never refresh once loaded)
+- For self-verification on the TV (not provable from the code):
+  - The album screen adds up to about 1095 of 1080 canvas px, so the strip's tiles and their focus outline may be cut at the bottom.
+  - D-pad Down from the last row of a month, when the next month is still non-focusable skeleton tiles: it must move on to the next month, at worst after a second press.
+- API: `GET /server/version`, `/users/me`, `/albums`, `/albums/{id}`, `/timeline/buckets`, `/timeline/bucket` and `/assets/{id}/thumbnail?size=preview` match the v3.3.5 spec (the version the server runs) for method, path, parameters, required response fields and the permissions named. Live `/albums` and `/timeline/buckets` responses match the fixtures' shape. `/albums/{id}` and `/timeline/bucket` were checked against the spec only; the live check of them is self-verification's.
+- Layers: clean, with one note left as the plan approved it: `strings.xml` names Immich's permission names (`album.read`, `asset.read`, `asset.view`) and the v1.133 floor in user-facing messages, so another photo server would need those strings changed too.

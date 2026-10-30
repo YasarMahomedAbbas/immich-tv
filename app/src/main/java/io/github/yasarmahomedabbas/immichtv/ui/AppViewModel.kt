@@ -12,6 +12,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.server.Session
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The top menu's tabs, in the order it shows them. */
@@ -42,6 +43,14 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
     private val _screen = MutableStateFlow<AppScreen>(AppScreen.Loading)
     val screen: StateFlow<AppScreen> = _screen.asStateFlow()
 
+    private val _connection = MutableStateFlow(0)
+
+    /**
+     * Goes up each time Setup connects. Screens' ViewModels are kept for the whole activity, so
+     * they are keyed by this: what they loaded from one server or key is gone after a change.
+     */
+    val connection: StateFlow<Int> = _connection.asStateFlow()
+
     init {
         viewModelScope.launch {
             _screen.value = if (getSession() == null) AppScreen.Setup(firstRun = true, current = null) else HOME
@@ -68,6 +77,7 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
     }
 
     fun connected() {
+        _connection.update { it + 1 }
         _screen.value = HOME
     }
 

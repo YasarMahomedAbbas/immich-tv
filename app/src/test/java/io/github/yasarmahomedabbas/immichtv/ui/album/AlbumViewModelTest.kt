@@ -25,8 +25,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.time.Instant
-import java.time.ZoneId
+import java.time.LocalDate
 import java.util.Locale
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -105,7 +104,7 @@ class AlbumViewModelTest {
     }
 
     private fun summary(photos: Int, videos: Int, start: String?, end: String?) =
-        albumSummary(photos, videos, start?.let(Instant::parse), end?.let(Instant::parse), ZoneId.of("Europe/Amsterdam"), Locale.ENGLISH)
+        albumSummary(photos, videos, start?.let { LocalDate.parse(it.take(10)) }, end?.let { LocalDate.parse(it.take(10)) }, Locale.ENGLISH)
 
     @Test
     fun `summary with photos, videos and a range in one year`() {
@@ -128,12 +127,6 @@ class AlbumViewModelTest {
             "3 photos · December 2024 – January 2025",
             summary(3, 0, "2024-12-30T10:00:00Z", "2025-01-02T10:00:00Z"),
         )
-    }
-
-    @Test
-    fun `summary reads dates in the device's zone`() {
-        // 23:30 UTC on 31 May is already June in Amsterdam.
-        assertEquals("2 photos · June 2025", summary(2, 0, "2025-05-31T23:30:00Z", "2025-06-02T10:00:00Z"))
     }
 
     @Test

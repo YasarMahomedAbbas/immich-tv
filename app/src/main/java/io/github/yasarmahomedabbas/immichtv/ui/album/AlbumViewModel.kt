@@ -19,9 +19,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
-import java.time.Instant
+import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -92,28 +91,27 @@ class AlbumViewModel(
 
 /**
  * "214 photos · 12 videos · June – August 2025": the parts that are zero or unknown are left
- * out; the dates are months in [zone], with the year once when both ends share it.
+ * out; the dates are months, with the year once when both ends share it.
  */
 internal fun albumSummary(
     photos: Int,
     videos: Int,
-    start: Instant?,
-    end: Instant?,
-    zone: ZoneId = ZoneId.systemDefault(),
+    start: LocalDate?,
+    end: LocalDate?,
     locale: Locale = Locale.getDefault(),
 ): String {
     val number = NumberFormat.getIntegerInstance(locale)
     val parts = buildList {
         if (photos > 0) add("${number.format(photos)} ${if (photos == 1) "photo" else "photos"}")
         if (videos > 0) add("${number.format(videos)} ${if (videos == 1) "video" else "videos"}")
-        dateRange(start, end, zone, locale)?.let(::add)
+        dateRange(start, end, locale)?.let(::add)
     }
     return parts.joinToString(" · ")
 }
 
-private fun dateRange(start: Instant?, end: Instant?, zone: ZoneId, locale: Locale): String? {
-    val a = (start ?: end)?.let { YearMonth.from(it.atZone(zone)) } ?: return null
-    val b = (end ?: start)?.let { YearMonth.from(it.atZone(zone)) } ?: return null
+private fun dateRange(start: LocalDate?, end: LocalDate?, locale: Locale): String? {
+    val a = (start ?: end)?.let(YearMonth::from) ?: return null
+    val b = (end ?: start)?.let(YearMonth::from) ?: return null
     val first = minOf(a, b)
     val last = maxOf(a, b)
     val monthYear = DateTimeFormatter.ofPattern("MMMM yyyy", locale)

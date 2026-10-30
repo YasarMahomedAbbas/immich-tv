@@ -19,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -136,6 +138,15 @@ private fun AlbumGrid(albums: List<Album>, focused: AlbumId?, onFocused: (AlbumI
     LaunchedEffect(Unit) {
         withFrameNanos { }
         runCatching { targetFocus.requestFocus() }
+    }
+    // A lazy grid follows its first item's key, so a new filter or sort would leave it scrolled to
+    // wherever that album landed. A new list starts from the top.
+    var shown by remember { mutableStateOf(albums) }
+    LaunchedEffect(albums) {
+        if (albums != shown) {
+            shown = albums
+            gridState.scrollToItem(0)
+        }
     }
     LazyVerticalGrid(
         columns = GridCells.Fixed(COLUMNS),

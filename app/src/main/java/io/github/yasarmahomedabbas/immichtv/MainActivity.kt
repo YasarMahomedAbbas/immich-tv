@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
             ImmichTvTheme {
                 val app: AppViewModel = viewModel(factory = AppViewModel.factory(container))
                 val screen by app.screen.collectAsState()
+                val connection by app.connection.collectAsState()
                 BackHandler { if (!app.back()) finish() }
                 when (val current = screen) {
                     AppScreen.Loading -> Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
@@ -52,11 +53,14 @@ class MainActivity : ComponentActivity() {
                         onOpenSettings = app::openSettings,
                     ) {
                         // Scoped to the activity, so the list and the focused album survive opening one.
-                        AlbumsScreen(viewModel(factory = AlbumsViewModel.factory(container)), onOpenAlbum = app::openAlbum)
+                        AlbumsScreen(
+                            viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
+                            onOpenAlbum = app::openAlbum,
+                        )
                     }
                     is AppScreen.Album -> AlbumScreen(
                         viewModel = viewModel(
-                            key = "album-${current.id.value}",
+                            key = "album-$connection-${current.id.value}",
                             factory = AlbumViewModel.factory(container, current.id),
                         ),
                         onBack = { app.back() },
@@ -66,7 +70,7 @@ class MainActivity : ComponentActivity() {
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
                         albumName = current.album.name,
                         viewModel = viewModel(
-                            key = "album-photos-${current.album.id.value}",
+                            key = "album-photos-$connection-${current.album.id.value}",
                             factory = PhotoGridViewModel.factory(container.albumTimeline(current.album)),
                         ),
                         onBack = { app.back() },

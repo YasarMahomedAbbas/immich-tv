@@ -117,6 +117,23 @@ class AppViewModelTest {
     }
 
     @Test
+    fun `connecting starts a new connection, going back from settings doesn't`() = runTest(dispatcher) {
+        val vm = viewModel(session)
+        advanceUntilIdle()
+        val before = vm.connection.value
+
+        vm.openSettings()
+        advanceUntilIdle()
+        vm.back()
+        assertEquals(before, vm.connection.value)
+
+        vm.openSettings()
+        advanceUntilIdle()
+        vm.connected()
+        assertTrue(vm.connection.value != before)
+    }
+
+    @Test
     fun `back on first-run setup and while loading is left to the system`() = runTest(dispatcher) {
         val loading = viewModel(null)
         assertFalse(loading.back())

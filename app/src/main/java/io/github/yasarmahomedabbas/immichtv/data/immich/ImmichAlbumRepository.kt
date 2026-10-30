@@ -27,6 +27,7 @@ import okhttp3.Request
 import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.YearMonth
 import java.time.format.DateTimeParseException
 import java.util.concurrent.ConcurrentHashMap
@@ -239,12 +240,18 @@ private data class AlbumDto(
             shared = shared,
             ownedByMe = owner == myId,
             updatedAt = if (lastAdded != null && lastAdded > updated) lastAdded else updated,
-            startDate = startDate?.let(Instant::parse),
-            endDate = endDate?.let(Instant::parse),
+            startDate = startDate?.let(::calendarDay),
+            endDate = endDate?.let(::calendarDay),
             newestFirst = order != "asc",
         )
     }
 }
+
+/**
+ * `startDate`/`endDate` are the "UTC representation of (local)" date: the day the photo was taken,
+ * written as midnight UTC. Read in the device's zone they would land on the day before, west of UTC.
+ */
+private fun calendarDay(value: String): LocalDate = Instant.parse(value).atOffset(ZoneOffset.UTC).toLocalDate()
 
 @Serializable
 private data class AlbumUserDto(val user: UserDto)

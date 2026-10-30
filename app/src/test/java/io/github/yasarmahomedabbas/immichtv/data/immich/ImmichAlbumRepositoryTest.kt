@@ -24,7 +24,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.Instant
+import java.time.LocalDate
 import java.time.YearMonth
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 class ImmichAlbumRepositoryTest {
@@ -61,8 +63,8 @@ class ImmichAlbumRepositoryTest {
             shared = true,
             ownedByMe = true,
             updatedAt = Instant.parse("2025-09-02T10:00:00Z"),
-            startDate = Instant.parse("2025-06-03T09:12:00Z"),
-            endDate = Instant.parse("2025-08-28T18:40:00Z"),
+            startDate = LocalDate.of(2025, 6, 3),
+            endDate = LocalDate.of(2025, 8, 28),
             newestFirst = true,
         ),
         Album(
@@ -88,6 +90,19 @@ class ImmichAlbumRepositoryTest {
     fun `a v2_0_0 albums body maps to the same albums, the owner read from owner id`() = runTest {
         routes["/api/albums"] = MockResponse().setBody(ALBUMS_V2_0_0)
         assertEquals(ServerResult.Ok(expectedAlbums), repository.albums())
+    }
+
+    @Test
+    fun `an album's dates stay the days the server says, west of UTC too`() = runTest {
+        val zone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
+        try {
+            routes["/api/albums"] = MockResponse().setBody(ALBUMS_V3_3_5.replace("2025-06-03T00:00:00.000Z", "2025-08-01T00:00:00.000Z"))
+            val first = (repository.albums() as ServerResult.Ok).value.first()
+            assertEquals(LocalDate.of(2025, 8, 1), first.startDate)
+        } finally {
+            TimeZone.setDefault(zone)
+        }
     }
 
     @Test
@@ -333,14 +348,14 @@ class ImmichAlbumRepositoryTest {
                 "contributorCounts": [],
                 "createdAt": "2025-06-01T08:00:00.000Z",
                 "description": "",
-                "endDate": "2025-08-28T18:40:00.000Z",
+                "endDate": "2025-08-28T00:00:00.000Z",
                 "hasSharedLink": false,
                 "id": "$SUMMER",
                 "isActivityEnabled": true,
                 "lastModifiedAssetTimestamp": "2025-09-02T10:00:00.000Z",
                 "order": "desc",
                 "shared": true,
-                "startDate": "2025-06-03T09:12:00.000Z",
+                "startDate": "2025-06-03T00:00:00.000Z",
                 "updatedAt": "2025-08-30T10:00:00.000Z"
               },
               {

@@ -1,6 +1,7 @@
 package io.github.yasarmahomedabbas.immichtv.domain.albums
 
 import java.time.Instant
+import java.time.LocalDate
 
 @JvmInline
 value class AlbumId(val value: String)
@@ -21,7 +22,8 @@ data class Preview(val photo: PhotoId)
  * @property cover the photo shown for it, or null when the album has none.
  * @property ownedByMe false when someone else shared it with the user.
  * @property updatedAt when it last changed, its contents included.
- * @property startDate the oldest item's date; null for an empty album.
+ * @property startDate the calendar day of the oldest item, where it was taken; null for an empty album.
+ * @property endDate the calendar day of the newest item, likewise.
  * @property newestFirst the order the album is set to show its items in.
  */
 data class Album(
@@ -32,8 +34,8 @@ data class Album(
     val shared: Boolean,
     val ownedByMe: Boolean,
     val updatedAt: Instant,
-    val startDate: Instant?,
-    val endDate: Instant?,
+    val startDate: LocalDate?,
+    val endDate: LocalDate?,
     val newestFirst: Boolean,
 )
 
