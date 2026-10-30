@@ -51,3 +51,33 @@ Branch: `feat/10-immich-screensaver`
 - Skipped: Compose owners in a `DreamService`, the narrowed Kover patterns, `ScreensaverShow`'s fixed values: each is stated where the code is, by a comment or KDoc. `CLAUDE.md`'s one-line description of the app lacks the screensaver: it isn't a list a session relies on, and every session would pay for the line. Screensaver setting as a TV rule exception (any key wakes rather than Back): in the manual, where screen work looks.
 - Stale, fixed separately: README.md:Architecture — doc said every screen showing server data calls `RefreshOnStart`, code shows the slideshow never has (a4bbd1f).
 - Raised, not changed (code, not docs): `SettingsViewModel` loads once per connection and only the picker reloads, so the Settings screen can show an old album name or "Album no longer there" until the picker is opened, and a failed first read stays "An album" until then. `RefreshOnStart(viewModel::load)` would meet the rule, but `load()` isn't a quiet refresh after a failure (it shows the skeleton). The README records the behaviour as it is.
+
+## Self verification
+
+Result: passed
+
+- CI build: not run here, per today's speed note: the full command runs once, in `raise-pr`. `assembleDebug` passed, which built the APK that was tested. Kover and lint still haven't seen the branch.
+- Server: Immich v3.3.5
+- TV: installed on the Chromecast (Android 14). Drove the idle start, the library show, Settings, the picker, the album show, waking with a key, the clock fallback and memory, in three lock holds of under 10 minutes each, inside the 15:30 CET window.
+- Verified:
+  - `GET /albums` 200 (15 albums, `id` and `albumName` present); `GET /albums/{id}` 200; `GET /timeline/buckets` and `/timeline/bucket` 200, with the exact query the code builds, for the library and for an album. Every parameter is in the v3.3.5 spec. A missing album answers 400, and the app treats it as a failure.
+  - Library size: 10 buckets, 555 assets, 511 of them photos, so the 500 cap applies. The cap itself rests on `LoadScreensaverTest`: the screen shows no count.
+  - `screensaver_components` accepts our service, and the system starts it **on idle**: `dumpsys dreams` named `ScreensaverService`, `mWakefulness=Dreaming`. This closes both open risks from Planning (a third-party dream on this build, Compose with hand-made owners).
+  - Library show: photos advance, with the date, clock and progress bar in place. Dates from different years appeared.
+  - Settings: Back label correct, focus enters on Server, the amber outline is visible, Right reaches Screensaver. OK on Server opens setup and Back returns.
+  - Picker: focus enters on the selected row, "Selected" shows at the right, Down moves the outline, nothing is cut off beyond the scrolling list. OK saves `album:<id>` and returns to Settings with focus on Screensaver, which then names the album.
+  - Album show: every photo seen carries the album's date (22 July 2024).
+  - Wake: a key ends the dream and returns to the Settings screen it left, without acting on the focused button.
+  - Fallback, with a missing album id stored through `run-as`: the plain clock on the dark ground, moved between 14:13 (lower right) and 14:14 (upper middle). Settings shows "Album no longer there".
+  - Memory over about 50 photos (7 minutes at 8 s each): total PSS flat at 159, 165, 157, 157 MB, with no process death. No fatal errors in logcat.
+- Failed: none
+- Not self-verifiable: the clock's way back to the photos when the server returns, and a truly unreachable server, weren't driven: the server is the household's and stays up. `retryWhileStopped` covers the return in `SlideshowViewModelTest`, and a server failure reaches the same clock as the missing album.
+
+Notes for whoever tests this next:
+
+- Neither start in the plan works here: this build has no `Somnambulator`, and `cmd dreams` needs root. The check used the real idle path instead, shortening `system screen_off_timeout` from 600000 to 20000 for the test. That goes beyond the setting the plan named; it was restored with the others.
+- `com.android.tv.settings/.device.display.daydream.DaydreamVoiceAction` doesn't start a dream here; it brings the Settings task to the front.
+- `UndimDetectorWakeLock` (system) holds the screen on for 10 minutes when a key arrives just after a dim, so the TV won't idle. A `SLEEP` then `WAKEUP` clears it.
+- Pipelines sharing the TV overwrite each other's debug build: a build from another branch was on the TV at the second hold, and the system logged our dream as "does not exist" and fell back to Google's Backdrop. Reinstall at the start of each hold.
+
+Restored after each hold: `screensaver_components` to `com.google.android.apps.tv.dreamx/.service.Backdrop`, `screen_off_timeout` to 600000, the stored `screensaver.source` removed, the TV on the launcher. Screenshots stayed in the scratchpad.
