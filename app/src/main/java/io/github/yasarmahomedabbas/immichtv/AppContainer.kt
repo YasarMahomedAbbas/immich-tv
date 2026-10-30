@@ -17,6 +17,7 @@ import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSlideshowSetting
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbums
+import io.github.yasarmahomedabbas.immichtv.domain.home.LoadHome
 import io.github.yasarmahomedabbas.immichtv.domain.photos.LibraryTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.server.ConnectToServer
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
@@ -50,6 +51,7 @@ class AppContainer(context: Context) {
     val loadLibrarySlideshow = LoadLibrarySlideshow(library)
 
     private val memories = ImmichMemoryRepository(http, sessions)
+    val loadHome = LoadHome(albums, memories, library)
 
     private val slideshowSettings = StoredSlideshowSettings(
         SharedPreferencesStorage(context.getSharedPreferences("slideshow", Context.MODE_PRIVATE)),

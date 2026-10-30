@@ -80,7 +80,7 @@ Tests: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/data/immich/Immic
 
 Goal: a tested use case and ViewModel hold everything the Home screen renders.
 
-### [ ] 2.1 — Use case
+### [x] 2.1 — Use case
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/home/LoadHome.kt`
 ```
@@ -93,12 +93,12 @@ class LoadHome(albums: AlbumRepository, memories: MemoryRepository, library: Lib
 ```
 `invoke()`: reads all three concurrently. Albums or recent failing returns that failure. A failed memories call counts as no memory, whatever the problem. Each memory keeps its non-video slides; those left empty are dropped; the one with the latest `takenOn` is the hero, with `yearsAgo = today().year - takenOn.year`. Otherwise the hero is the first album by `filterAndSort(All, RecentlyUpdated)` with `itemCount > 0`, or null. `albums` is that sort, first `ALBUM_ROW = 10`. `recent` is `library.recent(RECENT_ROW = 20)`. Constants in the companion.
 
-### [ ] 2.2 — ViewModel
+### [x] 2.2 — ViewModel
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/home/HomeViewModel.kt`, mirroring `AlbumsViewModel`.
-`sealed interface HomeLoad { Loading; Loaded(page: HomePage); Failed(problem) }`. `sealed interface HomeFocus { Play; ViewPhotos; SeeAll; AlbumCard(id: AlbumId); Recent(id: PhotoId) }`. `data class HomeState(load, focused: HomeFocus = HomeFocus.Play)`. `onFocused`, `retry`, `refresh` (no skeleton; failure leaves the screen). `suspend fun heroAlbumSettings(album: Album): SlideshowSettings` through `GetSlideshowSettings`. Factory from `AppContainer`, which gains `val loadHome`.
+`sealed interface HomeLoad { Loading; Loaded(page: HomePage); Failed(problem) }`. `sealed interface HomeFocus { Play; ViewPhotos; SeeAll; AlbumCard(id: AlbumId); Recent(id: PhotoId) }`. `data class HomeState(load, focused: HomeFocus = HomeFocus.Play)`. `onFocused`, `retry`, `refresh` (no skeleton; failure leaves the screen). `suspend fun heroAlbumSettings(album: Album): SlideshowSettings` through `GetSlideshowSettings`. Factory from `AppContainer`, which gains `val loadHome`. `HomePage.focusTarget(focused)` says where focus goes: `focused` if it is still on the page, else Play, else the first album or recent item, else null.
 
-### [ ] 2.3 — Tests
+### [x] 2.3 — Tests
 
 Files: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/domain/home/LoadHomeTest.kt`, `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/home/HomeViewModelTest.kt`, with a `FakeMemoryRepository` in `domain/home/Fakes.kt`. See the test plan.
 
