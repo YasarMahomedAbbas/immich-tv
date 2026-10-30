@@ -164,6 +164,55 @@ class ImmichLibraryRepositoryTest {
         assertEquals(ServerResult.Ok(emptyList<Slide>()), repository.slides())
     }
 
+    @Test
+    fun `recent stops at the newest month when that holds enough`() = runTest {
+        val recent = repository.recent(2)
+
+        assertEquals(ServerResult.Ok(listOf(Photo(PhotoId("a"), false), Photo(PhotoId("v"), true))), recent)
+        val requests = requests()
+        assertEquals(2, requests.size)
+        requests.forEach(::assertLibraryRequest)
+        assertEquals("2025-08-01", requests.last().requestUrl!!.queryParameter("timeBucket"))
+    }
+
+    @Test
+    fun `recent is cut to the limit`() = runTest {
+        assertEquals(ServerResult.Ok(listOf(Photo(PhotoId("a"), false))), repository.recent(1))
+    }
+
+    @Test
+    fun `recent goes on to older months until it has enough`() = runTest {
+        val recent = repository.recent(20)
+
+        assertEquals(
+            ServerResult.Ok(listOf(Photo(PhotoId("a"), false), Photo(PhotoId("v"), true), Photo(PhotoId("b"), false))),
+            recent,
+        )
+        assertEquals(3, requests().size)
+    }
+
+    @Test
+    fun `recent from an empty library is nothing`() = runTest {
+        buckets = MockResponse().setBody("[]")
+        assertEquals(ServerResult.Ok(emptyList<Photo>()), repository.recent(20))
+    }
+
+    @Test
+    fun `recent fails when the months or a month it needs fail`() = runTest {
+        months["2025-07-01"] = MockResponse().setResponseCode(500)
+        assertEquals(ServerResult.Failed(Problem.Unreachable), repository.recent(20))
+
+        buckets = MockResponse().setResponseCode(403)
+        assertEquals(ServerResult.Failed(Problem.KeyLacksPermission), repository.recent(20))
+    }
+
+    @Test
+    fun `recent with no session is not signed in, with no request made`() = runTest {
+        sessions.session = null
+        assertEquals(ServerResult.Failed(Problem.NotSignedIn), repository.recent(20))
+        assertEquals(0, server.requestCount)
+    }
+
     private companion object {
         const val KEY = "secret-key"
         const val AUGUST = """{"id":["a","v"],"isImage":[true,false],"ratio":[0.75,null],

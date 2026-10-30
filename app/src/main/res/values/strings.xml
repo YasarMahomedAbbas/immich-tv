@@ -7,7 +7,6 @@
     <string name="tab_albums">Albums</string>
     <string name="tab_photos">Photos</string>
     <string name="tab_search">Search</string>
-    <string name="coming_soon">Coming soon</string>
 
     <string name="failed_title">Couldn\'t load this</string>
     <string name="try_again">Try again</string>
@@ -22,6 +21,19 @@
         <item quantity="other">%1$s photos</item>
     </plurals>
     <string name="album_shared">Shared</string>
+    <string name="home_label_memory">MEMORIES</string>
+    <string name="home_label_album">RECENTLY UPDATED</string>
+    <plurals name="home_years_ago">
+        <item quantity="one">One year ago today</item>
+        <item quantity="other">%1$d years ago today</item>
+    </plurals>
+    <string name="home_play_slideshow">Play slideshow</string>
+    <string name="home_view_photos">View photos</string>
+    <string name="home_albums">Albums</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_recent">Recently added</string>
+    <string name="home_empty_title">Nothing here yet</string>
+    <string name="home_empty_hint">Add photos in Immich and they show up here.</string>
     <string name="albums_filter_all">All albums</string>
     <string name="albums_filter_mine">My albums</string>
     <string name="albums_filter_shared">Shared with me</string>
@@ -37,6 +49,7 @@
     <string name="albums_show_all">Show all albums</string>
 
     <string name="album_back">Albums</string>
+    <string name="album_back_home">Home</string>
     <string name="album_start_slideshow">Start slideshow</string>
     <string name="album_browse_photos">Browse photos</string>
     <string name="album_settings_heading">SLIDESHOW SETTINGS</string>
@@ -113,6 +126,9 @@
     <string name="slideshow_back_photos">‹ Photos</string>
     <string name="slideshow_empty_hint_library">Your library only has videos, or nothing yet.</string>
     <string name="slideshow_empty_action_library">Back to photos</string>
+    <string name="slideshow_back_home">‹ Home</string>
+    <string name="slideshow_empty_hint_home">There are only videos here, or nothing yet.</string>
+    <string name="slideshow_empty_action_home">Back to home</string>
     <string name="slideshow_empty_hint_search">These results only have videos.</string>
     <string name="slideshow_empty_action_search">Back to search</string>
 </resources>

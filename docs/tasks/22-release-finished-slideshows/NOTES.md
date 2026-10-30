@@ -54,3 +54,9 @@ Result: passed
   - Memory release on the device: `dumpsys meminfo` is indicative only and shows no release by itself (Java heap 10.8 MB at launch, 15.4 MB after all the rounds, with albums, the Photos grid and search results also loaded). The proof of release is the unit test, as planned.
   - Leaving a show other than by Back: only Back leaves a show on the TV, so this rests on the unit test.
 - Plan correction: this TV's night mode was already `yes`, so the test plan's `night yes` recreates nothing. The check flipped to `no` and back to `yes`, leaving it as found.
+
+## Raise PR
+
+- Merged `origin/main` after verification. It brought #9's home screen, including a fourth kind of show, the memory slideshow, still on the per-start key. It now takes its ViewModel from `app.shows` as well, and `leaving a show by Back clears it` covers it. Every other `open*` from main goes through `moveTo`.
+- CI build: the full command passed on the merged tree: 449 tests, 0 failed; `koverVerifyDebug` passed at its 80% bound; lint 0 errors, 30 warnings; `assembleDebug` passed.
+- Not re-verified on the TV: the merged tree, including the memory show. The on-TV checks in Self verification ran before the merge. The memory show's release rests on the unit test, and that it uses `app.shows` was checked by reading `MainActivity`.

@@ -1,5 +1,6 @@
 package io.github.yasarmahomedabbas.immichtv.ui.album
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -57,6 +58,7 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.RefreshOnStart
 import io.github.yasarmahomedabbas.immichtv.ui.components.SecondaryButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SettingButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
+import io.github.yasarmahomedabbas.immichtv.ui.CameFrom
 import io.github.yasarmahomedabbas.immichtv.ui.components.TileStyle
 import io.github.yasarmahomedabbas.immichtv.ui.components.lostFocus
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
@@ -99,6 +101,13 @@ internal val AlbumContentBottom = ScreenTop + BackLinkHeight + SectionGap + Mosa
 /** How wide each setting is, in [AlbumInfoWidth]. */
 internal val SettingWidth = (AlbumInfoWidth - SettingGap * (SettingsPerRow - 1)) / SettingsPerRow
 
+/** The back link names where Back goes, as `AppViewModel.back` decides it. */
+@StringRes
+internal fun albumBackLabel(cameFrom: CameFrom): Int = when (cameFrom) {
+    CameFrom.HomeRow, CameFrom.HomeHero -> R.string.album_back_home
+    CameFrom.AlbumsTab -> R.string.album_back
+}
+
 /**
  * One album: the cover mosaic, its title and counts, Start slideshow (focused when it opens),
  * Browse photos, the slideshow settings and a strip of its first items.
@@ -111,12 +120,14 @@ fun AlbumScreen(
     onBrowsePhotos: (Album) -> Unit,
     onStartSlideshow: (Album, SlideshowSettings) -> Unit,
     focusBrowse: Boolean = false,
+    cameFrom: CameFrom = CameFrom.AlbumsTab,
 ) {
     val state by viewModel.state.collectAsState()
     RefreshOnStart(viewModel::refresh)
     AlbumContent(
         state = state,
         focusBrowse = focusBrowse,
+        backLabel = albumBackLabel(cameFrom),
         onBack = onBack,
         onStartSlideshow = onStartSlideshow,
         onBrowsePhotos = onBrowsePhotos,
@@ -132,6 +143,7 @@ fun AlbumScreen(
 private fun AlbumContent(
     state: AlbumState,
     focusBrowse: Boolean,
+    @StringRes backLabel: Int,
     onBack: () -> Unit,
     onStartSlideshow: (Album, SlideshowSettings) -> Unit,
     onBrowsePhotos: (Album) -> Unit,
@@ -149,7 +161,7 @@ private fun AlbumContent(
             .padding(top = ScreenTop, start = ScreenSide, end = ScreenSide),
         verticalArrangement = Arrangement.spacedBy(SectionGap),
     ) {
-        BackLink(stringResource(R.string.album_back), onClick = onBack, modifier = Modifier.focusRequester(backFocus))
+        BackLink(stringResource(backLabel), onClick = onBack, modifier = Modifier.focusRequester(backFocus))
         when (val load = state.load) {
             AlbumLoad.Loading -> {
                 // Something has to hold focus while it loads, so the remote works at once.
@@ -383,7 +395,7 @@ private val previewPage = AlbumPage(
 
 @Composable
 private fun AlbumPreview(state: AlbumState) {
-    ImmichTvTheme { AlbumContent(state, false, {}, { _, _ -> }, {}, {}, {}, {}, {}, {}) }
+    ImmichTvTheme { AlbumContent(state, false, R.string.album_back, {}, { _, _ -> }, {}, {}, {}, {}, {}, {}) }
 }
 
 @Preview(device = Devices.TV_1080p)
