@@ -46,3 +46,24 @@ Branch: `fix/28-keep-menu-focus-on-arrival`
 - Skipped: the Top menu rule and `mayTakeFocus` — self-review already put the rule in `docs/design/README.md`; the checked claims there and the `MainScreen` KDoc hold.
 - Skipped: `CLAUDE.md` — the jar pinning only matters on a Robolectric bump, not on every ticket, and its build and test commands are unchanged.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: not run here, per the user's note on the issue (it runs once, in `raise-pr`). No test or coverage figures from this stage. Plain `assembleDebug` built the APK from `cdb65a0`: `syncRobolectricJars` hangs only off `Test` tasks, so the Central 429 doesn't block the debug APK. No code changed in this stage.
+- Server: not run, not in scope. The diff touches nothing under `data/`, and no Immich call changed.
+- TV: installed on the Chromecast and driven by D-pad, read from screenshots, within the window (until 15:30 CET). Lock taken by a successful `mkdir` each time and held 14:15:04-14:22:40, 14:31:22-14:32:18, 14:32:38-14:33:46, all under 10 minutes; the build was reinstalled after each gap, since other pipelines share the TV.
+- Verified, from a cold start, then Right twice and OK on Photos:
+  - (a) Press nothing: the pill keeps focus through the skeleton (still loading 5 s in), then the first tile takes focus on arrival.
+  - (b) Right during the skeleton: Search is focused on the skeleton and still focused after the photos arrive. This is the bug's own case.
+  - Extra menu case, reached by accident: Left twice during the skeleton, focus stays on the Home pill through the arrival.
+  - (c) Route found: Down lands on tile 2 (the tile under the Photos pill), Left to tile 1, Left to the rail. Focus on the rail's March during the skeleton, and still there after arrival.
+  - (d) Down then Right during the skeleton: tile 3 focused on the skeleton and still focused after arrival, with the month's photos in place.
+  - (e) Open tile 2 from a loaded month, then Back: the grid returns with tile 2 focused.
+  - (f) Photos loaded, Albums, then back to Photos: the first tile takes focus. The pill's answer does not arrive late on the real device.
+  - No `AndroidRuntime` or app error lines in logcat after any run.
+- Failed: none.
+- Not self-verifiable: (g) Try again on a failed first month: not exercised on the TV, because no failure could be caught without making the real server fail. To check by hand: lose the network while Photos loads its first month, restore it, press Try again; the first tile should take focus. Unit coverage is `PhotoGridFocusTest`'s Try again case, run in implement-plan and self-review, not in this stage.
+- Seen, out of scope: (1) the Albums grid takes focus when its albums arrive, even with the pill focused and keys being pressed: a Right and OK meant for the menu opened an album. This reproduces #33 on the device, where it was only read in the code. (2) Once, the full-screen photo was still showing 2 s after Back; on the next try it was back within the 6 s waited. Not timed further. (3) In run (f)'s first attempts the route went astray in the Albums toolbar and selected "Shared with me"; that filter is held in the ViewModel only, not stored, and later cold starts showed All albums again.
+- The TV was found showing the app and left on the launcher with HOME, as this stage says to. The debug build of this branch stays installed. Screenshots stay in the scratchpad.
