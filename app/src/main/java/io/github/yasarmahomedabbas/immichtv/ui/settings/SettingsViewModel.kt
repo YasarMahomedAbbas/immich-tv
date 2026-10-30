@@ -62,6 +62,10 @@ data class SettingsState(
             val album = source as? ScreensaverSource.Album ?: return 0
             return choices.indexOfFirst { it.id == album.id } + 1
         }
+
+    /** The row to put focus on; null while the failed card holds it with its Try again. */
+    val enterRow: Int?
+        get() = if (albums is AlbumsLoad.Failed) null else selectedRow
 }
 
 class SettingsViewModel(

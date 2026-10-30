@@ -78,9 +78,12 @@ private fun ScreensaverPickerContent(
     val listState = rememberLazyListState()
     val enterFocus = remember { FocusRequester() }
     val selectedRow = state.selectedRow
-    // Again once the albums load, when the selected album's row first exists.
-    LaunchedEffect(selectedRow) {
-        listState.scrollToItem(selectedRow)
+    val enterRow = state.enterRow
+    // Again once the albums load, when the selected album's row first exists, and when Try again
+    // takes away the button that had focus.
+    LaunchedEffect(enterRow) {
+        if (enterRow == null) return@LaunchedEffect
+        listState.scrollToItem(enterRow)
         withFrameNanos { }
         runCatching { enterFocus.requestFocus() }
     }

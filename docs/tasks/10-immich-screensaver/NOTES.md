@@ -34,3 +34,11 @@ Branch: `feat/10-immich-screensaver`
   - `"*ScreensaverScreen*"` wasn't needed in Kover: `"*ScreenKt*"` already covers it, so only `"*.ScreensaverService*"` is named. The checklist says so.
   - The plan named three values for the Screensaver setting; a fourth, "An album", shows while the albums are loading or failed, because calling the album gone would be untrue before the list is known.
   - Reading the albums again on entering the picker keeps a list already showing, also if that read fails, so focus isn't lost and no skeleton flashes. The skeleton and failed card are for when no list has loaded.
+
+## Review
+
+- Fixed: picker lost visible focus after Try again. With the albums failed and the random row selected (or a stored album that's gone), pressing Try again removed the focused button, and the entry-focus effect didn't run again because `selectedRow` stayed 0, so no row showed the amber outline until a key was pressed. `SettingsState.enterRow` (`ui/settings/SettingsViewModel.kt`) now changes from null to the row, and the same change stops the entry focus taking over from Try again when the card first appears. Test: `SettingsViewModelTest`.
+- Raised: none
+- API: no call added or changed. `GET /albums`, `/albums/{id}`, `/timeline/buckets`, `/timeline/bucket` read against the v3.3.5 spec (the server's version): the query parameters the repositories send are all there; matches docs and schema.
+- Layers: clean
+- Tests: `SettingsViewModelTest` only, per today's speed note; the full CI command runs in `raise-pr`.

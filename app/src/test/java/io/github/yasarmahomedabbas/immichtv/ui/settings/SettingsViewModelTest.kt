@@ -144,6 +144,15 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `try again taking its button away asks for focus on a row, also with the random row selected`() {
+        // Failed to Loading has to change enterRow, or the screen's effect doesn't run and nothing has focus.
+        assertNull(SettingsState(albums = AlbumsLoad.Failed(Problem.Unreachable)).enterRow)
+        assertEquals(0, SettingsState(albums = AlbumsLoad.Loading).enterRow)
+        assertEquals(0, SettingsState(albums = AlbumsLoad.Loaded(listOf(summer))).enterRow)
+        assertEquals(1, SettingsState(ScreensaverSource.Album(summer.id), albums = AlbumsLoad.Loaded(listOf(summer))).enterRow)
+    }
+
+    @Test
     fun `focus enters on the selected row, or the first if it's gone`() {
         val loaded = AlbumsLoad.Loaded(listOf(summer, alps))
         assertEquals(0, SettingsState(albums = loaded).selectedRow)
