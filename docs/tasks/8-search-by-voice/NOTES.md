@@ -85,7 +85,7 @@ Result: passed
 
 - CI build (with the hint): 306 tests passed, 0 failed, 0 skipped; line coverage 88.8% (88.7629%, minimum 80%); `koverVerifyDebug` and `lintDebug` pass; APK built.
 - Server: not re-run. Nothing in `data/` changed since the earlier run, which checked Immich v3.3.5. The searches below did reach the real server through the app.
-- TV: this build (the hint commit's tree) installed on the Chromecast and driven with adb keys, 12:49 to 12:55 CET, under the lock (taken by a successful `mkdir` at 12:49:07, released 12:55:25).
+- TV: this build (the hint commit's tree) installed on the Chromecast and driven with adb keys in two holds of the lock, each taken by a successful `mkdir`: 12:49:07 to 12:55:25 CET, and 13:08:58 to about 13:10 CET. Another pipeline used the TV between them, so the same APK was reinstalled for the second.
 
 ### The user's own results, not from this run
 
@@ -97,7 +97,7 @@ Reported by the user on the issue, tested on the TV on 2026-10-30, 12:26 to 12:3
 ### Observed on the TV in this run
 
 - **Hint:** shows beside the mic, one line, muted, vertically centred on the mic, nothing cut off. It stays put while focus moves.
-- **Fix 2 again, on this build:** RIGHT from the field put the amber-outlined focus on the mic; DOWN from the mic and from the field reached the chips.
+- **Fix 2 again, on this build:** RIGHT from the field put the amber-outlined focus on the mic; DOWN from the mic and from the field reached the chips. DOWN from a chip reached People (the Yasar circle), and UP from a chip back to the field, stepped one key at a time in the second hold with the outline visible each time.
 - **On-screen mic:** OK opens the system chooser, then Just once (read as the focused button from the UI tree before pressing) opens Google's speech prompt, listening ("Try saying something"). Back returned to the Search tab. Speech cannot be spoken over adb, so reaching the prompt is the whole check: no spoken result from this run.
 - **A chip searches:** "mountains" showed "100 best matches", focus on the first tile; "sunset" did the same.
 - **Typing and submitting:** OK on the field opened the keyboard (`mInputShown=true`). The text "castle" was sent with `adb input text`, not picked letter by letter; the keyboard's own Search key, reached with the D-pad, closed the keyboard and showed "castle", 100 best matches.
@@ -118,4 +118,5 @@ Reported by the user on the issue, tested on the TV on 2026-10-30, 12:26 to 12:3
 ### Noted, not changed
 
 - UP from the first tile goes to the People row above it, not to Play, as Play sits to the right. It is not a trap: UP from a tile under Play reaches Play. A small thing to try by hand.
-- The app was sent Home at the end, the HOME key sent just before the lock's release; the read straight after it still showed the app on top, likely the transition. The TV keeps this branch's debug build, which does not include what merged to main since (#6, #7); `raise-pr` merges those in, and that combination has not been on the TV.
+- RIGHT from the last person jumps up to a chip ("sunset"), as nothing lies further right. Focus stays visible and it is not a trap, but it may surprise; left as it is.
+- The TV was sent Home at the end of each hold; the launcher was read on top after the first. The TV keeps this branch's debug build, which does not include what merged to main since (#6, #7); `raise-pr` merges those in, and that combination has not been on the TV.
