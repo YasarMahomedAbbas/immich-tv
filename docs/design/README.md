@@ -78,5 +78,5 @@ A text field (`HouseTextField`) is `raised` with 18dp corners, an 18sp `mfg` lab
 
 ## Open decisions
 
-- OK on an album's Browse photos grid does nothing yet: opening a photo from there waits for its own ticket.
+- OK on an album's Browse photos grid does nothing yet: opening a photo from there waits for its own ticket (#23).
 - How the server address and API key are entered without typing them on the remote (a QR code from the phone is the likely answer).

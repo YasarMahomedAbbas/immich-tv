@@ -36,3 +36,14 @@ Branch: `feat/7-browse-photos-by-month`
 - Raised: https://github.com/YasarMahomedAbbas/immich-tv/issues/22 (finished slideshows stay in memory); https://github.com/YasarMahomedAbbas/immich-tv/issues/23 (OK on an album's grid, Q7.1).
 - API: `GET /api/timeline/buckets` and `GET /api/timeline/bucket` with `visibility=timeline`, `withStacked=true`, `order=desc`: match docs and schema in the specs at v1.133.0 and v3.3.5, and the live v3.3.5 server (every column as long as `id`; the extra `stack` column is ignored). `timeBucket` sent back as received. Header on every call, tested.
 - Layers: clean
+
+## Doc drift
+
+- Applied: README.md:features, Photos no longer "planned": what the tab shows and does, with what stays out, since it shows far fewer items than Albums and would otherwise look like a bug (rung 3).
+- Applied: README.md:features, the slideshow plays the library as well as an album (rung 3).
+- Applied: docs/design/README.md:Open decisions, the album grid's OK now names its ticket, #23 (rung 4).
+- Checked, holds: the manual's new Photos, Photo, Month rail and Key hint entries against `PhotosScreen.kt`, `MonthRail.kt`, `KeyHint.kt` and `PhotoViewerScreen.kt`; the README's ViewModel key and `RefreshOnStart` rules against `MainActivity.kt` and `PhotosScreen.kt`; the API key permissions: both timeline calls need `asset.read` in the v3.3.5 spec, and v1.133.0 declares no permission for them.
+- Skipped: `ImmichApi` as the shared path for Immich calls: both repositories use it and CLAUDE.md's `immichHttpClient()` rule still holds, one `rg` finds it.
+- Skipped: the grid and viewer sharing one ViewModel by key: a comment in `MainActivity.kt` says it at the call site.
+- Skipped: fixed library slideshow defaults and video handling in the viewer: already in the manual and in the code.
+- Stale, fixed separately: none
