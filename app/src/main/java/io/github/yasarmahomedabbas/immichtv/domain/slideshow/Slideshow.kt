@@ -47,6 +47,29 @@ class LoadSlideshow(private val repository: AlbumRepository, private val random:
 class LoadLibrarySlideshow(private val repository: LibraryRepository) {
     suspend operator fun invoke(from: PhotoId): ServerResult<Playlist> =
         repository.slides().map { all ->
-            Playlist(all, start = all.indexOfFirst { it.photo.id == from }.coerceAtLeast(0))
+            playlistFrom(all, all, from)
         }
+}
+
+/**
+ * What a slideshow of an album plays from a tile of its grid, beginning at [invoke]'s photo. It follows
+ * the grid's order, not the saved Order, as a show started from a tile carries on from where the grid is.
+ */
+class LoadSlideshowFromPhoto(private val repository: AlbumRepository) {
+    suspend operator fun invoke(album: Album, from: PhotoId, videos: VideoMode): ServerResult<Playlist> =
+        repository.slides(album).map { oldestFirst ->
+            val all = if (album.newestFirst) oldestFirst.reversed() else oldestFirst
+            playlistFrom(all, if (videos == VideoMode.Skip) all.withoutVideos() else all, from)
+        }
+}
+
+/**
+ * A show of [kept], which is [all] less what the show leaves out, both in play order. It begins at the
+ * first kept slide at or after [from] in [all]; with none after it, or [from] not in [all], at the first.
+ */
+internal fun playlistFrom(all: List<Slide>, kept: List<Slide>, from: PhotoId): Playlist {
+    val at = all.indexOfFirst { it.photo.id == from }
+    val keptIds = kept.mapTo(HashSet()) { it.photo.id }
+    val first = if (at < 0) null else all.drop(at).firstOrNull { it.photo.id in keptIds }
+    return Playlist(kept, start = first?.let { slide -> kept.indexOfFirst { it.photo.id == slide.photo.id } } ?: 0)
 }

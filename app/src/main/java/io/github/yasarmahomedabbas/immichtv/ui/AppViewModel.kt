@@ -1,6 +1,8 @@
 package io.github.yasarmahomedabbas.immichtv.ui
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -11,6 +13,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,8 +47,26 @@ sealed interface AppScreen {
     /** [focusBrowse]: coming Back from its photos, so focus goes to Browse photos. */
     data class Album(val id: AlbumId, val focusBrowse: Boolean = false, val cameFrom: CameFrom = CameFrom.AlbumsTab) : AppScreen
 
-    /** Browse photos: [album]'s photos by month. */
-    data class AlbumPhotos(val album: DomainAlbum, val cameFrom: CameFrom = CameFrom.AlbumsTab) : AppScreen
+    /**
+     * Browse photos: [album]'s photos by month. [returning]: coming Back from a photo or a show,
+     * so the grid goes to that tile; otherwise it starts at the top.
+     */
+    data class AlbumPhotos(
+        val album: DomainAlbum,
+        val cameFrom: CameFrom = CameFrom.AlbumsTab,
+        val returning: Boolean = false,
+    ) : AppScreen
+
+    /** One photo of [album] full-screen; which one is its grid's to say. */
+    data class AlbumPhotoViewer(val album: DomainAlbum, val cameFrom: CameFrom) : AppScreen
+
+    /** [album] playing from the photo [from] onward, in its grid's order, with [settings]. */
+    data class AlbumPhotoSlideshow(
+        val album: DomainAlbum,
+        val from: PhotoId,
+        val settings: SlideshowSettings,
+        val cameFrom: CameFrom,
+    ) : AppScreen
 
     /** [album] playing with [settings], as the album screen had them when it started. */
     data class Slideshow(
@@ -57,8 +78,14 @@ sealed interface AppScreen {
     /** Home's memory playing. */
     data class MemorySlideshow(val memory: Memory) : AppScreen
 
-    /** Home's memory as a grid under [title]. */
-    data class MemoryPhotos(val memory: Memory, val title: String) : AppScreen
+    /** Home's memory as a grid under [title]. [returning]: as for [AlbumPhotos]. */
+    data class MemoryPhotos(val memory: Memory, val title: String, val returning: Boolean = false) : AppScreen
+
+    /** One photo of [memory] full-screen; which one is its grid's to say. */
+    data class MemoryPhotoViewer(val memory: Memory, val title: String) : AppScreen
+
+    /** [memory] playing from the photo [from] onward. */
+    data class MemoryPhotoSlideshow(val memory: Memory, val title: String, val from: PhotoId) : AppScreen
 
     /** [slides], search results, playing at the default timing. */
     data class ResultsSlideshow(val slides: List<Slide>) : AppScreen
@@ -71,7 +98,10 @@ sealed interface AppScreen {
 }
 
 /** Chooses Setup or Home at launch and moves between screens; Back walks up toward Home. */
-class AppViewModel(private val getSession: GetSession) : ViewModel() {
+class AppViewModel(
+    private val getSession: GetSession,
+    private val getSlideshowSettings: GetSlideshowSettings,
+) : ViewModel() {
     private val _screen = MutableStateFlow<AppScreen>(AppScreen.Loading)
     val screen: StateFlow<AppScreen> = _screen.asStateFlow()
 
@@ -80,8 +110,19 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
     /**
      * Goes up each time Setup connects. Screens' ViewModels are kept for the whole activity, so
      * they are keyed by this: what they loaded from one server or key is gone after a change.
+     * Shows are the exception: they live in [shows], and don't need this key.
      */
     val connection: StateFlow<Int> = _connection.asStateFlow()
+
+    private val showStore = ViewModelStore()
+
+    /**
+     * Where a slideshow's ViewModel lives. What is here goes when the screen changes, so a show's
+     * slides don't stay and the next one starts fresh, and survives the activity being recreated.
+     */
+    val shows: ViewModelStoreOwner = object : ViewModelStoreOwner {
+        override val viewModelStore get() = showStore
+    }
 
     init {
         viewModelScope.launch {
@@ -90,51 +131,72 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
     }
 
     fun selectTab(tab: Tab) {
-        _screen.value = AppScreen.Main(tab)
+        moveTo(AppScreen.Main(tab))
     }
 
     fun openAlbum(id: AlbumId, cameFrom: CameFrom = CameFrom.AlbumsTab) {
-        _screen.value = AppScreen.Album(id, cameFrom = cameFrom)
+        moveTo(AppScreen.Album(id, cameFrom = cameFrom))
     }
 
     fun openAlbumPhotos(album: DomainAlbum, cameFrom: CameFrom = CameFrom.AlbumsTab) {
-        _screen.value = AppScreen.AlbumPhotos(album, cameFrom)
+        moveTo(AppScreen.AlbumPhotos(album, cameFrom))
     }
 
     fun openSlideshow(album: DomainAlbum, settings: SlideshowSettings, cameFrom: CameFrom = CameFrom.AlbumsTab) {
-        _screen.value = AppScreen.Slideshow(album, settings, cameFrom)
+        moveTo(AppScreen.Slideshow(album, settings, cameFrom))
     }
 
     fun openMemorySlideshow(memory: Memory) {
-        _screen.value = AppScreen.MemorySlideshow(memory)
+        moveTo(AppScreen.MemorySlideshow(memory))
     }
 
     fun openMemoryPhotos(memory: Memory, title: String) {
-        _screen.value = AppScreen.MemoryPhotos(memory, title)
+        moveTo(AppScreen.MemoryPhotos(memory, title))
+    }
+
+    fun openAlbumPhotoViewer(album: DomainAlbum, cameFrom: CameFrom = CameFrom.AlbumsTab) {
+        _screen.value = AppScreen.AlbumPhotoViewer(album, cameFrom)
+    }
+
+    /** With the album's saved settings; if Back left the grid while they loaded, it stays left. */
+    fun openAlbumPhotoSlideshow(album: DomainAlbum, from: PhotoId, cameFrom: CameFrom = CameFrom.AlbumsTab) {
+        val grid = _screen.value
+        viewModelScope.launch {
+            val settings = getSlideshowSettings(album.id)
+            if (_screen.value === grid) _screen.value = AppScreen.AlbumPhotoSlideshow(album, from, settings, cameFrom)
+        }
+    }
+
+    fun openMemoryPhotoViewer(memory: Memory, title: String) {
+        _screen.value = AppScreen.MemoryPhotoViewer(memory, title)
+    }
+
+    fun openMemoryPhotoSlideshow(memory: Memory, title: String, from: PhotoId) {
+        _screen.value = AppScreen.MemoryPhotoSlideshow(memory, title, from)
     }
 
     fun openResultsSlideshow(slides: List<Slide>) {
-        _screen.value = AppScreen.ResultsSlideshow(slides)
+        moveTo(AppScreen.ResultsSlideshow(slides))
     }
 
     fun openPhotoViewer(fromHome: Boolean = false) {
-        _screen.value = AppScreen.PhotoViewer(fromHome)
+        moveTo(AppScreen.PhotoViewer(fromHome))
     }
 
     fun openTimelineSlideshow(from: PhotoId) {
-        _screen.value = AppScreen.TimelineSlideshow(from)
+        moveTo(AppScreen.TimelineSlideshow(from))
     }
 
     fun openSettings() {
         val from = _screen.value
         viewModelScope.launch {
-            _screen.value = AppScreen.Setup(firstRun = false, current = getSession(), from = from)
+            moveTo(AppScreen.Setup(firstRun = false, current = getSession(), from = from))
         }
     }
 
     fun connected() {
         _connection.update { it + 1 }
-        _screen.value = HOME
+        moveTo(HOME)
     }
 
     /** True when Back was handled here; false when the system should finish the app. */
@@ -147,6 +209,10 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
             } else {
                 AppScreen.Album(current.album.id, focusBrowse = true, cameFrom = current.cameFrom)
             }
+            is AppScreen.AlbumPhotoViewer -> AppScreen.AlbumPhotos(current.album, current.cameFrom, returning = true)
+            is AppScreen.AlbumPhotoSlideshow -> AppScreen.AlbumPhotos(current.album, current.cameFrom, returning = true)
+            is AppScreen.MemoryPhotoViewer -> AppScreen.MemoryPhotos(current.memory, current.title, returning = true)
+            is AppScreen.MemoryPhotoSlideshow -> AppScreen.MemoryPhotos(current.memory, current.title, returning = true)
             is AppScreen.Slideshow -> if (current.cameFrom == CameFrom.HomeHero) {
                 HOME
             } else {
@@ -159,15 +225,24 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
             is AppScreen.Main -> if (current.tab == Tab.Home) null else HOME
             AppScreen.Loading -> null
         } ?: return false
-        _screen.value = next
+        moveTo(next)
         return true
+    }
+
+    override fun onCleared() {
+        showStore.clear()
+    }
+
+    private fun moveTo(next: AppScreen) {
+        showStore.clear()
+        _screen.value = next
     }
 
     companion object {
         private val HOME = AppScreen.Main(Tab.Home)
 
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { AppViewModel(container.getSession) }
+            initializer { AppViewModel(container.getSession, container.getSlideshowSettings) }
         }
     }
 }

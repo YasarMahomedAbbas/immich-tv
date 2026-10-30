@@ -29,6 +29,18 @@ class MemoryTest {
     }
 
     @Test
+    fun `its show starts at the chosen photo, in the grid's order`() {
+        val playlist = memory.playlistFrom(PhotoId("b"))
+        assertEquals(memory.slides, playlist.slides)
+        assertEquals(1, playlist.start)
+    }
+
+    @Test
+    fun `its show from a photo no longer there starts at the first`() {
+        assertEquals(0, memory.playlistFrom(PhotoId("gone")).start)
+    }
+
+    @Test
     fun `any other month of its timeline is empty`() = runTest {
         assertEquals(ServerResult.Ok(emptyList<Photo>()), memory.timeline().photos(YearMonth.of(2024, 9)))
     }

@@ -7,11 +7,14 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
+import io.github.yasarmahomedabbas.immichtv.domain.albums.Album
+import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
 import io.github.yasarmahomedabbas.immichtv.domain.home.timeline
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.ui.AppScreen
@@ -123,19 +126,26 @@ class MainActivity : ComponentActivity() {
                     )
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
                         albumName = current.album.name,
-                        viewModel = viewModel(
-                            // The timeline keeps the order it was created with, so a new order needs a new grid.
-                            key = "album-photos-$connection-${current.album.id.value}-${current.album.newestFirst}",
-                            factory = PhotoGridViewModel.factory(container.albumTimeline(current.album)),
-                        ),
+                        viewModel = albumGrid(container, connection, current.album),
                         onBack = { app.back() },
+                        returning = current.returning,
+                        onOpenPhoto = { app.openAlbumPhotoViewer(current.album, current.cameFrom) },
+                        onStartSlideshow = { app.openAlbumPhotoSlideshow(current.album, it, current.cameFrom) },
                     )
                     is AppScreen.MemoryPhotos -> AlbumPhotosScreen(
                         albumName = current.title,
-                        viewModel = viewModel(
-                            key = "memory-photos-$connection-${current.memory.hashCode()}",
-                            factory = PhotoGridViewModel.factory(current.memory.timeline()),
-                        ),
+                        viewModel = memoryGrid(connection, current.memory),
+                        onBack = { app.back() },
+                        returning = current.returning,
+                        onOpenPhoto = { app.openMemoryPhotoViewer(current.memory, current.title) },
+                        onStartSlideshow = { app.openMemoryPhotoSlideshow(current.memory, current.title, it) },
+                    )
+                    is AppScreen.AlbumPhotoViewer -> PhotoViewerScreen(
+                        viewModel = albumGrid(container, connection, current.album),
+                        onBack = { app.back() },
+                    )
+                    is AppScreen.MemoryPhotoViewer -> PhotoViewerScreen(
+                        viewModel = memoryGrid(connection, current.memory),
                         onBack = { app.back() },
                     )
                     is AppScreen.PhotoViewer -> PhotoViewerScreen(
@@ -143,9 +153,9 @@ class MainActivity : ComponentActivity() {
                         onBack = { app.back() },
                     )
                     is AppScreen.Slideshow -> SlideshowScreen(
-                        // A fresh ViewModel each time it starts, so it begins at the first photo.
+                        // In the show store, emptied on leaving: a show starts fresh and its slides don't stay.
                         viewModel = viewModel(
-                            key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            viewModelStoreOwner = app.shows,
                             factory = SlideshowViewModel.factory(container, current.album, current.settings),
                         ),
                         settings = current.settings,
@@ -153,9 +163,29 @@ class MainActivity : ComponentActivity() {
                         onBack = { app.back() },
                         source = if (current.cameFrom == CameFrom.HomeHero) SlideshowSource.Home else SlideshowSource.Album,
                     )
-                    is AppScreen.MemorySlideshow -> SlideshowScreen(
+                    is AppScreen.AlbumPhotoSlideshow -> SlideshowScreen(
                         viewModel = viewModel(
                             key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            factory = SlideshowViewModel.fromAlbumPhoto(container, current.album, current.from, current.settings),
+                        ),
+                        settings = current.settings,
+                        newPlayer = container::videoPlayer,
+                        onBack = { app.back() },
+                        source = SlideshowSource.Album,
+                    )
+                    is AppScreen.MemoryPhotoSlideshow -> SlideshowScreen(
+                        viewModel = viewModel(
+                            key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            factory = SlideshowViewModel.fromMemoryPhoto(current.memory, current.from),
+                        ),
+                        settings = TimelineSettings,
+                        newPlayer = container::videoPlayer,
+                        onBack = { app.back() },
+                        source = SlideshowSource.Memory,
+                    )
+                    is AppScreen.MemorySlideshow -> SlideshowScreen(
+                        viewModel = viewModel(
+                            viewModelStoreOwner = app.shows,
                             factory = SlideshowViewModel.fromMemory(current.memory),
                         ),
                         settings = TimelineSettings,
@@ -164,9 +194,8 @@ class MainActivity : ComponentActivity() {
                         source = SlideshowSource.Home,
                     )
                     is AppScreen.ResultsSlideshow -> SlideshowScreen(
-                        // A fresh ViewModel each time it starts, so it begins at the first photo.
                         viewModel = viewModel(
-                            key = "results-slideshow-$connection-${System.identityHashCode(current)}",
+                            viewModelStoreOwner = app.shows,
                             factory = SlideshowViewModel.factory(current.slides),
                         ),
                         settings = SlideshowSettings(),
@@ -176,7 +205,7 @@ class MainActivity : ComponentActivity() {
                     )
                     is AppScreen.TimelineSlideshow -> SlideshowScreen(
                         viewModel = viewModel(
-                            key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            viewModelStoreOwner = app.shows,
                             factory = SlideshowViewModel.fromTimeline(container, current.from),
                         ),
                         settings = TimelineSettings,
@@ -189,3 +218,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+/** An album's grid; its viewer takes the same one, so the grid knows where it got to. */
+@Composable
+private fun albumGrid(container: AppContainer, connection: Int, album: Album): PhotoGridViewModel = viewModel(
+    // The timeline keeps the order it was created with, so a new order needs a new grid.
+    key = "album-photos-$connection-${album.id.value}-${album.newestFirst}",
+    factory = PhotoGridViewModel.factory(container.albumTimeline(album)),
+)
+
+/** A memory's grid; its viewer takes the same one, so the grid knows where it got to. */
+@Composable
+private fun memoryGrid(connection: Int, memory: Memory): PhotoGridViewModel = viewModel(
+    key = "memory-photos-$connection-${memory.hashCode()}",
+    factory = PhotoGridViewModel.factory(memory.timeline()),
+)

@@ -129,6 +129,8 @@
     <string name="slideshow_back_home">‹ Home</string>
     <string name="slideshow_empty_hint_home">There are only videos here, or nothing yet.</string>
     <string name="slideshow_empty_action_home">Back to home</string>
+    <string name="slideshow_back_memory">‹ Memory</string>
+    <string name="slideshow_empty_action_memory">Back to memory</string>
     <string name="slideshow_empty_hint_search">These results only have videos.</string>
     <string name="slideshow_empty_action_search">Back to search</string>
 </resources>
