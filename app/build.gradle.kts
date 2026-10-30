@@ -123,3 +123,21 @@ dependencies {
     testImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.compose.ui.test.manifest)
 }
+
+// Left alone, Robolectric downloads its Android jars from Maven Central while the tests run, outside
+// Gradle's cache, so every CI run fetches them again and a refused request fails the tests. Gradle
+// fetches and caches them instead, and Robolectric is told not to use the network.
+val robolectricJarsDir = layout.buildDirectory.dir("robolectric-jars")
+// A configuration each: two versions of one module in the same one would resolve to the newer alone.
+val robolectricAndroidJars = listOf(libs.android.all.instrumented.sdk34, libs.android.all.instrumented.sdk35).map { jar ->
+    configurations.detachedConfiguration(dependencies.create(jar.get())).apply { isTransitive = false }
+}
+val syncRobolectricJars = tasks.register<Sync>("syncRobolectricJars") {
+    from(robolectricAndroidJars)
+    into(robolectricJarsDir)
+}
+tasks.withType<Test>().configureEach {
+    dependsOn(syncRobolectricJars)
+    systemProperty("robolectric.offline", "true")
+    systemProperty("robolectric.dependency.dir", robolectricJarsDir.get().asFile.path)
+}

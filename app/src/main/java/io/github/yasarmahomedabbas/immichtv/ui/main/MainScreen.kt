@@ -28,9 +28,9 @@ import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 
 /**
  * The top menu over the selected tab's content. Focus enters on the selected pill; a tab's
- * content may then move it (the Albums grid does, once its cards are laid out), but only while the
- * pill still holds it or nothing on the screen does, as when a pressed Try again has gone. The Photos
- * tab is handed that question as `mayTakeFocus`.
+ * content may then move it (the Albums grid does, once its cards are laid out). The Photos tab is
+ * handed `mayTakeFocus` to ask first: yes only while the pill still holds focus or nothing on the
+ * screen does, as when a pressed Try again has gone.
  */
 @Composable
 fun MainScreen(

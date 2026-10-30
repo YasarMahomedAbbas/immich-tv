@@ -37,6 +37,10 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+# The Android jars Robolectric 4.14.1 asks for: both, though the tests only name SDK 34. They go with the
+# robolectric version above; a missing one fails the tests, naming the jar.
+android-all-instrumented-sdk34 = { group = "org.robolectric", name = "android-all-instrumented", version = "14-robolectric-10818077-i7" }
+android-all-instrumented-sdk35 = { group = "org.robolectric", name = "android-all-instrumented", version = "15-robolectric-12650502-i7" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
