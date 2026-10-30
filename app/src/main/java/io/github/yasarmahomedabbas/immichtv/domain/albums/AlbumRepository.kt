@@ -3,6 +3,7 @@ package io.github.yasarmahomedabbas.immichtv.domain.albums
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.map
 import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 
 /** The albums on the photo server. */
 interface AlbumRepository {
@@ -16,6 +17,9 @@ interface AlbumRepository {
 
     /** [album]'s photos by month, in the album's order. */
     fun timeline(album: Album): Timeline
+
+    /** Every item in [album], oldest first. */
+    suspend fun slides(album: Album): ServerResult<List<Slide>>
 }
 
 /** Everything on the album screen. */

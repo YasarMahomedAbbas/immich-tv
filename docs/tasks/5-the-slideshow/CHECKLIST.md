@@ -42,7 +42,7 @@ The album screen holds the loaded `Album` and `SlideshowSettings`; Start slidesh
 
 Goal: the domain can ask for an album's photos as slides, ordered per the settings, on both date shapes.
 
-### [ ] 1.1 — Domain
+### [x] 1.1 — Domain
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/Slideshow.kt` (new)
 
@@ -56,12 +56,12 @@ File: `test/…/domain/albums/Fakes.kt`: `FakeAlbumRepository` gains `var slides
 
 Test: `test/…/domain/slideshow/LoadSlideshowTest.kt`.
 
-### [ ] 1.2 — Immich implementation
+### [x] 1.2 — Immich implementation
 
 File: `…/data/immich/ImmichAlbumRepository.kt`
 
-- `buckets` and `bucket` take `order: String = album.order`. `slides` reads them with `"asc"`, using the same `Semaphore(MAX_IN_FLIGHT)` shape as `contents`; a failed month fails it.
-- `BucketAssetsDto` gains, all defaulting to empty so an absent column reads as unknown: `ratio: List<Double>`, `city: List<String?>`, `country: List<String?>`, `fileCreatedAt: List<String>`, `localOffsetHours: List<Double>`, `localDateTime: List<String>`. `fun toSlides(): List<Slide>` uses `getOrNull` per index.
+- `buckets` takes `order: String = album.order`; a new `columns(session, album, timeBucket, order)` is what `bucket` now maps. `slides` reads them with `"asc"`, using the same `Semaphore(MAX_IN_FLIGHT)` shape as `contents`; a failed month fails it.
+- `BucketAssetsDto` gains, all defaulting to empty so an absent column reads as unknown, and with nullable items because the album screen reads this DTO too and a null must not fail it: `ratio: List<Double?>`, `city: List<String?>`, `country: List<String?>`, `fileCreatedAt: List<String?>`, `localOffsetHours: List<Double?>`, `localDateTime: List<String?>`. `fun toSlides(): List<Slide>` uses `getOrNull` per index.
 - `portrait` = ratio known and `< 1`.
 - `takenOn`, private top-level with a comment on the versions: `localDateTime` if present (`take(10)` parsed), else `fileCreatedAt` (a trailing `Z` removed, `LocalDateTime.parse`) plus `localOffsetHours` converted to seconds, `.toLocalDate()`. Unparseable → null for that item, never failing the show.
 - `place`: blank strings count as null; both null → null.

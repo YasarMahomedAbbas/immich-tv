@@ -12,6 +12,8 @@ import io.github.yasarmahomedabbas.immichtv.domain.server.ApiKey
 import io.github.yasarmahomedabbas.immichtv.domain.server.FakeSessionStore
 import io.github.yasarmahomedabbas.immichtv.domain.server.ServerAddress
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Place
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -249,6 +251,109 @@ class ImmichAlbumRepositoryTest {
         sessions.session = null
         assertEquals(ServerResult.Failed(Problem.NotSignedIn), timeline.months())
         assertEquals(ServerResult.Failed(Problem.NotSignedIn), timeline.photos(YearMonth.of(2025, 1)))
+    }
+
+    /** One month of [album], oldest first, with the [columns] written as they come. */
+    private fun oneMonth(columns: String, album: String = SUMMER) {
+        routes["/api/timeline/buckets?albumId=$album&order=asc"] =
+            MockResponse().setBody("""[{"timeBucket":"2025-06-01","count":1}]""")
+        routes["/api/timeline/bucket?albumId=$album&timeBucket=2025-06-01&order=asc"] = MockResponse().setBody(columns)
+    }
+
+    private suspend fun slides() = (repository.slides(expectedAlbums[0]) as ServerResult.Ok).value
+
+    @Test
+    fun `slides on v3 read the date from the file time and its offset`() = runTest {
+        oneMonth(
+            """{"id":["p1","p2","p3","p4"],"isImage":[true,true,true,false],""" +
+                """"fileCreatedAt":["2025-08-23T13:06:48.312","2025-08-23T23:30:00.000","2025-08-23T01:00:00.000","2025-08-23T23:40:00.000"],""" +
+                """"localOffsetHours":[2,2,-5.5,0.5],"ratio":[1.5,0.75,1,1.777],""" +
+                """"city":["Lisbon",null,null,""],"country":["Portugal","Japan",null,""]}""",
+        )
+
+        assertEquals(
+            listOf(
+                Slide(Photo(PhotoId("p1"), false), false, LocalDate.of(2025, 8, 23), Place("Lisbon", "Portugal")),
+                Slide(Photo(PhotoId("p2"), false), true, LocalDate.of(2025, 8, 24), Place(null, "Japan")),
+                Slide(Photo(PhotoId("p3"), false), false, LocalDate.of(2025, 8, 22), null),
+                Slide(Photo(PhotoId("p4"), true), false, LocalDate.of(2025, 8, 24), null),
+            ),
+            slides(),
+        )
+    }
+
+    @Test
+    fun `slides on v1_133 read the date from the local time`() = runTest {
+        oneMonth(
+            """{"id":["p1"],"isImage":[true],"localDateTime":["2025-08-23T23:06:48.000Z"],"ratio":[0.5],""" +
+                """"city":["Porto"],"country":[null]}""",
+        )
+        assertEquals(
+            listOf(Slide(Photo(PhotoId("p1"), false), true, LocalDate.of(2025, 8, 23), Place("Porto", null))),
+            slides(),
+        )
+    }
+
+    @Test
+    fun `a file time ending in Z reads the same`() = runTest {
+        oneMonth("""{"id":["p1"],"isImage":[true],"fileCreatedAt":["2025-08-23T23:06:48.312Z"],"localOffsetHours":[2]}""")
+        assertEquals(LocalDate.of(2025, 8, 24), slides().single().takenOn)
+    }
+
+    @Test
+    fun `a date that can't be read costs that slide its date and not the show`() = runTest {
+        oneMonth(
+            """{"id":["p1","p2","p3"],"isImage":[true,true,true],""" +
+                """"fileCreatedAt":["yesterday","2025-08-23T10:00:00.000",null],"localOffsetHours":[1,null,1]}""",
+        )
+        assertEquals(listOf(null, LocalDate.of(2025, 8, 23), null), slides().map { it.takenOn })
+    }
+
+    @Test
+    fun `an old server's bare columns make slides with nothing known`() = runTest {
+        oneMonth(bucket(listOf("p1" to true)))
+        assertEquals(listOf(Slide(Photo(PhotoId("p1"), false), false, null, null)), slides())
+    }
+
+    @Test
+    fun `slides read the oldest month first, whatever the album's order and however they finish`() = runTest {
+        routes["/api/timeline/buckets?albumId=$SUMMER&order=asc"] =
+            MockResponse().setBody("""[{"timeBucket":"2025-06-01","count":1},{"timeBucket":"2025-07-01","count":1}]""")
+        routes["/api/timeline/bucket?albumId=$SUMMER&timeBucket=2025-06-01&order=asc"] =
+            MockResponse().setBody(bucket(listOf("old" to true))).setBodyDelay(100, TimeUnit.MILLISECONDS)
+        routes["/api/timeline/bucket?albumId=$SUMMER&timeBucket=2025-07-01&order=asc"] =
+            MockResponse().setBody(bucket(listOf("new" to true)))
+
+        assertEquals(listOf("old", "new"), slides().map { it.photo.id.value })
+        for (request in requests()) {
+            assertEquals(KEY, request.getHeader("x-api-key"))
+            assertEquals("asc", request.requestUrl!!.queryParameter("order"))
+        }
+    }
+
+    @Test
+    fun `one failed month fails the slides`() = runTest {
+        routes["/api/timeline/buckets?albumId=$SUMMER&order=asc"] =
+            MockResponse().setBody("""[{"timeBucket":"2025-06-01","count":1},{"timeBucket":"2025-07-01","count":1}]""")
+        routes["/api/timeline/bucket?albumId=$SUMMER&timeBucket=2025-06-01&order=asc"] =
+            MockResponse().setBody(bucket(listOf("p1" to true)))
+        routes["/api/timeline/bucket?albumId=$SUMMER&timeBucket=2025-07-01&order=asc"] = MockResponse().setResponseCode(500)
+
+        assertEquals(ServerResult.Failed(Problem.Unreachable), repository.slides(expectedAlbums[0]))
+    }
+
+    @Test
+    fun `slide failures are mapped, and an empty album has none`() = runTest {
+        routes["/api/timeline/buckets?albumId=$SUMMER&order=asc"] = MockResponse().setResponseCode(401)
+        assertEquals(ServerResult.Failed(Problem.KeyRejected), repository.slides(expectedAlbums[0]))
+        routes["/api/timeline/buckets?albumId=$SUMMER&order=asc"] = MockResponse().setResponseCode(403)
+        assertEquals(ServerResult.Failed(Problem.KeyLacksPermission), repository.slides(expectedAlbums[0]))
+
+        routes["/api/timeline/buckets?albumId=$EMPTY&order=asc"] = MockResponse().setBody("[]")
+        assertEquals(ServerResult.Ok(emptyList<Slide>()), repository.slides(expectedAlbums[1]))
+
+        sessions.session = null
+        assertEquals(ServerResult.Failed(Problem.NotSignedIn), repository.slides(expectedAlbums[0]))
     }
 
     @Test
