@@ -76,3 +76,46 @@ Result: partial
 ### TV lock incident
 
 At 11:14:10 UTC this stage ran `adb install -r` and `am start` without holding the lock, while #6's pipeline held it (a wait loop of mine timed out, and I read that as having got the lock). It replaced #6's build on the TV with this branch's, about 44 s before #6 released. #6's newest TV capture on disk is from 11:13:50 UTC, before the install, and the montage it made at 11:14:31 UTC has no capture after the install behind it, so its recorded evidence looks unaffected; that is from file times, not from #6's pipeline. #6's lock itself was not touched. The TV now has this branch's debug build, and was sent Home.
+
+## Self verification, re-run (2026-10-30)
+
+Re-run after the park. The section above is the earlier run and stands as it was. The user chose option 1: keep the implicit system speech prompt and add no code to skip the chooser, which is a system choice on this TV. The "Press the mic on your remote" hint is restored in 7aa2101, in the screen and the design manual.
+
+Result: passed
+
+- CI build (with the hint): 306 tests passed, 0 failed, 0 skipped; line coverage 88.8% (88.7629%, minimum 80%); `koverVerifyDebug` and `lintDebug` pass; APK built.
+- Server: not re-run. Nothing in `data/` changed since the earlier run, which checked Immich v3.3.5. The searches below did reach the real server through the app.
+- TV: this build (the hint commit's tree) installed on the Chromecast and driven with adb keys, 12:49 to 12:55 CET, under the lock (taken by a successful `mkdir` at 12:49:07, released 12:55:25).
+
+### The user's own results, not from this run
+
+Reported by the user on the issue, tested on the TV on 2026-10-30, 12:26 to 12:30 CET:
+
+- **Physical mic button, pressed by the user on the Search tab: works.** The "Complete action using" chooser appeared. The user picked "Speech Recognition and Synthesis from Google" with Just once, spoke, and results appeared in the app. This closes point 1 above.
+- **Fix 2, driven over adb on the build installed at 12:19: works.** RIGHT from the field goes to the mic, DOWN goes to the chips, and the keyboard stays closed.
+
+### Observed on the TV in this run
+
+- **Hint:** shows beside the mic, one line, muted, vertically centred on the mic, nothing cut off. It stays put while focus moves.
+- **Fix 2 again, on this build:** RIGHT from the field put the amber-outlined focus on the mic; DOWN from the mic and from the field reached the chips.
+- **On-screen mic:** OK opens the system chooser, then Just once (read as the focused button from the UI tree before pressing) opens Google's speech prompt, listening ("Try saying something"). Back returned to the Search tab. Speech cannot be spoken over adb, so reaching the prompt is the whole check: no spoken result from this run.
+- **A chip searches:** "mountains" showed "100 best matches", focus on the first tile; "sunset" did the same.
+- **Typing and submitting:** OK on the field opened the keyboard (`mInputShown=true`). The text "castle" was sent with `adb input text`, not picked letter by letter; the keyboard's own Search key, reached with the D-pad, closed the keyboard and showed "castle", 100 best matches.
+- **A person's photos:** OK on Franzi showed "Franzi", 50 photos, loading into real thumbnails, focus on the first tile.
+- **Play as slideshow and Back:** from the "sunset" results the slideshow played and had moved to another photo in a capture about 15 s later, with date and clock. Back returned with focus on Play.
+- **Back from results:** cleared them, empty field with focus on it; this was seen from a tile (Franzi) and from Play. Back again went Home, with the outline on the Home pill.
+- **Keyboard closed on those moves:** `mInputShown=false` at every capture other than while typing, including focus onto the field and both Backs that cleared results.
+- **Crash check:** logcat cleared before the install; no `immichtv` or `AndroidRuntime` errors at the end.
+- **Shared settings:** Always never pressed; Just once used once. Household photos stayed in the scratchpad.
+
+### Not observed in this run
+
+- A spoken search through the on-screen mic: the prompt was reached, nothing was spoken, by this run or (as reported) by the user, who used the physical button. They share the voice launcher, so it should return the same way; that is inference.
+- The physical button: only the user's result above. This run did not send it.
+- Keyboard when a load takes away the focused item: no such load came up, so point 2 above stands for that one path.
+- Archived photos: point 4 above stands; the server has none.
+
+### Noted, not changed
+
+- UP from the first tile goes to the People row above it, not to Play, as Play sits to the right. It is not a trap: UP from a tile under Play reaches Play. A small thing to try by hand.
+- The app was sent Home at the end, the HOME key sent just before the lock's release; the read straight after it still showed the app on top, likely the transition. The TV keeps this branch's debug build, which does not include what merged to main since (#6, #7); `raise-pr` merges those in, and that combination has not been on the TV.
