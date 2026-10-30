@@ -42,7 +42,7 @@ Per the user's speed note for 2026-10-30: run only `AppViewModelTest` while impl
 
 Goal: a show's ViewModel lives in a store that is emptied on leaving it, and the three shows use it.
 
-### [ ] 1.1 — The show store and its tests
+### [x] 1.1 — The show store and its tests
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModel.kt`
 
@@ -61,7 +61,7 @@ Add a private `class ShowProbe : ViewModel()` whose `onCleared` sets a `cleared`
 - `a show asked again while it plays keeps its ViewModel`: same instance, not cleared, standing in for a recreated activity.
 - `clearing the app clears the show`: get `AppViewModel` from a `ViewModelProvider` on its own `ViewModelStore`, and clear that store.
 
-### [ ] 1.2 — The three shows use it
+### [x] 1.2 — The three shows use it
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 

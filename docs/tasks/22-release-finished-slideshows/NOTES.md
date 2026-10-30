@@ -13,3 +13,10 @@ Branch: `fix/22-release-finished-slideshows`
   - The per-start key goes, as an emptied store already guarantees a fresh show.
   - No Immich call changes, and no visuals change.
 - Open risks (flag: open-risk): with today's 555-item library, memory growth is small on the TV, so `dumpsys meminfo` is only indicative. The proof of release rests on the unit test. The smaller retained ViewModels in Out of scope stay.
+
+## Implementation
+
+- Shipped: `AppViewModel` owns the show store (`ui/AppViewModel.kt:72`), empties it on every move between screens (`moveTo`, `:148`) and when it is cleared itself (`:144`). The album, search results and library shows take their ViewModel from it (`MainActivity.kt:113`, `:122`, `:132`); the per-start key is gone, and `identityHashCode` remains only in Setup's key.
+- Tests: `AppViewModelTest` 20 passed / 0 failed, 5 of them new. With the clear taken out of `moveTo`, `leaving a show by Back clears it`, `leaving a show another way clears it` and `the next show gets a new ViewModel` fail. Full CI command not run here, per the user's speed note for 2026-10-30: it runs once in `raise-pr`.
+- Outstanding: the on-TV checks in the test plan, for self-verification.
+- Contradicted the plan: none.

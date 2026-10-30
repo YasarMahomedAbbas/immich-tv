@@ -108,9 +108,9 @@ class MainActivity : ComponentActivity() {
                         onBack = { app.back() },
                     )
                     is AppScreen.Slideshow -> SlideshowScreen(
-                        // A fresh ViewModel each time it starts, so it begins at the first photo.
+                        // In the show store, emptied on leaving: a show starts fresh and its slides don't stay.
                         viewModel = viewModel(
-                            key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            viewModelStoreOwner = app.shows,
                             factory = SlideshowViewModel.factory(container, current.album, current.settings),
                         ),
                         settings = current.settings,
@@ -118,9 +118,8 @@ class MainActivity : ComponentActivity() {
                         onBack = { app.back() },
                     )
                     is AppScreen.ResultsSlideshow -> SlideshowScreen(
-                        // A fresh ViewModel each time it starts, so it begins at the first photo.
                         viewModel = viewModel(
-                            key = "results-slideshow-$connection-${System.identityHashCode(current)}",
+                            viewModelStoreOwner = app.shows,
                             factory = SlideshowViewModel.factory(current.slides),
                         ),
                         settings = SlideshowSettings(),
@@ -130,7 +129,7 @@ class MainActivity : ComponentActivity() {
                     )
                     is AppScreen.TimelineSlideshow -> SlideshowScreen(
                         viewModel = viewModel(
-                            key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            viewModelStoreOwner = app.shows,
                             factory = SlideshowViewModel.fromTimeline(container, current.from),
                         ),
                         settings = TimelineSettings,
