@@ -41,3 +41,22 @@ Branch: `fix/18-refresh-albums-on-return`
 - Skipped: `docs/design/README.md`: no claim changed. The screens' shapes and the Refresh and Try again buttons stay as written; refresh adds no visible state.
 - Checked, still true: README's `AppViewModel.connection` key rule (every server-data key in `MainActivity` still takes it), its layer block, `CLAUDE.md`'s layer rules (`domain/` addition is plain Kotlin) and its CI command (the branch changed neither workflows nor `build.sh`).
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: 206 tests passed, 0 failed, 0 skipped; line coverage 87.7% (minimum 80); lint with no errors (22 warnings, mostly dependency versions; not compared with main); APK built.
+- Server: Immich v3.3.5. The branch changes no `data/` call; the test plan's read-only reads ran.
+- TV: debug build installed on the Chromecast, inside the window the user gave, holding the shared TV lock. Driven with the D-pad: Albums, the album screen and its photo grid, each with Home and return.
+- Verified:
+  - `GET /albums` (15 albums), `GET /albums/{id}` (the 699-item album) and `GET /timeline/buckets` (30 months, counts sum to 699), each read twice: identical answers, so an unchanged album skips the re-read and a real refresh is one call. Every field `Album` reads was present.
+  - Albums, card focused on the third row with the grid scrolled: after Home and return, the screenshot is pixel-identical (same card, same scroll, no skeleton).
+  - Album screen, third visible strip tile focused with the strip scrolled: pixel-identical once the launcher's crossfade ended; the first frame back already showed the content and the focus, no skeleton.
+  - Photo grid, focus on the eleventh row, past the 29 items of the first month: pixel-identical after the same crossfade.
+  - Back from Browse to the album keeps Browse photos focused. The strip is back at its start by then; only focus was asked for.
+  - The refresh does fire: on the album screen, the app's traffic rose by about 1.3 KB received and 0.9 KB sent on return, and by nothing while on the launcher, so one small call and no images reloaded.
+  - No crash or error from the app in logcat.
+  - A launcher-style intent on top of the `am start -n` that `build.sh install` uses stacked a second activity, which opened on Home; a harness effect of mixing intents, not of this branch. Back removed it and the return checks then used the same intent, with the same activity record throughout.
+- Failed: none
+- Not self-verifiable: changed data, as this stage may not edit the server and nobody edited an album during the run; it rests on the unit tests. By hand: open an album, press Home, add a photo to it in Immich, return: the counts and strip update and Browse shows the photo; a new album shows in the Albums tab; delete the focused album or photo: focus moves to the first item.
