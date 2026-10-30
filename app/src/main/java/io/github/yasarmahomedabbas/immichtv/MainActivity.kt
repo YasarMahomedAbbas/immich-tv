@@ -21,6 +21,7 @@ import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotosScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowScreen
@@ -53,13 +54,19 @@ class MainActivity : ComponentActivity() {
                         tab = current.tab,
                         onSelectTab = app::selectTab,
                         onOpenSettings = app::openSettings,
-                    ) {
-                        // Scoped to the activity, so the list and the focused album survive opening one.
-                        AlbumsScreen(
-                            viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
-                            onOpenAlbum = app::openAlbum,
-                        )
-                    }
+                        albums = {
+                            // Scoped to the activity, so the list and the focused album survive opening one.
+                            AlbumsScreen(
+                                viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
+                                onOpenAlbum = app::openAlbum,
+                            )
+                        },
+                        photos = {
+                            PhotosScreen(
+                                viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
+                            )
+                        },
+                    )
                     is AppScreen.Album -> AlbumScreen(
                         viewModel = viewModel(
                             key = "album-$connection-${current.id.value}",

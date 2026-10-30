@@ -96,7 +96,7 @@ Test: `test/…/data/immich/ImmichLibraryRepositoryTest.kt`, mirroring `ImmichAl
 
 Goal: the tab shows the rail and the grid, in all states. Rail and grid are not linked yet.
 
-### [ ] 2.1 — Rail entries
+### [x] 2.1 — Rail entries
 
 File: `…/ui/photos/MonthRail.kt` (new)
 
@@ -106,7 +106,7 @@ File: `…/ui/photos/MonthRail.kt` (new)
 
 Test: `test/…/ui/photos/MonthRailTest.kt`.
 
-### [ ] 2.2 — The screen
+### [x] 2.2 — The screen
 
 File: `…/ui/photos/PhotosScreen.kt` (new)
 
