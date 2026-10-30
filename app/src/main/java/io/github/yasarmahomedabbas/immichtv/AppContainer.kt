@@ -5,6 +5,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import coil3.ImageLoader
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichAlbumRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichLibraryRepository
+import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichMemoryRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichServerConnector
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichHttpClient
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichImageLoader
@@ -47,6 +48,8 @@ class AppContainer(context: Context) {
     private val library = ImmichLibraryRepository(http, sessions)
     val libraryTimeline = LibraryTimeline(library)
     val loadLibrarySlideshow = LoadLibrarySlideshow(library)
+
+    private val memories = ImmichMemoryRepository(http, sessions)
 
     private val slideshowSettings = StoredSlideshowSettings(
         SharedPreferencesStorage(context.getSharedPreferences("slideshow", Context.MODE_PRIVATE)),

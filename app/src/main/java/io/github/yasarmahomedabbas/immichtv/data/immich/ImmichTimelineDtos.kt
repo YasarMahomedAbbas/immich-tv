@@ -47,7 +47,7 @@ internal data class BucketAssetsDto(
  * v1.135 that column is gone, and it is `fileCreatedAt` (UTC, with or without a `Z`) moved by
  * `localOffsetHours`, which may be fractional. One that can't be read is unknown, never a failed show.
  */
-private fun takenOn(localDateTime: String?, fileCreatedAt: String?, offsetHours: Double?): LocalDate? = try {
+internal fun takenOn(localDateTime: String?, fileCreatedAt: String?, offsetHours: Double?): LocalDate? = try {
     when {
         localDateTime != null -> LocalDate.parse(localDateTime.take(10))
         fileCreatedAt != null -> LocalDateTime.parse(fileCreatedAt.removeSuffix("Z"))
@@ -61,7 +61,7 @@ private fun takenOn(localDateTime: String?, fileCreatedAt: String?, offsetHours:
 
 private const val SECONDS_PER_HOUR = 3600
 
-private fun place(city: String?, country: String?): Place? {
+internal fun place(city: String?, country: String?): Place? {
     val knownCity = city?.takeIf { it.isNotBlank() }
     val knownCountry = country?.takeIf { it.isNotBlank() }
     return if (knownCity == null && knownCountry == null) null else Place(knownCity, knownCountry)

@@ -42,29 +42,29 @@ Consequences to keep to: a hero memory holds photos only, so the count, the show
 
 Goal: the domain can ask for today's memories and the newest photos, on every supported server version.
 
-### [ ] 1.1 — Domain: memories
+### [x] 1.1 — Domain: memories
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/home/Memory.kt`
 `data class Memory(val takenOn: LocalDate, val slides: List<Slide>)`, with `val photos: List<Photo>` from the slides.
 `interface MemoryRepository { suspend fun memoriesOn(day: LocalDate): ServerResult<List<Memory>> }`, documented as "On this day" memories for that day, photos and videos, any order.
 `fun Memory.timeline(): Timeline`: one `TimelineMonth(YearMonth.from(takenOn), slides.size)`, its `photos(month)` the slides' photos, empty for another month.
 
-### [ ] 1.2 — Domain: recent photos
+### [x] 1.2 — Domain: recent photos
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/photos/Library.kt`
 Add to `LibraryRepository`: `suspend fun recent(limit: Int): ServerResult<List<Photo>>`, "the newest [limit] items, by when they were taken". Update `FakeLibraryRepository` with a settable `recent`.
 
-### [ ] 1.3 — Data: memories
+### [x] 1.3 — Data: memories
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/immich/ImmichMemoryRepository.kt`
-`internal class ImmichMemoryRepository(client: OkHttpClient, sessions: SessionStore) : MemoryRepository`, using `ImmichApi`. `GET memories` with `for=<day>` (`LocalDate.toString()`) and `type=on_this_day`. Private DTOs: `MemoryDto(memoryAt: String, assets: List<MemoryAssetDto>)`, `MemoryAssetDto(id, type, visibility: String? = null, width: Int? = null, height: Int? = null, localDateTime: String? = null, exifInfo: ExifDto? = null)`, `ExifDto(city: String? = null, country: String? = null)`. `takenOn` is `memoryAt`'s UTC calendar day, read as `calendarDay` in `ImmichAlbumRepository` does (make that `internal`, or share it). An asset whose `visibility` is present and not `timeline`, or whose `type` is neither `IMAGE` nor `VIDEO`, is dropped. `portrait` is `height > width` when both are known, else false. `takenOn` of a slide is `localDateTime`'s first 10 characters, null if unreadable. Share `place` from `ImmichTimelineDtos.kt` by making it `internal`. An unreadable `memoryAt` fails as `Problem.Unreachable`.
+`internal class ImmichMemoryRepository(client: OkHttpClient, sessions: SessionStore) : MemoryRepository`, using `ImmichApi`. `GET memories` with `for=<day>` (`LocalDate.toString()`) and `type=on_this_day`. Private DTOs: `MemoryDto(memoryAt: String, assets: List<MemoryAssetDto>)`, `MemoryAssetDto(id, type, visibility: String? = null, width: Int? = null, height: Int? = null, localDateTime: String? = null, exifInfo: ExifDto? = null)`, `ExifDto(city: String? = null, country: String? = null)`. `takenOn` is `memoryAt`'s UTC calendar day, read as `calendarDay` in `ImmichAlbumRepository` does (make that `internal`, or share it). An asset whose `visibility` is present and not `timeline`, or whose `type` is neither `IMAGE` nor `VIDEO`, is dropped. `portrait` is `height > width` when both are known, else false. `takenOn` of a slide is `localDateTime`'s first 10 characters, null if unreadable. Share `takenOn` and `place` from `ImmichTimelineDtos.kt`, and `mapAll` from `ImmichAlbumRepository.kt`, by making them `internal`. An unreadable `memoryAt` fails as `Problem.Unreachable`.
 
-### [ ] 1.4 — Data: recent photos
+### [x] 1.4 — Data: recent photos
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/immich/ImmichLibraryRepository.kt`
 `recent(limit)`: `timeline/buckets` with `QUERY`, then `timeline/bucket` one month at a time from the newest, stopping once `limit` items are held, so it costs as few calls as the library allows. Any failure returns that failure.
 
-### [ ] 1.5 — Wiring and tests
+### [x] 1.5 — Wiring and tests
 
 Files: `AppContainer.kt` (a private `ImmichMemoryRepository`), `README.md` (add `memory.read` to the key's permissions, saying that without it Home shows an album instead of a memory).
 Tests: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/data/immich/ImmichMemoryRepositoryTest.kt` (mirror `ImmichLibraryRepositoryTest`), additions to `ImmichLibraryRepositoryTest`, `app/src/test/java/io/github/yasarmahomedabbas/immichtv/domain/home/MemoryTest.kt`. See the test plan.

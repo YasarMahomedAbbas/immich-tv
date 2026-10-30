@@ -15,7 +15,7 @@ The app talks only to your own server. It's built for a server reached over the 
 2. Or from a computer on the same network, with developer options and network debugging on: download `immich-tv-<version>.apk` from the [latest release](../../releases/latest) and run `adb connect <tv-ip>:5555 && adb install immich-tv-<version>.apk`.
 3. Open Immich TV and enter the server address and an API key (Immich web → Account Settings → API Keys).
 
-The app needs Immich v1.133 or newer, the release that gave the timeline its current shape ([release notes](https://github.com/immich-app/immich/releases/tag/v1.133.0)); it refuses older servers when connecting. The API key needs `user.read`, `album.read`, `asset.read` and `asset.view` ([API reference](https://api.immich.app)), or all permissions.
+The app needs Immich v1.133 or newer, the release that gave the timeline its current shape ([release notes](https://github.com/immich-app/immich/releases/tag/v1.133.0)); it refuses older servers when connecting. The API key needs `user.read`, `album.read`, `asset.read`, `asset.view` and `memory.read` ([API reference](https://api.immich.app)), or all permissions. Without `memory.read`, Home shows an album instead of a memory.
 
 ## Architecture
 
