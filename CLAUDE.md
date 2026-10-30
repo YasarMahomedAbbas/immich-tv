@@ -37,7 +37,7 @@ Every call to Immich (`data/`) must follow the API of the Immich version the ser
 - **The spec for the running version:** read the version from `<server>/api/server/version`, then use `open-api/immich-openapi-specs.json` at that tag in the Immich repo.
 - **Auth:** the `x-api-key` header, on API calls and on every image request. Never in a URL. Every request, image loading included, goes through `immichHttpClient()`: OkHttp would carry a custom header along a redirect to another host, and its interceptor drops the key there.
 
-When a response shape changes between versions, support both (the server may lag behind or run ahead) and add a test for each. MockWebServer accepts things a real Immich refuses; check API changes against the real server too.
+When a response shape changes between versions, support both (the server may lag behind or run ahead, down to the oldest version the app accepts: `MINIMUM` in `ImmichServerConnector`) and add a test for each. MockWebServer accepts things a real Immich refuses; check API changes against the real server too.
 
 ## TV rules
 - Everything is reachable with the D-pad: every screen has a visible focus (the amber outline), Back always goes back, and nothing needs a touchscreen or a pointer.
