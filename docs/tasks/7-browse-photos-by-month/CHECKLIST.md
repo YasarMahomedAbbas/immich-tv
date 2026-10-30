@@ -41,18 +41,18 @@ Shape (`design-recipe`): Photos is the manual's Photos row. Parts: `TopMenu`, a 
 
 Goal: the domain can ask for the library as a `Timeline` and as slides, against both bucket shapes. Album behaviour is unchanged.
 
-### [ ] 1.1 — Extract the shared Immich plumbing
+### [x] 1.1 — Extract the shared Immich plumbing
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/immich/ImmichApi.kt` (new)
 
-- `internal class ImmichApi(client: OkHttpClient, sessions: SessionStore)` with `suspend fun <T> signedIn(block: suspend (Session) -> ServerResult<T>): ServerResult<T>` and `suspend inline fun <reified T> get(session, path, query)`: moved as they are from `ImmichAlbumRepository`, with `decode`. `inline` needs its members `@PublishedApi internal`.
+- `internal class ImmichApi(client: OkHttpClient, sessions: SessionStore)` with `suspend fun <T> signedIn(block: suspend (Session) -> ServerResult<T>): ServerResult<T>` and `suspend inline fun <reified T> get(session, path, query)`: moved as they are from `ImmichAlbumRepository`, with `decode`. `inline` in an internal class needs the members it reads to be `internal`, not `private`.
 - `internal fun List<BucketDto>.toMonths(remember: (YearMonth, String) -> Unit): ServerResult<List<TimelineMonth>>`: the parsing and `DateTimeParseException` handling from `AlbumTimeline.months`.
 
 File: `…/data/immich/ImmichTimelineDtos.kt` (new): `BucketDto`, `BucketAssetsDto`, `takenOn`, `place` moved from `ImmichAlbumRepository.kt`, made `internal`.
 
 File: `…/data/immich/ImmichAlbumRepository.kt`: uses both; the constructor keeps `(client, sessions)` so its tests don't change.
 
-### [ ] 1.2 — Domain
+### [x] 1.2 — Domain
 
 File: `…/domain/photos/Library.kt` (new)
 
@@ -73,7 +73,7 @@ File: `test/…/domain/photos/FakeLibrary.kt` (new): `FakeLibraryRepository(time
 
 Correct the `Timeline` KDoc: the library now gives one.
 
-### [ ] 1.3 — Immich implementation
+### [x] 1.3 — Immich implementation
 
 File: `…/data/immich/ImmichLibraryRepository.kt` (new): `internal class ImmichLibraryRepository(client, sessions) : LibraryRepository`.
 

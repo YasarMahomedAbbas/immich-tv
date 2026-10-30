@@ -9,7 +9,7 @@ data class TimelineMonth(val month: YearMonth, val count: Int)
 
 /**
  * A set of photos grouped by month, read a month at a time so a long one opens quickly. An
- * album gives one; the whole library will too (#7). Months come in the source's own order,
+ * album gives one, and so does the whole library. Months come in the source's own order,
  * newest or oldest first.
  */
 interface Timeline {
