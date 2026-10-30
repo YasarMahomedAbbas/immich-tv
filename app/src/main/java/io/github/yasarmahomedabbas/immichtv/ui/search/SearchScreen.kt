@@ -48,6 +48,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -281,13 +283,16 @@ private fun FieldRow(
     ) {
         SearchField(text, onEdit, onSubmit, modifier.then(fieldModifier))
         VoiceButton(stringResource(R.string.search_voice), onVoice, modifier)
-        Text(
-            stringResource(R.string.search_voice_hint),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 22.sp,
-            modifier = Modifier.weight(1f),
-        )
     }
+}
+
+/** Where a key sends focus out of the search field; null for a key the field handles itself. */
+internal fun fieldFocusMove(key: Key): FocusDirection? = when (key) {
+    Key.DirectionUp -> FocusDirection.Up
+    Key.DirectionDown -> FocusDirection.Down
+    Key.DirectionLeft -> FocusDirection.Left
+    Key.DirectionRight -> FocusDirection.Right
+    else -> null
 }
 
 /** The big round field: OK opens the on-screen keyboard, whose Search key searches. */
@@ -295,17 +300,34 @@ private fun FieldRow(
 private fun SearchField(text: String, onEdit: (String) -> Unit, onSubmit: () -> Unit, modifier: Modifier) {
     val colors = MaterialTheme.colorScheme
     val keyboard = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     var focused by remember { mutableStateOf(false) }
+    // A writable text field opens the keyboard as soon as it gains focus, and the D-pad then moves
+    // inside the keyboard: the mic and chips can't be reached. So it stays read-only until OK.
+    var editing by remember { mutableStateOf(false) }
+    LaunchedEffect(editing) { if (editing) keyboard?.show() }
     BasicTextField(
         value = text,
         onValueChange = onEdit,
+        readOnly = !editing,
         modifier = modifier
             .width(FieldWidth)
             .height(FieldHeight)
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged {
+                focused = it.isFocused
+                if (!it.isFocused) editing = false
+            }
             .onPreviewKeyEvent { event ->
+                // The field would take these as cursor moves, and the remote could never leave it.
+                val direction = fieldFocusMove(event.key)
+                if (direction != null) {
+                    if (event.type == KeyEventType.KeyDown) focusManager.moveFocus(direction)
+                    return@onPreviewKeyEvent true
+                }
                 val ok = event.key == Key.DirectionCenter || event.key == Key.Enter || event.key == Key.NumPadEnter
-                if (ok && event.type == KeyEventType.KeyUp) keyboard?.show()
+                if (ok && event.type == KeyEventType.KeyUp) {
+                    if (editing) keyboard?.show() else editing = true
+                }
                 ok
             }
             .focusOutline(focused, FieldHeight / 2),
@@ -316,6 +338,7 @@ private fun SearchField(text: String, onEdit: (String) -> Unit, onSubmit: () -> 
         keyboardActions = KeyboardActions(
             onSearch = {
                 keyboard?.hide()
+                editing = false
                 onSubmit()
             },
         ),
