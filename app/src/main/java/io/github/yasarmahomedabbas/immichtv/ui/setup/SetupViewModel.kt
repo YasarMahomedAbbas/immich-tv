@@ -23,10 +23,12 @@ data class SetupState(
     val keyVisible: Boolean = false,
     val connecting: Boolean = false,
     val problem: SetupProblem? = null,
+    /** The version a too-old server runs, shown with [SetupProblem.ServerTooOld]. */
+    val serverVersion: String? = null,
 )
 
 /** Why Connect didn't work; each has its own message on screen. */
-enum class SetupProblem { InvalidAddress, MissingKey, Unreachable, NotPhotoServer, KeyRejected, KeyLacksPermission }
+enum class SetupProblem { InvalidAddress, MissingKey, Unreachable, NotPhotoServer, ServerTooOld, KeyRejected, KeyLacksPermission }
 
 class SetupViewModel(private val connect: ConnectToServer, current: Session?) : ViewModel() {
     private val _state = MutableStateFlow(
@@ -39,27 +41,30 @@ class SetupViewModel(private val connect: ConnectToServer, current: Session?) : 
     /** Fires once when the server accepted the key and the session was saved. */
     val connected: Flow<Unit> = _connected.receiveAsFlow()
 
-    fun onAddressChange(value: String) = _state.update { it.copy(address = value, problem = null) }
+    fun onAddressChange(value: String) = _state.update { it.copy(address = value, problem = null, serverVersion = null) }
 
-    fun onApiKeyChange(value: String) = _state.update { it.copy(apiKey = value, problem = null) }
+    fun onApiKeyChange(value: String) = _state.update { it.copy(apiKey = value, problem = null, serverVersion = null) }
 
     fun toggleKeyVisible() = _state.update { it.copy(keyVisible = !it.keyVisible) }
 
     fun connect() {
         val start = _state.value
         if (start.connecting) return
-        _state.update { it.copy(connecting = true, problem = null) }
+        _state.update { it.copy(connecting = true, problem = null, serverVersion = null) }
         viewModelScope.launch {
-            val problem = when (connect(start.address, start.apiKey)) {
+            val result = connect(start.address, start.apiKey)
+            val problem = when (result) {
                 is ConnectResult.Connected -> null
                 ConnectResult.InvalidAddress -> SetupProblem.InvalidAddress
                 ConnectResult.MissingKey -> SetupProblem.MissingKey
                 ConnectResult.Unreachable -> SetupProblem.Unreachable
                 ConnectResult.NotPhotoServer -> SetupProblem.NotPhotoServer
+                is ConnectResult.ServerTooOld -> SetupProblem.ServerTooOld
                 ConnectResult.KeyRejected -> SetupProblem.KeyRejected
                 ConnectResult.KeyLacksPermission -> SetupProblem.KeyLacksPermission
             }
-            _state.update { it.copy(connecting = false, problem = problem) }
+            val version = (result as? ConnectResult.ServerTooOld)?.version
+            _state.update { it.copy(connecting = false, problem = problem, serverVersion = version) }
             if (problem == null) _connected.send(Unit)
         }
     }

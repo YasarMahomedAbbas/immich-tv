@@ -49,6 +49,9 @@ sealed interface ConnectResult {
 
     /** Something answered, but not as the photo server the app speaks to. */
     data object NotPhotoServer : ConnectResult
+
+    /** The server is Immich, but older than the oldest version the app speaks; [version] is what it runs. */
+    data class ServerTooOld(val version: String) : ConnectResult
     data object KeyRejected : ConnectResult
     data object KeyLacksPermission : ConnectResult
 }

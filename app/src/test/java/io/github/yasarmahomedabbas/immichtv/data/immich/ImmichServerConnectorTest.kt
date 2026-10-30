@@ -22,12 +22,14 @@ class ImmichServerConnectorTest {
 
     private var ping = MockResponse().setBody("""{"res":"pong"}""")
     private var me = MockResponse().setBody(ME_V3_3_5)
+    private var version = MockResponse().setBody(VERSION_3_3_5)
 
     @Before
     fun setUp() {
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest) = when (request.path) {
                 "/api/server/ping" -> ping
+                "/api/server/version" -> version
                 "/api/users/me" -> me
                 else -> MockResponse().setResponseCode(404)
             }
@@ -49,9 +51,51 @@ class ImmichServerConnectorTest {
     }
 
     @Test
-    fun `a v1_118 server and a good key connect`() = runTest {
+    fun `a v1_133 server and a good key connect`() = runTest {
+        version = MockResponse().setBody("""{"major":1,"minor":133,"patch":0}""")
         me = MockResponse().setBody(ME_V1_118)
         assertEquals(ConnectResult.Connected(session(), "Ada Lovelace"), check())
+    }
+
+    @Test
+    fun `a v1_132_9 server is too old and the key is never sent`() = runTest {
+        version = MockResponse().setBody("""{"major":1,"minor":132,"patch":9}""")
+
+        assertEquals(ConnectResult.ServerTooOld("1.132.9"), check())
+        assertEquals(2, server.requestCount)
+        assertEquals("/api/server/ping", server.takeRequest().path)
+        assertEquals("/api/server/version", server.takeRequest().path)
+    }
+
+    @Test
+    fun `a v1_118 server is too old`() = runTest {
+        version = MockResponse().setBody("""{"major":1,"minor":118,"patch":0}""")
+        me = MockResponse().setBody(ME_V1_118)
+        assertEquals(ConnectResult.ServerTooOld("1.118.0"), check())
+    }
+
+    @Test
+    fun `a newer minor on an older major still counts by major first`() = runTest {
+        version = MockResponse().setBody("""{"major":2,"minor":0,"patch":0}""")
+        assertEquals(ConnectResult.Connected::class, check()::class)
+    }
+
+    @Test
+    fun `a version 404 is not immich`() = runTest {
+        version = MockResponse().setResponseCode(404)
+        assertEquals(ConnectResult.NotPhotoServer, check())
+    }
+
+    @Test
+    fun `a version answered with something else is not immich`() = runTest {
+        version = MockResponse().setBody("""{"version":"v3"}""")
+        assertEquals(ConnectResult.NotPhotoServer, check())
+    }
+
+    @Test
+    fun `a version 503 is unreachable`() = runTest {
+        version = MockResponse().setResponseCode(503)
+        assertEquals(ConnectResult.Unreachable, check())
     }
 
     @Test
@@ -62,11 +106,13 @@ class ImmichServerConnectorTest {
         assertEquals("/api/server/ping", first.path)
         assertNull(first.getHeader("x-api-key"))
         val second = server.takeRequest()
-        assertEquals("/api/users/me", second.path)
-        assertEquals(KEY, second.getHeader("x-api-key"))
-        assertFalse(first.requestUrl.toString().contains(KEY))
-        assertFalse(second.requestUrl.toString().contains(KEY))
-        assertEquals(2, server.requestCount)
+        assertEquals("/api/server/version", second.path)
+        assertNull(second.getHeader("x-api-key"))
+        val third = server.takeRequest()
+        assertEquals("/api/users/me", third.path)
+        assertEquals(KEY, third.getHeader("x-api-key"))
+        for (request in listOf(first, second, third)) assertFalse(request.requestUrl.toString().contains(KEY))
+        assertEquals(3, server.requestCount)
     }
 
     @Test
@@ -75,6 +121,7 @@ class ImmichServerConnectorTest {
 
         assertEquals(ConnectResult.Connected::class, result::class)
         assertEquals("/api/server/ping", server.takeRequest().path)
+        assertEquals("/api/server/version", server.takeRequest().path)
         assertEquals("/api/users/me", server.takeRequest().path)
     }
 
@@ -170,6 +217,7 @@ class ImmichServerConnectorTest {
 
         server.takeRequest()
         server.takeRequest()
+        server.takeRequest()
         assertEquals(KEY, server.takeRequest().getHeader("x-api-key"))
     }
 
@@ -182,6 +230,9 @@ class ImmichServerConnectorTest {
 
     private companion object {
         const val KEY = "k3y-Secret-0123456789"
+
+        /** `ServerVersionResponseDto` as the server sends it. */
+        const val VERSION_3_3_5 = """{"major":3,"minor":3,"patch":5}"""
 
         /** `UserAdminResponseDto` as v3.3.5 sends it, with the v3-only `clusterGroupId`. */
         val ME_V3_3_5 = """

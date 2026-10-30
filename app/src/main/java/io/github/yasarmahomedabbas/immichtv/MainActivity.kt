@@ -14,7 +14,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
 import io.github.yasarmahomedabbas.immichtv.ui.AppScreen
 import io.github.yasarmahomedabbas.immichtv.ui.AppViewModel
-import io.github.yasarmahomedabbas.immichtv.ui.home.HomeScreen
+import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumPhotosScreen
+import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumScreen
+import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
+import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
+import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
@@ -27,6 +33,7 @@ class MainActivity : ComponentActivity() {
             ImmichTvTheme {
                 val app: AppViewModel = viewModel(factory = AppViewModel.factory(container))
                 val screen by app.screen.collectAsState()
+                val connection by app.connection.collectAsState()
                 BackHandler { if (!app.back()) finish() }
                 when (val current = screen) {
                     AppScreen.Loading -> Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
@@ -40,7 +47,34 @@ class MainActivity : ComponentActivity() {
                         onConnected = app::connected,
                         onBack = { app.back() },
                     )
-                    AppScreen.Home -> HomeScreen(onOpenSettings = app::openSettings)
+                    is AppScreen.Main -> MainScreen(
+                        tab = current.tab,
+                        onSelectTab = app::selectTab,
+                        onOpenSettings = app::openSettings,
+                    ) {
+                        // Scoped to the activity, so the list and the focused album survive opening one.
+                        AlbumsScreen(
+                            viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
+                            onOpenAlbum = app::openAlbum,
+                        )
+                    }
+                    is AppScreen.Album -> AlbumScreen(
+                        viewModel = viewModel(
+                            key = "album-$connection-${current.id.value}",
+                            factory = AlbumViewModel.factory(container, current.id),
+                        ),
+                        onBack = { app.back() },
+                        onBrowsePhotos = app::openAlbumPhotos,
+                        focusBrowse = current.focusBrowse,
+                    )
+                    is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
+                        albumName = current.album.name,
+                        viewModel = viewModel(
+                            key = "album-photos-$connection-${current.album.id.value}",
+                            factory = PhotoGridViewModel.factory(container.albumTimeline(current.album)),
+                        ),
+                        onBack = { app.back() },
+                    )
                 }
             }
         }

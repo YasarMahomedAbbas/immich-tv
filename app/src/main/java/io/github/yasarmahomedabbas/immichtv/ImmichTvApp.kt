@@ -1,8 +1,11 @@
 package io.github.yasarmahomedabbas.immichtv
 
 import android.app.Application
+import coil3.ImageLoader
+import coil3.PlatformContext
+import coil3.SingletonImageLoader
 
-class ImmichTvApp : Application() {
+class ImmichTvApp : Application(), SingletonImageLoader.Factory {
     lateinit var container: AppContainer
         private set
 
@@ -10,4 +13,6 @@ class ImmichTvApp : Application() {
         super.onCreate()
         container = AppContainer(this)
     }
+
+    override fun newImageLoader(context: PlatformContext): ImageLoader = container.imageLoader(context)
 }
