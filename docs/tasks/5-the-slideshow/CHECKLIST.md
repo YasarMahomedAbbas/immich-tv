@@ -82,14 +82,14 @@ Test: extend `test/…/data/immich/ImmichAlbumRepositoryTest.kt` as in the test 
 
 Goal: everything the slideshow does over time, tested with virtual time and no screen.
 
-### [ ] 2.1 — ViewModel
+### [x] 2.1 — ViewModel
 
 File: `…/ui/slideshow/SlideshowViewModel.kt` (new)
 
 - `sealed interface SlideshowLoad { Loading; Empty; Failed(problem: Problem); Playing }`
 - `data class SlideshowState(val load: SlideshowLoad = Loading, val slides: List<Slide> = emptyList(), val index: Int = 0, val paused: Boolean = false, val controlsVisible: Boolean = false)` with `current`, `next`, `previous` (each wrapping; null when no slides) and `position` (index + 1).
 - `class SlideshowViewModel(album: Album, private val settings: SlideshowSettings, private val loadSlideshow: LoadSlideshow) : ViewModel()`: loads in `init`. Constants in its companion: `CONTROLS_MS = 4_000L`, `MAX_FAILURES = 5`.
-- `suspend fun play()`: the timer, a loop run by the screen and cancelled with it. Counts elapsed time in 100 ms `delay` ticks, not while paused or not `Playing`; at `secondsPerPhoto` it advances if `next` is ready, otherwise keeps checking.
+- `suspend fun play()`: the timer, a loop run by the screen and cancelled with it. Counts elapsed time in 100 ms `delay` ticks, not while paused or not `Playing`, nor until the current photo's image is ready (else a slow one would be skipped unseen); at `secondsPerPhoto` it advances if `next` is ready, otherwise keeps checking.
 - `fun skipForward()`, `skipBack()`: move at once, wrap, zero the elapsed time, show controls.
 - `fun togglePause()`, `fun showControls()`: restart a `viewModelScope` hide job of `CONTROLS_MS`.
 - `fun imageReady(photo: PhotoId)`: remembered for the next-ready check, only the latest few kept; zeroes the failure count.
@@ -97,7 +97,7 @@ File: `…/ui/slideshow/SlideshowViewModel.kt` (new)
 - `fun retry()`: reloads; ignored while `Loading`.
 - Factory `factory(container, album, settings)`.
 
-### [ ] 2.2 — Pure helpers
+### [x] 2.2 — Pure helpers
 
 File: `…/ui/slideshow/SlideshowViewModel.kt`:
 
