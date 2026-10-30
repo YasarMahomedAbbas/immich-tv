@@ -56,7 +56,8 @@ private val FocusRoom = 8.dp
 /**
  * Photos by month in a 6-column grid of square previews, a heading per month. A month not
  * loaded yet shows empty `surface` tiles and asks for its photos ([onNeedMonth]) when the grid reaches
- * it; a month that failed says so with Try again. Focus goes to the first tile once it is there.
+ * it; a month that failed says so with Try again. Focus goes to the first tile once it is there, if
+ * [mayTakeFirstFocus] still says so; a remote already gone elsewhere stays there.
  * OK on a tile calls [onOpen], and holding OK [onHold]; a tile whose photo hasn't arrived ignores both.
  * [onMonthFocused] says which month the remote is on. A [jumpTo] month
  * is scrolled to with its first tile focused (its Try again, if it failed), then [onJumped] is called.
@@ -75,6 +76,7 @@ fun PhotoGrid(
     onJumped: () -> Unit = {},
     restoreTo: PhotoId? = null,
     onHold: ((Photo) -> Unit)? = null,
+    mayTakeFirstFocus: () -> Boolean = { true },
 ) {
     val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = restoreTo?.let { gridIndexOfPhoto(sections, it) } ?: 0)
     val restoreFocus = remember { FocusRequester() }
@@ -92,7 +94,8 @@ fun PhotoGrid(
         val restoring = restoreTo?.let { gridIndexOfPhoto(sections, it) } != null
         if (restoring || firstReady) {
             withFrameNanos { }
-            focusedOnce = if (restoring) runCatching { restoreFocus.requestFocus() }.isSuccess else focusFirst()
+            // After the frame, so the answer is current. Coming back to a tile doesn't ask: the menu isn't where the remote was.
+            focusedOnce = if (restoring) runCatching { restoreFocus.requestFocus() }.isSuccess else mayTakeFirstFocus() && focusFirst()
         }
     }
     // A refresh can take away the tile the remote is on; focus then starts again from the top.
