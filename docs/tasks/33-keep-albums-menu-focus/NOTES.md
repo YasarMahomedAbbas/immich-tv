@@ -13,5 +13,7 @@ Branch: `fix/33-keep-albums-menu-focus`
 - Decided: the refresh branch that refocuses when the focused album disappears is out of scope.
 - Decided: test cases are no key pressed, Right during the skeleton, Try again and arriving on an already-loaded tab, plus Left during the skeleton, a tab switch, a remembered album and a chip, added while writing the checklist.
 - Decided while writing the checklist, flag if you disagree: a chip that brings the grid back with no remembered album in the list keeps focus instead of losing it to the first card. This is new behaviour, and it follows from the rule.
+- Decided (the pipeline, on the user's behalf; flags: ux, scope, open-risk): plan brief approved with option 1 of 2, the plan as written, including a chip keeping focus. The alternative was keeping today's move to the first card for that chip, which adds a condition to the rule for a rare path.
+- Decided (the pipeline's revision): the docs checkpoint also confirms `MainScreen`'s KDoc, reworded in 1.1, no longer names only the Photos tab.
 - Speed note: the user's note for today's run is in the checklist's Context.
 - Open risks: (1) The TV window ends about 15:30 CET on 2026-10-30; the on-TV check is skipped and recorded as skipped if it is reached later. (2) The Home screen takes focus on arrival the same way, unasked. It is out of scope here, and no ticket for it was checked for. (3) The albums' first load is short on the real server, so the on-TV Right during the skeleton may be hard to land; the unit test is the proof either way.

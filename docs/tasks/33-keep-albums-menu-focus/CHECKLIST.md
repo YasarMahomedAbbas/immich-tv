@@ -77,9 +77,13 @@ In the Top menu line, "The Photos grid takes focus from there on arrival only wh
 File: `README.md`
 The testing line that names `PhotoGridFocusTest` also names `AlbumGridFocusTest`, for the Albums grid.
 
+File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/main/MainScreen.kt`
+The KDoc is reworded in 1.1, because the code it describes changes there. Confirm here that it no longer names only the Photos tab as asking first, and widen it in this commit if it still does.
+
 ### Verify
 
 - `rg -n 'Albums and Photos grids' docs/design/README.md` finds the line, and `rg -n 'AlbumGridFocusTest' README.md` finds the other.
+- `MainScreen`'s KDoc names both the Albums and Photos tabs as asking first.
 
 ---
 
