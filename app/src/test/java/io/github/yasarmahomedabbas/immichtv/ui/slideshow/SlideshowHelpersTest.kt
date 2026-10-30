@@ -75,6 +75,13 @@ class SlideshowHelpersTest {
         assertNull(actionFor(Key.A))
     }
 
+    @Test
+    fun `only Media3's IO errors are the server's`() {
+        for (code in listOf(2000, 2001, 2004, 2008, 2999)) assertEquals(true, isServerFailure(code))
+        // Unspecified, a runtime error, a malformed container, a decoder failure, and either side of the range.
+        for (code in listOf(1000, 1004, 3001, 4001, 1999, 3000)) assertEquals(false, isServerFailure(code))
+    }
+
     private fun photo(id: String) = Slide(Photo(PhotoId(id), false), false, null, null)
 
     @Test

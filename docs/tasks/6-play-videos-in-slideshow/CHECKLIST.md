@@ -89,12 +89,12 @@ Add `"*.ImmichVideoPlayer*"` and `"*.VideoSourceFactory*"` (its private media so
 
 Goal: the ViewModel plays by the video's reports instead of the timer, tested in virtual time; the screen doesn't send them yet.
 
-### [ ] 3.1 — State
+### [x] 3.1 — State
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/slideshow/SlideshowViewModel.kt`
 `SlideshowState` gains `val run: Int = 0`: goes up on every `moveBy`, so a sole video replays on its own move. Private fields: `videoEnded: Boolean`, `videoMoving: Boolean`, `videoWaitMs: Long`, all reset in `moveBy`, in `load` and when the current slide is dropped. Companion: `const val VIDEO_STALL_MS = 30_000L`.
 
-### [ ] 3.2 — Reports from the player
+### [x] 3.2 — Reports from the player
 
 Same file. Each ignores a `photo` that isn't the current slide's:
 - `fun videoPlaying(photo: PhotoId)`: `videoMoving = true`, `videoWaitMs = 0`, `failuresInARow = 0`.
@@ -106,14 +106,14 @@ Same file. Each ignores a `photo` that isn't the current slide's:
 
 `imageReady` resets `failuresInARow` only when the slide isn't a video: look it up in `slides`, and treat an id no longer in the show as not a video.
 
-### [ ] 3.3 — The clock
+### [x] 3.3 — The clock
 
 Same file. In `play()`, after the pause check, when `state.current?.photo?.isVideo == true` run a video tick and `continue`:
 - not in `ready`: nothing (the preview isn't up, so the video hasn't started).
 - `videoEnded`: `moveBy(1)` once `state.next?.photo?.id in ready`.
 - `!videoMoving`: `videoWaitMs += TICK_MS`; at `VIDEO_STALL_MS`, `videoFailed(id, serverFailure = true)`.
 
-### [ ] 3.4 — The error split
+### [x] 3.4 — The error split
 
 Same file, next to `actionFor`: `internal fun isServerFailure(errorCode: Int): Boolean = errorCode in 2000..2999`, Media3's `ERROR_CODE_IO_*` range, with a comment naming it. Tested in `SlideshowHelpersTest`.
 
