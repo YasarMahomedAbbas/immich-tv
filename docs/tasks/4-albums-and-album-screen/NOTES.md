@@ -24,3 +24,17 @@ Branch: `feat/4-albums-and-album-screen`
   - Coil 3.0.4 with Compose BOM 2024.12.01 and Kotlin 2.1.0 is expected to resolve; checkpoint 4's `assembleDebug` proves it.
 - Decided (user, on the issue): option 1 for Browse photos. It opens a 6-column album photo grid with a heading per month, loaded month by month from the album timeline, with skeleton, empty and failed states; focus on the first tile, OK a no-op until #7, Back to the album with Browse photos focused; built so #7 can reuse it. Added as checkpoint 8. Rejected: a no-op with a follow-up ticket, and hiding the button.
 - Approved (user, on the issue): the plan, with that revision. The other pipeline decisions (v1.133 floor, Coil 3, per-album slideshow settings, filtering and sorting on the device, counts from the timeline) stand. The TV is now connected (`TV_ADB` set), so the on-TV checks run.
+
+## Implementation
+
+- Shipped (paths under `app/src/main/java/io/github/yasarmahomedabbas/immichtv/`):
+  - The v1.133 floor (`data/immich/ImmichServerConnector.kt:100`) and its Setup message; the session cached in memory.
+  - Albums from Immich, both owner shapes (`data/immich/ImmichAlbumRepository.kt:40`), and the domain `Timeline` (`domain/photos/Timeline.kt:15`).
+  - Slideshow settings per album (`data/settings/StoredSlideshowSettings.kt:15`).
+  - Preview thumbnails through Coil with the key (`data/immich/PreviewInterceptor.kt:25`).
+  - The top menu and tabs (`ui/components/TopMenu.kt:52`, `ui/main/MainScreen.kt:30`, `ui/AppViewModel.kt:75`).
+  - The Albums tab (`ui/albums/AlbumsScreen.kt:61`), the album screen (`ui/album/AlbumScreen.kt:75`) and the album photo grid (`ui/album/AlbumPhotosScreen.kt:40`, `ui/photos/PhotoGrid.kt:60`).
+  - 1dp = 1/1920 of the screen's width, keeping the system font scale (`ui/theme/Theme.kt:42`, applied at `:48`), with rule 10 in `docs/design/README.md`. This also fixes Setup from #3.
+- Tests: 163 passed / 0 failed, 0 skipped; koverVerifyDebug, lintDebug and assembleDebug pass. `CanvasDensityTest` fails 3 of its 5 tests when `canvasDensity` returns the system density. No test covers `ImmichTvTheme` applying it (no Robolectric or instrumented tests here); that is for the TV.
+- Outstanding: no unticked tasks. Not yet seen on the TV: the new screens and Setup at the new density, for self-verification. tv-material parts with built-in dp sizes now scale too and may look small next to the canvas's values. The keyed ViewModels for each opened album and album grid stay in the activity's store for the session.
+- Contradicted the plan: the TV's screen is 960×540 dp (1920×1080 px at density 2.0), but the manual, the checklist and the code read canvas px as dp, so everything drew at twice its size. Decided (user, on the issue): option 1, one app-wide change in the theme, added as checkpoint 9. Rejected: the same fix as its own ticket, and halving every value and rewriting the manual and canvas in 960×540 dp.
