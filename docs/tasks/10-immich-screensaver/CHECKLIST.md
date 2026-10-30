@@ -161,7 +161,7 @@ Files: `.../ui/screensaver/ScreensaverScreen.kt`, `.../ui/components/TopMenu.kt`
 
 Goal: the gear opens Settings, and the user can choose what the screensaver plays with the D-pad.
 
-### [ ] 4.1 — Navigation
+### [x] 4.1 — Navigation
 
 Files: `app/src/main/java/.../ui/AppViewModel.kt`, `app/src/test/java/.../ui/AppViewModelTest.kt`
 
@@ -170,7 +170,7 @@ Files: `app/src/main/java/.../ui/AppViewModel.kt`, `app/src/test/java/.../ui/App
 - `back()`: `Settings` → `from`; `ScreensaverPicker` → its `settings` with `focusScreensaver = true`. Setup's Back goes to its `from`, unchanged. `connected()` stays Home.
 - Update the tests at the existing `openSettings` cases and add one per move.
 
-### [ ] 4.2 — The ViewModel
+### [x] 4.2 — The ViewModel
 
 File: `app/src/main/java/.../ui/settings/SettingsViewModel.kt`, mirroring `AlbumsViewModel`.
 
@@ -178,7 +178,7 @@ File: `app/src/main/java/.../ui/settings/SettingsViewModel.kt`, mirroring `Album
 
 Test: `app/src/test/java/.../ui/settings/SettingsViewModelTest.kt`.
 
-### [ ] 4.3 — The screens
+### [x] 4.3 — The screens
 
 Files: `.../ui/settings/SettingsScreen.kt`, `.../ui/settings/ScreensaverPickerScreen.kt`, `.../ui/components/PickerRow.kt`, `app/src/main/res/values/strings.xml`, `.../MainActivity.kt`
 

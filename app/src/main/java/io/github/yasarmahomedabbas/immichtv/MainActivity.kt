@@ -14,15 +14,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
 import io.github.yasarmahomedabbas.immichtv.ui.AppScreen
 import io.github.yasarmahomedabbas.immichtv.ui.AppViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.Tab
 import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumPhotosScreen
 import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumScreen
 import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.components.label
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoViewerScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotosScreen
+import io.github.yasarmahomedabbas.immichtv.ui.settings.ScreensaverPickerScreen
+import io.github.yasarmahomedabbas.immichtv.ui.settings.SettingsScreen
+import io.github.yasarmahomedabbas.immichtv.ui.settings.SettingsViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowScreen
@@ -51,6 +56,20 @@ class MainActivity : ComponentActivity() {
                         ),
                         firstRun = current.firstRun,
                         onConnected = app::connected,
+                        onBack = { app.back() },
+                    )
+                    is AppScreen.Settings -> SettingsScreen(
+                        viewModel = viewModel(key = "settings-$connection", factory = SettingsViewModel.factory(container)),
+                        // The gear is only on the main screens.
+                        back = ((current.from as? AppScreen.Main)?.tab ?: Tab.Home).label,
+                        focusScreensaver = current.focusScreensaver,
+                        onOpenServer = app::openServerSetup,
+                        onOpenScreensaver = app::openScreensaverPicker,
+                        onBack = { app.back() },
+                    )
+                    is AppScreen.ScreensaverPicker -> ScreensaverPickerScreen(
+                        // The same ViewModel as Settings, so a choice shows there at once.
+                        viewModel = viewModel(key = "settings-$connection", factory = SettingsViewModel.factory(container)),
                         onBack = { app.back() },
                     )
                     is AppScreen.Main -> MainScreen(
