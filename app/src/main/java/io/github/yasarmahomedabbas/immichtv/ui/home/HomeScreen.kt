@@ -211,32 +211,34 @@ private fun HomeBlock(content: @Composable ColumnScope.() -> Unit) {
     )
 }
 
+/** What the hero says and does, for one [HeroBlock] call: a refresh that swaps memory and album keeps the focused button. */
+private class HeroContent(val photo: PhotoId?, val label: String, val title: String, val line: String, val onPlay: () -> Unit, val onPhotos: () -> Unit)
+
 @Composable
 private fun Hero(hero: HomeHero, focusOn: Modifier.(HomeFocus) -> Modifier, actions: HomeActions) {
-    when (hero) {
+    val content = when (hero) {
         is HomeHero.FromMemory -> {
             val title = pluralStringResource(R.plurals.home_years_ago, hero.yearsAgo, hero.yearsAgo)
             val date = hero.memory.takenOn.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
-            HeroBlock(
+            HeroContent(
                 photo = hero.memory.photos.first().id,
                 label = stringResource(R.string.home_label_memory),
                 title = title,
                 line = "$date · ${photoCount(hero.memory.slides.size)}",
-                focusOn = focusOn,
                 onPlay = { actions.onPlayMemory(hero.memory) },
                 onPhotos = { actions.onMemoryPhotos(hero.memory, title) },
             )
         }
-        is HomeHero.FromAlbum -> HeroBlock(
+        is HomeHero.FromAlbum -> HeroContent(
             photo = hero.album.cover,
             label = stringResource(R.string.home_label_album),
             title = hero.album.name,
             line = photoCount(hero.album.itemCount),
-            focusOn = focusOn,
             onPlay = { actions.onPlayAlbum(hero.album) },
             onPhotos = { actions.onAlbumPhotos(hero.album) },
         )
     }
+    HeroBlock(content.photo, content.label, content.title, content.line, focusOn, content.onPlay, content.onPhotos)
 }
 
 @Composable

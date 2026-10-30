@@ -76,6 +76,8 @@ class MainActivity : ComponentActivity() {
                                 onOpenAlbum = { app.openAlbum(it, CameFrom.HomeRow) },
                                 onOpenRecent = { photo ->
                                     photos.open(photo)
+                                    // Nothing else refreshes it while Home is up, and the tile may be newer than its months.
+                                    photos.refresh()
                                     app.openPhotoViewer(fromHome = true)
                                 },
                                 onSeeAll = { app.selectTab(Tab.Albums) },
