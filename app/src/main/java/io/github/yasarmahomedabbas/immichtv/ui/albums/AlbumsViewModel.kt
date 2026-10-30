@@ -13,6 +13,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumSort
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbums
 import io.github.yasarmahomedabbas.immichtv.domain.albums.filterAndSort
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,6 +44,7 @@ data class AlbumsState(
 class AlbumsViewModel(private val loadAlbums: LoadAlbums) : ViewModel() {
     private val _state = MutableStateFlow(AlbumsState())
     val state: StateFlow<AlbumsState> = _state.asStateFlow()
+    private var refreshJob: Job? = null
 
     init {
         load()
@@ -60,7 +62,20 @@ class AlbumsViewModel(private val loadAlbums: LoadAlbums) : ViewModel() {
 
     fun retry() {
         if (_state.value.load == AlbumsLoad.Loading) return
+        refreshJob?.cancel()
         load()
+    }
+
+    /**
+     * Reads the albums again without the skeleton, so focus stays where it is. Equal albums change
+     * nothing on screen; a failure leaves the screen as it was, and the next refresh tries again.
+     */
+    fun refresh() {
+        if (_state.value.load == AlbumsLoad.Loading || refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.launch {
+            val result = loadAlbums()
+            if (result is ServerResult.Ok) _state.update { it.copy(load = AlbumsLoad.Loaded(result.value)) }
+        }
     }
 
     private fun load() {

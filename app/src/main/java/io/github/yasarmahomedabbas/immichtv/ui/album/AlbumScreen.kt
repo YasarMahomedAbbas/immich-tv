@@ -18,12 +18,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -50,10 +53,12 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.BackLink
 import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
 import io.github.yasarmahomedabbas.immichtv.ui.components.PhotoTile
 import io.github.yasarmahomedabbas.immichtv.ui.components.PrimaryButton
+import io.github.yasarmahomedabbas.immichtv.ui.components.RefreshOnStart
 import io.github.yasarmahomedabbas.immichtv.ui.components.SecondaryButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SettingButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
 import io.github.yasarmahomedabbas.immichtv.ui.components.TileStyle
+import io.github.yasarmahomedabbas.immichtv.ui.components.lostFocus
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 import io.github.yasarmahomedabbas.immichtv.ui.theme.CANVAS_WIDTH
 import java.time.Instant
@@ -107,6 +112,7 @@ fun AlbumScreen(
     focusBrowse: Boolean = false,
 ) {
     val state by viewModel.state.collectAsState()
+    RefreshOnStart(viewModel::refresh)
     AlbumContent(
         state = state,
         focusBrowse = focusBrowse,
@@ -226,7 +232,7 @@ private fun LoadedAlbum(
             Text(stringResource(R.string.album_settings_hint), color = colors.onSurfaceVariant, fontSize = 18.sp)
         }
     }
-    Strip(contents.firstItems)
+    Strip(contents.firstItems, onFocusLost = { runCatching { startFocus.requestFocus() } })
 }
 
 /** The cover over two rows, then the album's next two items; a missing tile stays `surface`. */
@@ -273,10 +279,20 @@ private fun Settings(
     }
 }
 
-/** "In this album": the first items as focusable tiles (opening one comes with the photo viewer). */
+/**
+ * "In this album": the first items as focusable tiles (opening one comes with the photo viewer).
+ * [onFocusLost] is called when the tile the remote was last on is gone after a refresh.
+ */
 @Composable
-private fun Strip(items: List<Photo>) {
+private fun Strip(items: List<Photo>, onFocusLost: () -> Unit) {
     val colors = MaterialTheme.colorScheme
+    var lastFocused by remember { mutableStateOf<PhotoId?>(null) }
+    LaunchedEffect(items) {
+        if (lostFocus(lastFocused, items.map { it.id })) {
+            lastFocused = null
+            onFocusLost()
+        }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(18.dp - FocusRoom)) {
         Text(stringResource(R.string.album_in_this_album), color = colors.onSurface, fontSize = 28.sp, fontWeight = FontWeight.Bold)
         if (items.isEmpty()) {
@@ -288,7 +304,12 @@ private fun Strip(items: List<Photo>) {
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
             ) {
                 items(items, key = { it.id.value }) { photo ->
-                    PhotoTile(photo.id, Modifier.size(StripTile), isVideo = photo.isVideo, focusable = true)
+                    PhotoTile(
+                        photo.id,
+                        Modifier.size(StripTile).onFocusChanged { if (it.isFocused) lastFocused = photo.id },
+                        isVideo = photo.isVideo,
+                        focusable = true,
+                    )
                 }
             }
         }

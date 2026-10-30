@@ -85,6 +85,52 @@ class AlbumsTest {
         assertEquals(ServerResult.Failed(Problem.Unreachable), LoadAlbum(repo)(AlbumId("a1")))
     }
 
+    private val knownPage = AlbumPage(album(), AlbumContents(3, 1, emptyList()))
+
+    @Test
+    fun `if changed, an unchanged album doesn't read its contents`() = runTest {
+        val repo = FakeAlbumRepository(albums = ServerResult.Ok(listOf(album())))
+        val result = LoadAlbum(repo).ifChanged(knownPage)
+
+        assertTrue((result as ServerResult.Ok).value === knownPage)
+        assertTrue(repo.contentsLimits.isEmpty())
+    }
+
+    @Test
+    fun `if changed, a new item count reads the contents`() = runTest {
+        val changed = album(itemCount = 11)
+        val contents = AlbumContents(4, 1, emptyList())
+        val repo = FakeAlbumRepository(albums = ServerResult.Ok(listOf(changed)), contents = ServerResult.Ok(contents))
+
+        assertEquals(ServerResult.Ok(AlbumPage(changed, contents)), LoadAlbum(repo).ifChanged(knownPage))
+        assertEquals(listOf(30), repo.contentsLimits)
+    }
+
+    @Test
+    fun `if changed, a new updated time reads the contents`() = runTest {
+        val changed = album(updatedAt = "2025-09-01T00:00:00Z")
+        val repo = FakeAlbumRepository(albums = ServerResult.Ok(listOf(changed)))
+
+        assertEquals(ServerResult.Ok(AlbumPage(changed, knownPage.contents)), LoadAlbum(repo).ifChanged(knownPage))
+        assertEquals(listOf(30), repo.contentsLimits)
+    }
+
+    @Test
+    fun `if changed, a failed album is failed`() = runTest {
+        val repo = FakeAlbumRepository().apply { albumFailure = Problem.Unreachable }
+        assertEquals(ServerResult.Failed(Problem.Unreachable), LoadAlbum(repo).ifChanged(knownPage))
+        assertTrue(repo.contentsLimits.isEmpty())
+    }
+
+    @Test
+    fun `if changed, failed contents are failed`() = runTest {
+        val repo = FakeAlbumRepository(
+            albums = ServerResult.Ok(listOf(album(itemCount = 11))),
+            contents = ServerResult.Failed(Problem.Unreachable),
+        )
+        assertEquals(ServerResult.Failed(Problem.Unreachable), LoadAlbum(repo).ifChanged(knownPage))
+    }
+
     @Test
     fun `album timeline asks the repository for that album's`() {
         val repo = FakeAlbumRepository()

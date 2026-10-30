@@ -14,15 +14,22 @@ import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveSlideshowSettin
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowOrder
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.VideoMode
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
@@ -101,6 +108,152 @@ class AlbumViewModelTest {
         assertEquals(setOf(AlbumId("a1")), store.saves.map { it.first }.toSet())
         assertEquals(expected, store.saved[AlbumId("a1")])
         assertEquals(SlideshowSettings(), store.load(AlbumId("other")))
+    }
+
+    /** Every load state the screen sees from here on. */
+    private fun TestScope.loadsOf(vm: AlbumViewModel): List<AlbumLoad> {
+        val seen = mutableListOf<AlbumLoad>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect { seen += it.load } }
+        return seen
+    }
+
+    @Test
+    fun `a refresh of an unchanged album keeps the state and doesn't read contents`() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        val before = vm.state.value
+        val loads = loadsOf(vm)
+
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertSame(before, vm.state.value)
+        assertEquals(1, loads.size)
+        assertEquals(2, repo.albumCalls)
+        assertEquals(listOf(30), repo.contentsLimits)
+    }
+
+    @Test
+    fun `a refresh of a changed album updates the page without passing through loading`() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        val loads = loadsOf(vm)
+
+        val changed = album(id = "a1", itemCount = 11)
+        val contents = AlbumContents(4, 1, emptyList())
+        repo.albums = ServerResult.Ok(listOf(changed))
+        repo.contents = ServerResult.Ok(contents)
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertEquals(AlbumLoad.Loaded(AlbumPage(changed, contents)), vm.state.value.load)
+        assertFalse(AlbumLoad.Loading in loads)
+        assertEquals(listOf(30, 30), repo.contentsLimits)
+    }
+
+    @Test
+    fun `a refresh that fails keeps the page`() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        val before = vm.state.value
+
+        repo.albumFailure = Problem.Unreachable
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertSame(before, vm.state.value)
+    }
+
+    @Test
+    fun `a refresh whose contents fail keeps the page`() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        val before = vm.state.value
+
+        repo.albums = ServerResult.Ok(listOf(album(id = "a1", itemCount = 11)))
+        repo.contents = ServerResult.Failed(Problem.Unreachable)
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertSame(before, vm.state.value)
+    }
+
+    @Test
+    fun `a failed screen recovers on refresh without passing through loading`() = runTest(dispatcher) {
+        repo.albumFailure = Problem.Unreachable
+        val vm = viewModel()
+        advanceUntilIdle()
+        val loads = loadsOf(vm)
+
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals(AlbumLoad.Failed(Problem.Unreachable), vm.state.value.load)
+
+        repo.albumFailure = null
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertEquals(AlbumLoad.Loaded(AlbumPage(summer, AlbumContents(3, 1, emptyList()))), vm.state.value.load)
+        assertFalse(AlbumLoad.Loading in loads)
+    }
+
+    @Test
+    fun `a refresh during the first load is ignored`() = runTest(dispatcher) {
+        val vm = viewModel()
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals(1, repo.albumCalls)
+    }
+
+    @Test
+    fun `a second refresh while one runs is ignored`() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val gate = CompletableDeferred<Unit>().also { repo.gate = it }
+        vm.refresh()
+        runCurrent()
+        vm.refresh()
+        runCurrent()
+        assertEquals(2, repo.albumCalls)
+        gate.complete(Unit)
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun `settings changed before a refresh survive it`() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.cycleSeconds()
+        val settings = vm.state.value.settings
+
+        repo.albums = ServerResult.Ok(listOf(album(id = "a1", itemCount = 11)))
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertEquals(settings, vm.state.value.settings)
+        assertEquals(11, (vm.state.value.load as AlbumLoad.Loaded).page.album.itemCount)
+    }
+
+    @Test
+    fun `an older refresh can't overwrite what try again loaded`() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val gate = CompletableDeferred<Unit>().also { repo.gate = it }
+        vm.refresh()
+        runCurrent()
+
+        repo.gate = null
+        val newer = album(id = "a1", itemCount = 11)
+        repo.albums = ServerResult.Ok(listOf(newer))
+        vm.retry()
+        advanceUntilIdle()
+
+        repo.albums = ServerResult.Ok(listOf(album(id = "a1", itemCount = 99)))
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertEquals(newer, (vm.state.value.load as AlbumLoad.Loaded).page.album)
     }
 
     private fun summary(photos: Int, videos: Int, start: String?, end: String?) =
