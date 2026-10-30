@@ -91,12 +91,13 @@ Test: `data/immich/ImmichSearchRepositoryTest.kt` (mirror `ImmichAlbumRepository
 
 Goal: results can be played; albums play exactly as before.
 
-### [ ] 2.1 — The ViewModel and the route
+### [x] 2.1 — The ViewModel and the route
 
 File: `domain/slideshow/Slideshow.kt`: `fun List<Slide>.playable(): List<Slide> = filterNot { it.photo.isVideo }`, used by `LoadSlideshow`.
 File: `ui/slideshow/SlideshowViewModel.kt`: the constructor becomes `(settings: SlideshowSettings, loadSlides: suspend () -> ServerResult<List<Slide>>)`. `factory(container, album, settings)` stays, passing `{ container.loadSlideshow(album, settings.order) }`; add `factory(slides: List<Slide>)` with default settings.
 File: `ui/AppViewModel.kt`: `AppScreen.ResultsSlideshow(val slides: List<Slide>)`, `openResultsSlideshow(slides)`, and `Main(val tab: Tab, val focusResults: Boolean = false)`. Back from `ResultsSlideshow` goes to `Main(Tab.Search, focusResults = true)`.
 File: `MainActivity.kt`: route `ResultsSlideshow` to `SlideshowScreen`, keyed like the album route.
+File: `ui/slideshow/SlideshowScreen.kt`: a `backLabel` parameter, as the controls' "‹ Album" is wrong here; results pass "‹ Search".
 Test: `SlideshowViewModelTest` (constructor, a list plays), `AppViewModelTest`, `LoadSlideshowTest`.
 
 ### Verify

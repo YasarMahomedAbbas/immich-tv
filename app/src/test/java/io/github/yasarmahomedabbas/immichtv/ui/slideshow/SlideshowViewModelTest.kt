@@ -39,6 +39,9 @@ class SlideshowViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
+    private fun albumShow(settings: SlideshowSettings = SlideshowSettings()) =
+        SlideshowViewModel(settings) { LoadSlideshow(repository)(album(), settings.order) }
+
     private fun slide(id: String) = Slide(Photo(PhotoId(id), false), false, null, null)
 
     private fun photo(id: String) = PhotoId(id)
@@ -48,7 +51,7 @@ class SlideshowViewModelTest {
     /** A slideshow of [ids] at 5 s a photo, loaded, with every photo's image ready if [allReady]. */
     private fun TestScope.loaded(vararg ids: String, allReady: Boolean = true): SlideshowViewModel {
         repository.slides = ServerResult.Ok(ids.map(::slide))
-        val vm = SlideshowViewModel(album(), SlideshowSettings(secondsPerPhoto = 5), LoadSlideshow(repository))
+        val vm = albumShow(SlideshowSettings(secondsPerPhoto = 5))
         advanceUntilIdle()
         if (allReady) ids.forEach { vm.imageReady(photo(it)) }
         return vm
@@ -65,13 +68,35 @@ class SlideshowViewModelTest {
     @Test
     fun `it loads, then plays from the first photo`() = runTest(dispatcher) {
         repository.slides = ServerResult.Ok(listOf(slide("a"), slide("b")))
-        val vm = SlideshowViewModel(album(), SlideshowSettings(), LoadSlideshow(repository))
+        val vm = albumShow()
         assertEquals(SlideshowLoad.Loading, vm.state.value.load)
         advanceUntilIdle()
 
         assertEquals(SlideshowLoad.Playing, vm.state.value.load)
         assertEquals("a", vm.shown)
         assertEquals(1, vm.state.value.position)
+    }
+
+    @Test
+    fun `a list plays in the order given, and only asks once`() = runTest(dispatcher) {
+        var calls = 0
+        val slides = listOf(slide("c"), slide("a"), slide("b"))
+        val vm = SlideshowViewModel(SlideshowSettings()) {
+            calls++
+            ServerResult.Ok(slides)
+        }
+        advanceUntilIdle()
+
+        assertEquals(SlideshowLoad.Playing, vm.state.value.load)
+        assertEquals(slides, vm.state.value.slides)
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun `an empty list has nothing to play`() = runTest(dispatcher) {
+        val vm = SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(emptyList()) }
+        advanceUntilIdle()
+        assertEquals(SlideshowLoad.Empty, vm.state.value.load)
     }
 
     @Test
@@ -82,7 +107,7 @@ class SlideshowViewModelTest {
     @Test
     fun `a failed load says why, and retry plays`() = runTest(dispatcher) {
         repository.slides = ServerResult.Failed(Problem.KeyRejected)
-        val vm = SlideshowViewModel(album(), SlideshowSettings(), LoadSlideshow(repository))
+        val vm = albumShow()
         advanceUntilIdle()
         assertEquals(SlideshowLoad.Failed(Problem.KeyRejected), vm.state.value.load)
 
@@ -96,7 +121,7 @@ class SlideshowViewModelTest {
     @Test
     fun `retry is ignored while loading`() = runTest(dispatcher) {
         repository.slides = ServerResult.Ok(listOf(slide("a")))
-        val vm = SlideshowViewModel(album(), SlideshowSettings(), LoadSlideshow(repository))
+        val vm = albumShow()
         vm.retry()
         advanceUntilIdle()
         assertEquals(1, repository.slidesCalls)

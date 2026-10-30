@@ -81,6 +81,7 @@
     <string name="setup_problem_missing_key">Enter an API key.</string>
 
     <string name="slideshow_back">‹ Album</string>
+    <string name="slideshow_back_search">‹ Search</string>
     <string name="slideshow_position">%1$d / %2$d</string>
     <string name="slideshow_previous">Previous photo</string>
     <string name="slideshow_next">Next photo</string>

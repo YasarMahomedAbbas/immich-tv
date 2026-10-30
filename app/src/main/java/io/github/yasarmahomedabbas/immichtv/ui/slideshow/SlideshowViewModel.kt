@@ -10,7 +10,6 @@ import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Album
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
-import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Job
@@ -26,7 +25,7 @@ import java.util.Locale
 sealed interface SlideshowLoad {
     data object Loading : SlideshowLoad
 
-    /** The album has no photos to play. */
+    /** There are no photos to play. */
     data object Empty : SlideshowLoad
     data class Failed(val problem: Problem) : SlideshowLoad
     data object Playing : SlideshowLoad
@@ -53,9 +52,8 @@ data class SlideshowState(
  * is started, and reports each image the loader got ([imageReady]) or couldn't ([imageFailed]).
  */
 class SlideshowViewModel(
-    private val album: Album,
     private val settings: SlideshowSettings,
-    private val loadSlideshow: LoadSlideshow,
+    private val loadSlides: suspend () -> ServerResult<List<Slide>>,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SlideshowState())
     val state: StateFlow<SlideshowState> = _state.asStateFlow()
@@ -158,7 +156,7 @@ class SlideshowViewModel(
         ready.clear()
         _state.value = SlideshowState()
         viewModelScope.launch {
-            _state.value = when (val result = loadSlideshow(album, settings.order)) {
+            _state.value = when (val result = loadSlides()) {
                 is ServerResult.Ok -> SlideshowState(
                     load = if (result.value.isEmpty()) SlideshowLoad.Empty else SlideshowLoad.Playing,
                     slides = result.value,
@@ -178,7 +176,12 @@ class SlideshowViewModel(
         private const val READY_KEPT = 8
 
         fun factory(container: AppContainer, album: Album, settings: SlideshowSettings) = viewModelFactory {
-            initializer { SlideshowViewModel(album, settings, container.loadSlideshow) }
+            initializer { SlideshowViewModel(settings) { container.loadSlideshow(album, settings.order) } }
+        }
+
+        /** [slides] in the order given, at the default timing. */
+        fun factory(slides: List<Slide>) = viewModelFactory {
+            initializer { SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(slides) } }
         }
     }
 }

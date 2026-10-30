@@ -111,7 +111,12 @@ private const val SCREEN_HEIGHT_PX = 1080
  * directly, so the controls are indicators and nothing in them takes focus.
  */
 @Composable
-fun SlideshowScreen(viewModel: SlideshowViewModel, settings: SlideshowSettings, onBack: () -> Unit) {
+fun SlideshowScreen(
+    viewModel: SlideshowViewModel,
+    settings: SlideshowSettings,
+    onBack: () -> Unit,
+    backLabel: String = stringResource(R.string.slideshow_back),
+) {
     val state by viewModel.state.collectAsState()
     RunWhileStarted(viewModel)
     KeepScreenOn(state.load == SlideshowLoad.Playing && !state.paused)
@@ -130,6 +135,7 @@ fun SlideshowScreen(viewModel: SlideshowViewModel, settings: SlideshowSettings, 
         },
         onImageReady = viewModel::imageReady,
         onImageFailed = viewModel::imageFailed,
+        backLabel = backLabel,
     )
 }
 
@@ -173,6 +179,7 @@ private fun SlideshowContent(
     onAction: (SlideshowAction) -> Unit,
     onImageReady: (PhotoId) -> Unit,
     onImageFailed: (PhotoId) -> Unit,
+    backLabel: String,
 ) {
     val rootFocus = remember { FocusRequester() }
     val load = state.load
@@ -208,7 +215,7 @@ private fun SlideshowContent(
                 onAction = onBack,
             )
             is SlideshowLoad.Failed -> FailedState(load.problem, onRetry)
-            SlideshowLoad.Playing -> Playing(state, settings, onImageReady, onImageFailed)
+            SlideshowLoad.Playing -> Playing(state, settings, onImageReady, onImageFailed, backLabel)
         }
     }
 }
@@ -219,6 +226,7 @@ private fun Playing(
     settings: SlideshowSettings,
     onImageReady: (PhotoId) -> Unit,
     onImageFailed: (PhotoId) -> Unit,
+    backLabel: String,
 ) {
     Preload(state.current, onImageReady, onImageFailed)
     Preload(state.next, onImageReady, onImageFailed)
@@ -240,7 +248,7 @@ private fun Playing(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = OverlayEdge),
-        ) { Controls(state) }
+        ) { Controls(state, backLabel) }
     }
 }
 
@@ -398,7 +406,7 @@ private fun DateAndPlace(slide: Slide, modifier: Modifier) {
 
 /** Shows what the remote does; the keys work whether this is showing or not. */
 @Composable
-private fun Controls(state: SlideshowState) {
+private fun Controls(state: SlideshowState, backLabel: String) {
     val colors = MaterialTheme.colorScheme
     OverPhotoPanel(OverPhotoStyle.Controls) {
         Row(
@@ -406,7 +414,7 @@ private fun Controls(state: SlideshowState) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(28.dp),
         ) {
-            Text(stringResource(R.string.slideshow_back), color = colors.onSurfaceVariant, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+            Text(backLabel, color = colors.onSurfaceVariant, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
             Icon(painterResource(R.drawable.ic_previous), stringResource(R.string.slideshow_previous), tint = colors.onSurface, modifier = Modifier.size(44.dp))
             Box(
                 Modifier
@@ -440,7 +448,7 @@ private val previewSlides = List(214) { previewSlide(it) }
 
 @Composable
 private fun SlideshowPreview(state: SlideshowState, settings: SlideshowSettings = SlideshowSettings()) {
-    ImmichTvTheme { SlideshowContent(state, settings, {}, {}, {}, {}, {}) }
+    ImmichTvTheme { SlideshowContent(state, settings, {}, {}, {}, {}, {}, stringResource(R.string.slideshow_back)) }
 }
 
 @Preview(device = Devices.TV_1080p)

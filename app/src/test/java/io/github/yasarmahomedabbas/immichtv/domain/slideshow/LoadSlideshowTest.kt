@@ -39,6 +39,12 @@ class LoadSlideshowTest {
     }
 
     @Test
+    fun `playable leaves out videos and keeps the order`() {
+        val list = listOf(slide("b"), slide("v", isVideo = true), slide("a"))
+        assertEquals(listOf(slide("b"), slide("a")), list.playable())
+    }
+
+    @Test
     fun `a failure passes through`() = runTest {
         repository.slides = ServerResult.Failed(Problem.KeyLacksPermission)
         assertEquals(

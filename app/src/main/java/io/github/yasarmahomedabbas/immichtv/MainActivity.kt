@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.ui.AppScreen
 import io.github.yasarmahomedabbas.immichtv.ui.AppViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumPhotosScreen
@@ -87,6 +89,16 @@ class MainActivity : ComponentActivity() {
                         ),
                         settings = current.settings,
                         onBack = { app.back() },
+                    )
+                    is AppScreen.ResultsSlideshow -> SlideshowScreen(
+                        // A fresh ViewModel each time it starts, so it begins at the first photo.
+                        viewModel = viewModel(
+                            key = "results-slideshow-$connection-${System.identityHashCode(current)}",
+                            factory = SlideshowViewModel.factory(current.slides),
+                        ),
+                        settings = SlideshowSettings(),
+                        onBack = { app.back() },
+                        backLabel = stringResource(R.string.slideshow_back_search),
                     )
                 }
             }
