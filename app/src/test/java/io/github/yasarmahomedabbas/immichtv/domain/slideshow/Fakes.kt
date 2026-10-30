@@ -14,3 +14,15 @@ class FakeSlideshowSettingsStore : SlideshowSettingsStore {
         saves += album to settings
     }
 }
+
+/** The screensaver's source in a field, counting saves. */
+class FakeScreensaverSettingsStore(var source: ScreensaverSource = ScreensaverSource.Library) : ScreensaverSettingsStore {
+    var saves = 0
+
+    override suspend fun load() = source
+
+    override suspend fun save(source: ScreensaverSource) {
+        saves++
+        this.source = source
+    }
+}

@@ -34,7 +34,7 @@ Problem: when the TV goes idle it shows Google's ambient mode, not our own photo
 
 Goal: the source can be stored and turned into a playlist, tested, with no Android.
 
-### [ ] 1.1 — The domain
+### [x] 1.1 — The domain
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/Screensaver.kt`
 
@@ -48,7 +48,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/S
 
 Test: `app/src/test/java/.../domain/slideshow/LoadScreensaverTest.kt`, with `FakeLibraryRepository` and the fake in `domain/albums/Fakes.kt`.
 
-### [ ] 1.2 — The stored setting
+### [x] 1.2 — The stored setting
 
 File: `app/src/main/java/.../data/settings/StoredScreensaverSettings.kt`, mirroring `StoredSlideshowSettings`.
 
@@ -56,7 +56,7 @@ File: `app/src/main/java/.../data/settings/StoredScreensaverSettings.kt`, mirror
 
 Test: `app/src/test/java/.../data/settings/StoredScreensaverSettingsTest.kt`, with `MemoryStorage`.
 
-### [ ] 1.3 — Wiring
+### [x] 1.3 — Wiring
 
 File: `app/src/main/java/.../AppContainer.kt`
 

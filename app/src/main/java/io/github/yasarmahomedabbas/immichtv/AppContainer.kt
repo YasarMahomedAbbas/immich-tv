@@ -11,6 +11,7 @@ import io.github.yasarmahomedabbas.immichtv.data.immich.immichImageLoader
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichVideoPlayer
 import io.github.yasarmahomedabbas.immichtv.data.settings.KeystoreCipher
 import io.github.yasarmahomedabbas.immichtv.data.settings.SharedPreferencesStorage
+import io.github.yasarmahomedabbas.immichtv.data.settings.StoredScreensaverSettings
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSessionRepository
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumTimeline
@@ -19,9 +20,12 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbums
 import io.github.yasarmahomedabbas.immichtv.domain.photos.LibraryTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.server.ConnectToServer
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetScreensaverSource
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadLibrarySlideshow
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadScreensaver
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveScreensaverSource
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveSlideshowSettings
 
 /**
@@ -48,9 +52,10 @@ class AppContainer(context: Context) {
     val libraryTimeline = LibraryTimeline(library)
     val loadLibrarySlideshow = LoadLibrarySlideshow(library)
 
-    private val slideshowSettings = StoredSlideshowSettings(
-        SharedPreferencesStorage(context.getSharedPreferences("slideshow", Context.MODE_PRIVATE)),
-    )
+    private val slideshowStorage = SharedPreferencesStorage(context.getSharedPreferences("slideshow", Context.MODE_PRIVATE))
+    private val slideshowSettings = StoredSlideshowSettings(slideshowStorage)
+    private val screensaverSettings = StoredScreensaverSettings(slideshowStorage)
+
     /** Loads a domain `Preview` with the key header; the app's one Coil image loader. */
     fun imageLoader(context: Context): ImageLoader = immichImageLoader(context, http, sessions)
 
@@ -59,4 +64,8 @@ class AppContainer(context: Context) {
 
     val getSlideshowSettings = GetSlideshowSettings(slideshowSettings)
     val saveSlideshowSettings = SaveSlideshowSettings(slideshowSettings)
+
+    val getScreensaverSource = GetScreensaverSource(screensaverSettings)
+    val saveScreensaverSource = SaveScreensaverSource(screensaverSettings)
+    val loadScreensaver = LoadScreensaver(screensaverSettings, albums, library)
 }
