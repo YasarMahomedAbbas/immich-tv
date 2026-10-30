@@ -21,6 +21,9 @@ enum class OverPhotoStyle(internal val alpha: Float, internal val shape: Shape) 
 
     /** The remote's controls: `scrim` at 80%, fully round. */
     Controls(0.8f, CircleShape),
+
+    /** The text and buttons on Home's hero: `scrim` at 78%, the panel corner. */
+    Hero(0.78f, RoundedCornerShape(18.dp)),
 }
 
 /** A panel over a photo; [modifier] places it and pads what it holds. */

@@ -103,6 +103,7 @@ import java.time.LocalDate
 enum class SlideshowSource(@StringRes val back: Int, @StringRes val emptyHint: Int, @StringRes val emptyAction: Int) {
     Album(R.string.slideshow_back, R.string.slideshow_empty_hint, R.string.slideshow_empty_action),
     Library(R.string.slideshow_back_photos, R.string.slideshow_empty_hint_library, R.string.slideshow_empty_action_library),
+    Home(R.string.slideshow_back_home, R.string.slideshow_empty_hint_home, R.string.slideshow_empty_action_home),
     Search(R.string.slideshow_back_search, R.string.slideshow_empty_hint_search, R.string.slideshow_empty_action_search),
 }
 
