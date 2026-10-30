@@ -19,3 +19,10 @@ Branch: `fix/27-pace-grid-key-presses`
 - Tests: `MovePaceTest` 6 passed / 0 failed; with `accept` always true, 4 of the 6 fail. The grid wiring has no unit test (no Compose UI tests in the project); the TV check covers it. The full CI command wasn't run here, per the speed note: it runs once, in `raise-pr`.
 - Outstanding: none in the checklist's tasks. The on-TV checks in the test plan are for self-verification.
 - Contradicted the plan: none. One test added beyond the plan: an accepted move needs a new frame before the next.
+
+## Review
+
+- Fixed: none
+- Raised: none
+- API: none touched; the branch adds and changes no Immich call.
+- Layers: clean
