@@ -20,3 +20,10 @@ Branch: `fix/22-release-finished-slideshows`
 - Tests: `AppViewModelTest` 20 passed / 0 failed, 5 of them new. With the clear taken out of `moveTo`, `leaving a show by Back clears it`, `leaving a show another way clears it` and `the next show gets a new ViewModel` fail. Full CI command not run here, per the user's speed note for 2026-10-30: it runs once in `raise-pr`.
 - Outstanding: the on-TV checks in the test plan, for self-verification.
 - Contradicted the plan: none.
+
+## Review
+
+- Fixed: none
+- Raised: none
+- API: no endpoint touched
+- Layers: clean
