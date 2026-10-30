@@ -21,6 +21,19 @@
         <item quantity="other">%1$s photos</item>
     </plurals>
     <string name="album_shared">Shared</string>
+    <string name="home_label_memory">MEMORIES</string>
+    <string name="home_label_album">RECENTLY UPDATED</string>
+    <plurals name="home_years_ago">
+        <item quantity="one">One year ago today</item>
+        <item quantity="other">%1$d years ago today</item>
+    </plurals>
+    <string name="home_play_slideshow">Play slideshow</string>
+    <string name="home_view_photos">View photos</string>
+    <string name="home_albums">Albums</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_recent">Recently added</string>
+    <string name="home_empty_title">Nothing here yet</string>
+    <string name="home_empty_hint">Add photos in Immich and they show up here.</string>
     <string name="albums_filter_all">All albums</string>
     <string name="albums_filter_mine">My albums</string>
     <string name="albums_filter_shared">Shared with me</string>

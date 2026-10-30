@@ -24,13 +24,14 @@ import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 
 /**
  * The top menu over the selected tab's content. Focus enters on the selected pill; a tab's
- * content may then move it (the Albums grid does, once its cards are laid out).
+ * content may then move it (Home and the Albums grid do, once they are laid out).
  */
 @Composable
 fun MainScreen(
     tab: Tab,
     onSelectTab: (Tab) -> Unit,
     onOpenSettings: () -> Unit,
+    home: @Composable () -> Unit,
     albums: @Composable () -> Unit,
     photos: @Composable () -> Unit,
 ) {
@@ -46,9 +47,10 @@ fun MainScreen(
         Spacer(Modifier.height(40.dp))
         Box(Modifier.weight(1f)) {
             when (tab) {
+                Tab.Home -> home()
                 Tab.Albums -> albums()
                 Tab.Photos -> photos()
-                else -> PlaceholderTab(stringResource(tab.label))
+                Tab.Search -> PlaceholderTab(stringResource(tab.label))
             }
         }
     }
@@ -57,11 +59,11 @@ fun MainScreen(
 @Preview(device = Devices.TV_1080p)
 @Composable
 private fun MainHomePreview() {
-    ImmichTvTheme { MainScreen(Tab.Home, {}, {}, albums = {}, photos = {}) }
+    ImmichTvTheme { MainScreen(Tab.Home, {}, {}, home = {}, albums = {}, photos = {}) }
 }
 
 @Preview(device = Devices.TV_1080p)
 @Composable
 private fun MainSearchPreview() {
-    ImmichTvTheme { MainScreen(Tab.Search, {}, {}, albums = {}, photos = {}) }
+    ImmichTvTheme { MainScreen(Tab.Search, {}, {}, home = {}, albums = {}, photos = {}) }
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
 import io.github.yasarmahomedabbas.immichtv.ui.AppScreen
@@ -20,6 +21,7 @@ import io.github.yasarmahomedabbas.immichtv.ui.album.AlbumViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
+import io.github.yasarmahomedabbas.immichtv.ui.main.PlaceholderTab
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoViewerScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotosScreen
@@ -57,6 +59,7 @@ class MainActivity : ComponentActivity() {
                         tab = current.tab,
                         onSelectTab = app::selectTab,
                         onOpenSettings = app::openSettings,
+                        home = { PlaceholderTab(stringResource(R.string.tab_home)) },
                         albums = {
                             // Scoped to the activity, so the list and the focused album survive opening one.
                             AlbumsScreen(

@@ -112,12 +112,12 @@ Files: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/domain/home/LoadH
 
 Goal: the Home tab renders the hero, both rows and every state, with the app's own components. Run the `design-recipe` skill first.
 
-### [ ] 3.1 — Screen
+### [x] 3.1 — Screen
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/home/HomeScreen.kt`
 `HomeScreen(viewModel, onPlayMemory: (Memory) -> Unit, onMemoryPhotos: (Memory, String) -> Unit, onPlayAlbum: (Album, SlideshowSettings) -> Unit, onAlbumPhotos: (Album) -> Unit, onOpenAlbum: (AlbumId) -> Unit, onOpenRecent: (Photo) -> Unit, onSeeAll: () -> Unit)`. A stateless content composable below it for previews. `RefreshOnStart(viewModel::refresh)`.
 A vertically scrolling column, since the canvas's three blocks overrun 1080: focus moving down brings a row into view, moving up returns to the hero.
-- Hero, 380dp tall, 22dp corners, full width: a preview-size `PhotoTile` (`memory.photos.first()` or `album.cover`), with `OverPhotoPanel` bottom-left at 40dp and 620dp wide. A new `OverPhotoStyle.Hero`: 78% scrim, 18dp corners. Label 18sp 700 `mfg` caps ("Memories" or "Recently updated"), title 46sp 800 ("One year ago today" through a plural `R.plurals.home_years_ago`, or the album name), a line 22sp `mfg`: the localized long date and "23 photos" (`R.plurals.photo_count`), or the album's count. Then `PrimaryButton` Play slideshow with its icon, `SecondaryButton` View photos.
+- Hero, 380dp tall, 22dp corners (a new `TileStyle.Hero`), full width: a preview-size `PhotoTile` (`memory.photos.first()` or `album.cover`), with `OverPhotoPanel` bottom-left at 40dp and 620dp wide. A new `OverPhotoStyle.Hero`: 78% scrim, 18dp corners. Label 18sp 700 `mfg` caps ("Memories" or "Recently updated"), title 46sp 800 ("One year ago today" through a plural `R.plurals.home_years_ago`, or the album name), a line 22sp `mfg`: the localized long date and "23 photos" (`R.plurals.photo_count`), or the album's count. Then `PrimaryButton` Play slideshow with its icon, `SecondaryButton` View photos.
 - Albums row: title 28sp 700, `SecondaryButton(compact = true)` See all, then a `LazyRow` of `AlbumCard` 320dp wide, 32dp gaps.
 - Recently added: title, `LazyRow` of 200dp focusable `PhotoTile`s, 18dp gaps, with the video badge.
 - No hero and nothing in either row: `EmptyState` with the Albums empty wording's pattern, "Nothing here yet" / "Add photos in Immich and they show up here." / Refresh. A row with nothing in it is left out.
@@ -125,12 +125,12 @@ A vertically scrolling column, since the canvas's three blocks overrun 1080: foc
 - Focus: once loaded, `HomeState.focused` is requested, Play first; if it has gone, Play. With no hero, the first focusable item. During loading focus stays on the menu pill, as `MainScreen` sets it. Report changes through `onFocused`.
 - `@Preview`s for memory, album fallback, skeleton, failed, empty. Strings in `strings.xml`.
 
-### [ ] 3.2 — Slot
+### [x] 3.2 — Slot
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/main/MainScreen.kt`
 Add a `home: @Composable () -> Unit` slot; `Tab.Home -> home()`; fix the previews. `PlaceholderTab` stays for Search.
 
-### [ ] 3.3 — Manual
+### [x] 3.3 — Manual
 
 File: `docs/design/README.md`: the Home row in § Screens gains the hero's values and the 10 and 20 item limits; `OverPhotoPanel` gains `Hero`.
 
