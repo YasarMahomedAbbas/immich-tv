@@ -28,6 +28,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadLibrarySlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshowFromPhoto
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveSlideshowSettings
 
 /**
@@ -49,6 +50,7 @@ class AppContainer(context: Context) {
     val loadAlbum = LoadAlbum(albums)
     val albumTimeline = AlbumTimeline(albums)
     val loadSlideshow = LoadSlideshow(albums)
+    val loadSlideshowFromPhoto = LoadSlideshowFromPhoto(albums)
 
     private val library = ImmichLibraryRepository(http, sessions)
     val libraryTimeline = LibraryTimeline(library)

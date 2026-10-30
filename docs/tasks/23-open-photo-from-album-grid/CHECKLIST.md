@@ -36,21 +36,21 @@ Problem: OK on a tile of an album's Browse photos grid does nothing, so a photo 
 
 Goal: the domain can say what a show from a tile plays, in the grid's order, and the show can run it.
 
-### [ ] 1.1 — Shared start logic
+### [x] 1.1 — Shared start logic
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/Slideshow.kt`
 Add `internal fun playlistFrom(all: List<Slide>, kept: List<Slide>, from: PhotoId): Playlist`: `kept` is `all` less what the show leaves out, both in play order. Starts at the first kept slide at or after `from` in `all`; `from` not in `all`, or no kept slide after it, starts at 0. Move `LoadLibrarySlideshow`'s body onto it, with no change in behaviour.
 
-### [ ] 1.2 — The album show from a photo
+### [x] 1.2 — The album show from a photo
 
 Same file: `class LoadSlideshowFromPhoto(private val repository: AlbumRepository)` with `suspend operator fun invoke(album: Album, from: PhotoId, videos: VideoMode): ServerResult<Playlist>`: `repository.slides(album)`, `.reversed()` when `album.newestFirst`, kept is `withoutVideos()` when `videos == VideoMode.Skip`, else all; then `playlistFrom`. Doc comment says the grid's order is why the saved Order isn't taken.
 Test: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/LoadSlideshowFromPhotoTest.kt`, mirroring `LoadLibrarySlideshowTest`, with `FakeAlbumRepository`.
 
-### [ ] 1.3 — The memory show from a photo
+### [x] 1.3 — The memory show from a photo
 
 File: `…/domain/home/Memory.kt`: `fun Memory.playlistFrom(from: PhotoId): Playlist` calling the helper with `slides` as both lists. Test in `…/domain/home/MemoryTest.kt`.
 
-### [ ] 1.4 — Wiring and words
+### [x] 1.4 — Wiring and words
 
 - `…/AppContainer.kt`: `val loadSlideshowFromPhoto = LoadSlideshowFromPhoto(albums)`.
 - `…/ui/slideshow/SlideshowViewModel.kt` companion: `fun fromAlbumPhoto(container: AppContainer, album: Album, from: PhotoId, settings: SlideshowSettings)`, `fun fromMemoryPhoto(memory: Memory, from: PhotoId)` with `TimelineSettings`.
