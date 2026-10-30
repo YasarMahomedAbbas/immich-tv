@@ -103,6 +103,7 @@ class MainActivity : ComponentActivity() {
                             factory = SlideshowViewModel.factory(container, current.album, current.settings),
                         ),
                         settings = current.settings,
+                        newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                     )
                     is AppScreen.TimelineSlideshow -> SlideshowScreen(
@@ -111,6 +112,7 @@ class MainActivity : ComponentActivity() {
                             factory = SlideshowViewModel.fromTimeline(container, current.from),
                         ),
                         settings = TimelineSettings,
+                        newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                         source = SlideshowSource.Library,
                     )

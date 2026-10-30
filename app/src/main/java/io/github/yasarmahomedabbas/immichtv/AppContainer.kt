@@ -1,12 +1,14 @@
 package io.github.yasarmahomedabbas.immichtv
 
 import android.content.Context
+import androidx.media3.exoplayer.ExoPlayer
 import coil3.ImageLoader
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichAlbumRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichLibraryRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichServerConnector
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichHttpClient
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichImageLoader
+import io.github.yasarmahomedabbas.immichtv.data.immich.immichVideoPlayer
 import io.github.yasarmahomedabbas.immichtv.data.settings.KeystoreCipher
 import io.github.yasarmahomedabbas.immichtv.data.settings.SharedPreferencesStorage
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSessionRepository
@@ -51,6 +53,9 @@ class AppContainer(context: Context) {
     )
     /** Loads a domain `Preview` with the key header; the app's one Coil image loader. */
     fun imageLoader(context: Context): ImageLoader = immichImageLoader(context, http, sessions)
+
+    /** Plays a domain `Video` with the key header; one per video layer on screen. */
+    fun videoPlayer(context: Context): ExoPlayer = immichVideoPlayer(context, http, sessions)
 
     val getSlideshowSettings = GetSlideshowSettings(slideshowSettings)
     val saveSlideshowSettings = SaveSlideshowSettings(slideshowSettings)

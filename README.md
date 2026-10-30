@@ -3,7 +3,7 @@
 An Android TV app for a Chromecast with Google TV that shows your photos from a self-hosted [Immich](https://immich.app/) server.
 
 - **Albums**: filter and sort them, open one to see its photos, set up its slideshow and start it.
-- **Slideshow**: crossfades with a slow zoom, portrait photos on a blurred copy of themselves, the date and place in a corner, and the remote's left/right/OK to skip and pause. It plays an album's or the whole library's photos on a loop; videos are left out whatever the Videos setting says, until #6.
+- **Slideshow**: crossfades with a slow zoom, portrait photos on a blurred copy of themselves, the date and place in a corner, and the remote's left/right/OK to skip and pause. It plays an album on a loop, and the Videos setting decides its videos: played to their end, muted or with sound, or left out by Skip. It also plays the whole library's photos on a loop, leaving its videos out.
 - **Photos**: your own timeline by month, as Immich's Photos page shows it (partners' photos and photos only in albums others shared with you stay out). Jump by month, open a photo full screen and move left and right, or hold OK on a photo to start a slideshow from it.
 - **Search** (planned, #8): Immich's smart search ("dog on the beach"), by voice from the remote.
 

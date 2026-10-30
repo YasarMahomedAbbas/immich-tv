@@ -67,3 +67,9 @@ Result: partial
   - Hold OK starts the show at that photo and the held key doesn't pause it; the show continues to older photos; Back returns to the starting tile; a video tile starts at the next photo.
   - The first month arriving doesn't pull focus back to the first tile when the remote is already on a tile of that month (fixed in self-review, no test).
   - Memory with `dumpsys meminfo` stays steady through the whole grid.
+
+## Raise PR
+
+- Merged origin/main, which had gained #6 (videos in the slideshow), with conflicts in the slideshow code, its tests, the README and the manual. Album shows keep #6's behaviour; `SlideshowViewModel` takes a `Playlist` and `source` as #7 built them.
+- Decided (raise-pr; flag: ux, scope): the library show stays photos only, though #6 has landed and the plan said "videos stay out until #6". That is what was planned for this branch, and playing them would be new behaviour after verification and without the TV. The app can't change it from the show either, as its settings are fixed. Needs a decision or a follow-up ticket.
+- CI after the merge: 331 tests passed, 0 failed; `koverVerifyDebug` green at 87.2% line coverage; lint 0 errors, 30 warnings; APK built. The merged result hasn't run on the TV or against a live video.

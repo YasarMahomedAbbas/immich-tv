@@ -24,24 +24,23 @@ data class Place(val city: String?, val country: String?)
 /** What a slideshow plays, and the slide it begins on. */
 data class Playlist(val slides: List<Slide>, val start: Int = 0)
 
-/** What a slideshow of an album plays: its photos, in the order the settings ask for. */
+/** What a slideshow of an album plays: its items, as the Videos setting keeps them, in the order the settings ask for. */
 class LoadSlideshow(private val repository: AlbumRepository, private val random: Random = Random.Default) {
-    suspend operator fun invoke(album: Album, order: SlideshowOrder): ServerResult<List<Slide>> =
+    suspend operator fun invoke(album: Album, order: SlideshowOrder, videos: VideoMode): ServerResult<List<Slide>> =
         repository.slides(album).map { all ->
-            // Videos are left out whatever the Videos setting says, until the slideshow can play them.
-            val photos = all.filterNot { it.photo.isVideo }
+            val slides = if (videos == VideoMode.Skip) all.filterNot { it.photo.isVideo } else all
             when (order) {
-                SlideshowOrder.OldestFirst -> photos
-                SlideshowOrder.NewestFirst -> photos.reversed()
-                SlideshowOrder.Shuffle -> photos.shuffled(random)
+                SlideshowOrder.OldestFirst -> slides
+                SlideshowOrder.NewestFirst -> slides.reversed()
+                SlideshowOrder.Shuffle -> slides.shuffled(random)
             }
         }
 }
 
 /**
  * What a slideshow of the whole library plays, newest to oldest, beginning at [invoke]'s photo: the
- * first photo at or after it, since a video can't play yet. A video with no photo after it, or a
- * photo no longer there, begins at the newest.
+ * first photo at or after it, since a library show leaves videos out. A video with no photo after
+ * it, or a photo no longer there, begins at the newest.
  */
 class LoadLibrarySlideshow(private val repository: LibraryRepository) {
     suspend operator fun invoke(from: PhotoId): ServerResult<Playlist> =
