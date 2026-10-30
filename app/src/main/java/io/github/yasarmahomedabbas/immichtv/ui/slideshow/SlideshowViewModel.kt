@@ -276,6 +276,21 @@ class SlideshowViewModel(
     }
 }
 
+/** How often the screensaver asks again when it has no photos to play. */
+const val SCREENSAVER_RETRY_MS = 60_000L
+
+/**
+ * Loads the show again every [everyMs] while it has stopped for want of photos, so the screensaver
+ * returns to them by itself once the server answers. Runs until cancelled, and leaves a playing show alone.
+ */
+suspend fun SlideshowViewModel.retryWhileStopped(everyMs: Long = SCREENSAVER_RETRY_MS) {
+    while (true) {
+        delay(everyMs)
+        val load = state.value.load
+        if (load is SlideshowLoad.Failed || load == SlideshowLoad.Empty) retry()
+    }
+}
+
 /** A library show can't be set up: the defaults (8 s, date and place on), newest to oldest. */
 val TimelineSettings = SlideshowSettings(order = SlideshowOrder.NewestFirst)
 

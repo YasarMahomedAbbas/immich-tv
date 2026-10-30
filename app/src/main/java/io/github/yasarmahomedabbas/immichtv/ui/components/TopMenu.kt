@@ -117,8 +117,8 @@ private fun TabPill(tab: Tab, selected: Boolean, onClick: () -> Unit, modifier: 
     }
 }
 
-/** The clock's two looks: at rest in the top menu, or over a photo inside a panel. */
-internal enum class ClockStyle { Menu, OverPhoto }
+/** The clock's looks: at rest in the top menu, over a photo inside a panel, or alone on the ground of an idle screen. */
+internal enum class ClockStyle { Menu, OverPhoto, Screensaver }
 
 /** The time, in the device's 12- or 24-hour format, updated on the minute. */
 @Composable
@@ -137,6 +137,7 @@ internal fun Clock(style: ClockStyle = ClockStyle.Menu) {
     when (style) {
         ClockStyle.Menu -> Text(now.format(formatter), color = colors.onSurfaceVariant, fontSize = 24.sp)
         ClockStyle.OverPhoto -> Text(now.format(formatter), color = colors.onSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        ClockStyle.Screensaver -> Text(now.format(formatter), color = colors.onSurfaceVariant, fontSize = 96.sp, fontWeight = FontWeight.Bold)
     }
 }
 

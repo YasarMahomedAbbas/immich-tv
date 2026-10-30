@@ -132,7 +132,7 @@ Kover's `"*Screen*"` swallows every `*Screensaver*` class. Exclude `"*.Screensav
 
 Goal: no photos for any reason means a calm clock, and the show comes back by itself.
 
-### [ ] 3.1 — The logic
+### [x] 3.1 — The logic
 
 Files: `app/src/main/java/.../ui/slideshow/SlideshowViewModel.kt`, `.../ui/screensaver/ScreensaverLogic.kt`
 
@@ -142,7 +142,7 @@ Files: `app/src/main/java/.../ui/slideshow/SlideshowViewModel.kt`, `.../ui/scree
 
 Tests: `app/src/test/java/.../ui/slideshow/SlideshowViewModelTest.kt` (with virtual time: retries a failed load, retries an empty one, leaves a playing show alone, resumes when the server answers), `.../ui/screensaver/ScreensaverLogicTest.kt`.
 
-### [ ] 3.2 — The clock
+### [x] 3.2 — The clock
 
 Files: `.../ui/screensaver/ScreensaverScreen.kt`, `.../ui/components/TopMenu.kt`
 
