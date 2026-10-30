@@ -47,3 +47,23 @@ Branch: `feat/7-browse-photos-by-month`
 - Skipped: the grid and viewer sharing one ViewModel by key: a comment in `MainActivity.kt` says it at the call site.
 - Skipped: fixed library slideshow defaults and video handling in the viewer: already in the manual and in the code.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: 299 tests passed, 0 failed; `koverVerifyDebug` green at 87.2% line coverage (bound 80%); lint 0 errors, 23 warnings; APK built.
+- Server: Immich v3.3.5, read-only GETs only.
+- TV: not run (skipped). The TV answered `adb connect`, but `/tmp/immich-tv-adb.lock` was held from before this stage began until the window on the issue's comment closed at 12:20 CET on 2026-10-30, by other pipelines. The lock was never taken here, so nothing was installed, opened or driven, and no one else's lock was removed.
+- Verified: every parameter the two calls send (`visibility`, `withStacked`, `order`, `timeBucket`) and every column the code reads exists in the v3.3.5 spec, with `TimeBucketsResponseDto` giving `count` and `timeBucket`. `GET /api/timeline/buckets` as the code builds it: 200, 10 months, newest first. `GET /api/timeline/bucket` for all 10 months: every column as long as `id`, each month's `count` equal to its `id` length, 555 items in all, newest first within and across months, `visibility` only `timeline`, no null `ratio`, no album id needed. These responses were checked by script, not parsed by the app's own DTOs; the optional `localDateTime` is absent on this version, as the code expects.
+- Failed: none
+- Not self-verifiable: none of the app's behaviour on the device has been seen. To check on the TV by hand:
+  - Photos tab opens on the rail and grid with a focused tile, and the rail shows years.
+  - Moving down crosses months and moves the rail's selection.
+  - Left enters the rail, with focus on the selected month. The first year label shows when scrolling back up the rail.
+  - OK on a far month jumps there with its first tile focused. Up reaches the top menu.
+  - OK opens a photo, whole and sharp, portrait and landscape. Left/right cross a month boundary and stop at both ends. A video shows a still with a badge.
+  - Back focuses the last viewed tile, scrolled there, including a far tile.
+  - Hold OK starts the show at that photo and the held key doesn't pause it; the show continues to older photos; Back returns to the starting tile; a video tile starts at the next photo.
+  - The first month arriving doesn't pull focus back to the first tile when the remote is already on a tile of that month (fixed in self-review, no test).
+  - Memory with `dumpsys meminfo` stays steady through the whole grid.
