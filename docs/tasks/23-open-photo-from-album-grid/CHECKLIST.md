@@ -68,13 +68,13 @@ File: `…/domain/home/Memory.kt`: `fun Memory.playlistFrom(from: PhotoId): Play
 
 Goal: the new screens exist in `AppViewModel`, and every Back path is tested.
 
-### [ ] 2.1 — The screens
+### [x] 2.1 — The screens
 
 File: `…/ui/AppViewModel.kt`, in `AppScreen`:
 - `AlbumPhotos` gains `val returning: Boolean = false`; `MemoryPhotos` the same. `returning`: coming Back from a photo or a show, so the grid goes to that tile; otherwise it starts at the top.
 - New: `AlbumPhotoViewer(album: DomainAlbum, cameFrom: CameFrom)`, `MemoryPhotoViewer(memory: Memory, title: String)`, `AlbumPhotoSlideshow(album: DomainAlbum, from: PhotoId, settings: SlideshowSettings, cameFrom: CameFrom)`, `MemoryPhotoSlideshow(memory: Memory, title: String, from: PhotoId)`.
 
-### [ ] 2.2 — Moving between them
+### [x] 2.2 — Moving between them
 
 Same file. `AppViewModel` gains a constructor parameter `getSlideshowSettings: GetSlideshowSettings`, given in `factory`. Add `openAlbumPhotoViewer(album, cameFrom)`, `openMemoryPhotoViewer(memory, title)`, `openMemoryPhotoSlideshow(memory, title, from)` and `openAlbumPhotoSlideshow(album, from, cameFrom)`. The last loads the album's settings in `viewModelScope`, then changes screen only if the current screen is still that `AlbumPhotos`, so Back during the load isn't overridden.
 `back()`: both album new screens go to `AlbumPhotos(album, cameFrom, returning = true)`; both memory new screens to `MemoryPhotos(memory, title, returning = true)`. `AlbumPhotos` and `MemoryPhotos` go where they do today.
@@ -96,7 +96,7 @@ File: `…/ui/album/AlbumPhotosScreen.kt`: `AlbumPhotosScreen(albumName, viewMod
 
 ### [ ] 3.2 — The activity
 
-File: `…/MainActivity.kt`: private helper composables `albumGrid(album)` and `memoryGrid(memory)` returning the `PhotoGridViewModel` with today's keys, so grid and viewer can't drift apart. Wire `AlbumPhotos` and `MemoryPhotos` to the new callbacks and `returning`. Add `AlbumPhotoViewer` and `MemoryPhotoViewer` (`PhotoViewerScreen` with that grid's ViewModel), `AlbumPhotoSlideshow` (`SlideshowViewModel.fromAlbumPhoto`, `settings = current.settings`, `source = SlideshowSource.Album`, fresh key as the others), `MemoryPhotoSlideshow` (`fromMemoryPhoto`, `TimelineSettings`, `SlideshowSource.Memory`).
+File: `…/MainActivity.kt`: private helper composables `albumGrid(album)` and `memoryGrid(memory)` returning the `PhotoGridViewModel` with today's keys, so grid and viewer can't drift apart. Wire `AlbumPhotos` and `MemoryPhotos` to the new callbacks and `returning`. The helpers and the screens below went in with checkpoint 2, as `AppScreen`'s `when` can't compile without them. Add `AlbumPhotoViewer` and `MemoryPhotoViewer` (`PhotoViewerScreen` with that grid's ViewModel), `AlbumPhotoSlideshow` (`SlideshowViewModel.fromAlbumPhoto`, `settings = current.settings`, `source = SlideshowSource.Album`, fresh key as the others), `MemoryPhotoSlideshow` (`fromMemoryPhoto`, `TimelineSettings`, `SlideshowSource.Memory`).
 
 ### [ ] 3.3 — The manual
 
