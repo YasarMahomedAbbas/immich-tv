@@ -33,6 +33,12 @@ sealed interface MonthPhotos {
 
 data class MonthSection(val month: YearMonth, val count: Int, val photos: MonthPhotos = MonthPhotos.NotLoaded)
 
+/** The month's tiles in order; null is a tile whose photo hasn't arrived. */
+internal fun MonthSection.tiles(): List<Photo?> = when (photos) {
+    is MonthPhotos.Loaded -> photos.photos
+    else -> List(count) { null }
+}
+
 data class PhotoGridState(val load: GridLoad = GridLoad.Loading, val sections: List<MonthSection> = emptyList())
 
 /**

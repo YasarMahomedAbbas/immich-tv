@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
@@ -39,7 +40,6 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.ui.components.PhotoTile
 import io.github.yasarmahomedabbas.immichtv.ui.components.SecondaryButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
-import io.github.yasarmahomedabbas.immichtv.ui.components.TileStyle
 import java.text.NumberFormat
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -52,7 +52,7 @@ private val FocusRoom = 8.dp
 
 /**
  * Photos by month in a 6-column grid of square previews, a heading per month. A month not
- * loaded yet shows skeleton tiles and asks for its photos ([onNeedMonth]) when the grid reaches
+ * loaded yet shows empty `surface` tiles and asks for its photos ([onNeedMonth]) when the grid reaches
  * it; a month that failed says so with Try again. Focus goes to the first tile once it is there.
  * OK on a tile calls [onOpen] (nothing yet: the photo viewer comes with #7).
  */
@@ -102,26 +102,27 @@ private fun LazyGridScope.monthSection(
         LaunchedEffect(section.month) { onNeedMonth(section.month) }
         MonthHeading(section, Modifier.padding(top = if (isFirst) 0.dp else 26.dp))
     }
-    when (val photos = section.photos) {
-        is MonthPhotos.Loaded -> items(photos.photos, key = { "p-${it.id.value}" }, contentType = { "tile" }) { photo ->
-            val first = isFirst && photo == photos.photos.first()
-            PhotoTile(
-                photo = photo.id,
-                isVideo = photo.isVideo,
-                focusable = true,
-                onClick = { onOpen(photo) },
-                modifier = Modifier
-                    .aspectRatio(1f)
-                    .then(if (first) Modifier.focusRequester(firstTile) else Modifier),
-            )
-        }
-        is MonthPhotos.Failed -> item(key = "f-$key", span = { GridItemSpan(maxLineSpan) }, contentType = "failed") {
+    if (section.photos is MonthPhotos.Failed) {
+        item(key = "f-$key", span = { GridItemSpan(maxLineSpan) }, contentType = "failed") {
             MonthFailed { onRetryMonth(section.month) }
         }
-        MonthPhotos.NotLoaded, MonthPhotos.Loading -> items(section.count, key = { "s-$key-$it" }, contentType = { "skeleton" }) {
-            LaunchedEffect(section.month) { onNeedMonth(section.month) }
-            SkeletonBlock(Modifier.aspectRatio(1f), corner = TileStyle.Tile.corner)
-        }
+        return
+    }
+    val tiles = section.tiles()
+    // The same key and the same focusable tile before and after the photo arrives: the remote can
+    // always move on to a month still loading, and stays on its tile when the photo comes. Tiles
+    // the D-pad couldn't land on sent focus search laying out the grid until the app stopped responding.
+    itemsIndexed(tiles, key = { index, _ -> "t-$key-$index" }, contentType = { _, _ -> "tile" }) { index, photo ->
+        if (photo == null) LaunchedEffect(section.month) { onNeedMonth(section.month) }
+        PhotoTile(
+            photo = photo?.id,
+            isVideo = photo?.isVideo == true,
+            focusable = true,
+            onClick = { if (photo != null) onOpen(photo) },
+            modifier = Modifier
+                .aspectRatio(1f)
+                .then(if (isFirst && index == 0) Modifier.focusRequester(firstTile) else Modifier),
+        )
     }
 }
 

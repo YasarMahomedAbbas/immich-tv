@@ -55,17 +55,44 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.SettingButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
 import io.github.yasarmahomedabbas.immichtv.ui.components.TileStyle
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
+import io.github.yasarmahomedabbas.immichtv.ui.theme.CANVAS_WIDTH
 import java.time.Instant
 import java.time.LocalDate
 
 private val MosaicCover = 560.dp
 private val MosaicSide = 320.dp
-private val MosaicRow = 300.dp
+
+// 284, not the canvas's 300: with 300 the canvas's strip ends at 1088 of 1080, off the screen.
+private val MosaicRow = 284.dp
 private val MosaicGap = 16.dp
 private val StripTile = 232.dp
 
 // Room for the 4dp focus outline, 4dp off a tile, inside the strip's clip.
 private val FocusRoom = 8.dp
+
+private val ScreenTop = 48.dp
+private val ScreenSide = 96.dp
+private val SectionGap = 40.dp
+private val BackLinkHeight = 56.dp
+private val MosaicToInfo = 72.dp
+private val StripHeading = 38.dp
+private val SettingGap = 14.dp
+
+/**
+ * Two rows of two, not the canvas's one row: four at their 230dp minimum need 962dp and the column
+ * beside the mosaic has 760, so the last one was crushed and pushed the strip off the screen.
+ */
+internal const val SettingsPerRow = 2
+
+/** The width beside the mosaic. */
+internal val AlbumInfoWidth = CANVAS_WIDTH.dp - ScreenSide * 2 - MosaicCover - MosaicGap - MosaicSide - MosaicToInfo
+
+/** How far down the canvas the strip's focus outline reaches. */
+internal val AlbumContentBottom = ScreenTop + BackLinkHeight + SectionGap + MosaicRow * 2 + MosaicGap + SectionGap +
+    StripHeading + (18.dp - FocusRoom) + FocusRoom + StripTile + FocusRoom
+
+/** How wide each setting is, in [AlbumInfoWidth]. */
+internal val SettingWidth = (AlbumInfoWidth - SettingGap * (SettingsPerRow - 1)) / SettingsPerRow
 
 /**
  * One album: the cover mosaic, its title and counts, Start slideshow (focused when it opens; it
@@ -112,8 +139,8 @@ private fun AlbumContent(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(top = 48.dp, start = 96.dp, end = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(40.dp),
+            .padding(top = ScreenTop, start = ScreenSide, end = ScreenSide),
+        verticalArrangement = Arrangement.spacedBy(SectionGap),
     ) {
         BackLink(stringResource(R.string.album_back), onClick = onBack, modifier = Modifier.focusRequester(backFocus))
         when (val load = state.load) {
@@ -159,9 +186,9 @@ private fun LoadedAlbum(
         withFrameNanos { }
         runCatching { (if (focusBrowse) browseFocus else startFocus).requestFocus() }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(72.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(MosaicToInfo)) {
         Mosaic(album.cover, contents.firstItems)
-        Column(Modifier.padding(top = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.weight(1f).padding(top = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 album.name,
                 color = colors.onSurface,
@@ -223,19 +250,26 @@ private fun Settings(
     onCycleVideos: () -> Unit,
     onToggleDateAndPlace: () -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        SettingButton(
+    val all = listOf(
+        Triple(
             stringResource(R.string.setting_seconds),
             pluralStringResource(R.plurals.setting_seconds_value, settings.secondsPerPhoto, settings.secondsPerPhoto),
             onCycleSeconds,
-        )
-        SettingButton(stringResource(R.string.setting_order), stringResource(settings.order.label), onCycleOrder)
-        SettingButton(stringResource(R.string.setting_videos), stringResource(settings.videos.label), onCycleVideos)
-        SettingButton(
+        ),
+        Triple(stringResource(R.string.setting_order), stringResource(settings.order.label), onCycleOrder),
+        Triple(stringResource(R.string.setting_videos), stringResource(settings.videos.label), onCycleVideos),
+        Triple(
             stringResource(R.string.setting_date_place),
             stringResource(if (settings.showDateAndPlace) R.string.setting_on else R.string.setting_off),
             onToggleDateAndPlace,
-        )
+        ),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(SettingGap)) {
+        for (row in all.chunked(SettingsPerRow)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SettingGap)) {
+                for ((label, value, onClick) in row) SettingButton(label, value, onClick, Modifier.weight(1f))
+            }
+        }
     }
 }
 
@@ -263,7 +297,7 @@ private fun Strip(items: List<Photo>) {
 
 @Composable
 private fun AlbumSkeleton() {
-    Row(horizontalArrangement = Arrangement.spacedBy(72.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(MosaicToInfo)) {
         Row(horizontalArrangement = Arrangement.spacedBy(MosaicGap)) {
             SkeletonBlock(Modifier.size(MosaicCover, MosaicRow * 2 + MosaicGap), corner = TileStyle.Mosaic.corner)
             Column(verticalArrangement = Arrangement.spacedBy(MosaicGap)) {
@@ -274,12 +308,14 @@ private fun AlbumSkeleton() {
             SkeletonBlock(Modifier.width(520.dp).height(64.dp), round = true)
             SkeletonBlock(Modifier.width(420.dp).height(28.dp), round = true)
             Row(Modifier.padding(top = 28.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                SkeletonBlock(Modifier.width(280.dp).height(64.dp), round = true)
-                SkeletonBlock(Modifier.width(220.dp).height(64.dp), round = true)
+                SkeletonBlock(Modifier.width(320.dp).height(76.dp), round = true)
+                SkeletonBlock(Modifier.width(260.dp).height(76.dp), round = true)
             }
             Spacer(Modifier.height(56.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                repeat(4) { SkeletonBlock(Modifier.width(230.dp).height(88.dp), corner = 16.dp) }
+            repeat(2) {
+                Row(horizontalArrangement = Arrangement.spacedBy(SettingGap)) {
+                    repeat(SettingsPerRow) { SkeletonBlock(Modifier.width(SettingWidth).height(88.dp), corner = 16.dp) }
+                }
             }
         }
     }

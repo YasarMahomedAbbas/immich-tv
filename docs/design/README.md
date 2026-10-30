@@ -44,7 +44,7 @@ These live in `.claude/skills/design-canvas/assets/artboard.dc.html` for the can
 | --- | --- |
 | Home | top menu, a memory hero, rows (Albums, Recently added) |
 | Albums | top menu, filter chips + sort, a 5-column grid of album cards |
-| Album | back link, cover mosaic, title and counts, Start slideshow, Browse photos, slideshow settings, a strip of photos |
+| Album | back link, cover mosaic, title and counts, Start slideshow, Browse photos, slideshow settings in two rows of two, a strip of photos (the mosaic's rows are 284dp: the canvas's one row of settings and 300dp rows don't fit the screen) |
 | Album photos | back link, a 6-column grid per month (`PhotoGrid`, built for Photos to reuse in #7) |
 | Slideshow | full screen; date and place bottom-left, controls bottom-centre (shown on a key press, fade after a few seconds), a thin progress bar on top |
 | Photos | top menu, a month rail on the left, a 6-column grid per month |
@@ -60,6 +60,7 @@ Settings is a gear button at the right end, beside the clock.
 What each shared part in `ui/components/` looks like. A call site picks a variant; it never passes a colour, shape or font size.
 
 - **Top menu** (`TopMenu`), 56dp tall: the logo (the image glyph and "Immich TV" 26sp 800, both `fg`: the canvas's amber logo would break rule 3), then the tab pills, a spacer, the clock (24sp `mfg`, the device's 12/24-hour format) and the Settings gear. A pill is 22sp, fully round; the selected one is `fg` with `on-fg` 800 text, the others have no fill and `mfg` text that turns `fg` on focus. OK selects; focus enters a main screen on the selected pill.
+- **Buttons** (`PrimaryButton`, `SecondaryButton`), fully round: primary 26sp 800 with 40×20dp padding; secondary 24sp 600 with 34×20dp; a compact secondary 20sp 600 with 22×10dp, among chips or beside a field (Sort, Show). tv-material's built-in padding is for 960dp screens, so always set it.
 - **Icon button** (`IconButton`): a 56dp `raised` circle with one 28dp icon, for the gear.
 - **Back link** (`BackLink`): "‹ Albums" top-left, 22sp 600, no fill, `mfg` at rest and `fg` on focus. It does what Back does.
 - **Chip** (`Chip`): 20sp, fully round; `raised` with `fg` 600 text at rest, `fg` with `on-fg` 800 text when selected.

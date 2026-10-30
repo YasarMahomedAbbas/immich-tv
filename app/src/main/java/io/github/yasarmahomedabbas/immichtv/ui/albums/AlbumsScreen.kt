@@ -121,6 +121,7 @@ private fun Toolbar(filter: AlbumFilter, sort: AlbumSort, onFilter: (AlbumFilter
         SecondaryButton(
             text = stringResource(R.string.albums_sort, stringResource(sort.label)),
             onClick = onCycleSort,
+            compact = true,
             icon = painterResource(R.drawable.ic_sort),
         )
     }

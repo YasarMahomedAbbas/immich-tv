@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
@@ -34,14 +35,35 @@ fun PrimaryButton(
     icon: Painter? = null,
 ) {
     val colors = MaterialTheme.colorScheme
-    HouseButton(text, onClick, modifier, enabled, icon = icon, fill = colors.primary, content = colors.onPrimary)
+    HouseButton(
+        text, onClick, modifier, enabled, icon = icon, fill = colors.primary, content = colors.onPrimary,
+        fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, padding = PaddingValues(horizontal = 40.dp, vertical = 20.dp),
+    )
 }
 
-/** Every other action: `raised` fill, `fg` text, an optional leading icon tinted to match. */
+/**
+ * Every other action: `raised` fill, `fg` text, an optional leading icon tinted to match.
+ * [compact] is for a button sitting among chips or beside a field.
+ */
 @Composable
-fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: Painter? = null) {
+fun SecondaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: Painter? = null,
+    compact: Boolean = false,
+) {
     val colors = MaterialTheme.colorScheme
-    HouseButton(text, onClick, modifier, enabled = true, icon = icon, fill = colors.surfaceVariant, content = colors.onSurface)
+    HouseButton(
+        text, onClick, modifier, enabled = true, icon = icon, fill = colors.surfaceVariant, content = colors.onSurface,
+        fontSize = if (compact) 20.sp else 24.sp,
+        fontWeight = FontWeight.SemiBold,
+        padding = if (compact) {
+            PaddingValues(horizontal = 22.dp, vertical = 10.dp)
+        } else {
+            PaddingValues(horizontal = 34.dp, vertical = 20.dp)
+        },
+    )
 }
 
 @Composable
@@ -53,6 +75,9 @@ private fun HouseButton(
     icon: Painter?,
     fill: Color,
     content: Color,
+    fontSize: TextUnit,
+    fontWeight: FontWeight,
+    padding: PaddingValues,
 ) {
     // Focus changes only the outline: the fill stays put so amber is the one focus signal.
     val focusBorder = houseFocusBorder(CircleShape)
@@ -61,6 +86,7 @@ private fun HouseButton(
         modifier = modifier,
         enabled = enabled,
         shape = ButtonDefaults.shape(shape = CircleShape),
+        contentPadding = padding,
         colors = ButtonDefaults.colors(
             containerColor = fill,
             contentColor = content,
@@ -77,7 +103,7 @@ private fun HouseButton(
             Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = content)
             Spacer(Modifier.width(10.dp))
         }
-        Text(text, fontSize = 22.sp)
+        Text(text, fontSize = fontSize, fontWeight = fontWeight)
     }
 }
 

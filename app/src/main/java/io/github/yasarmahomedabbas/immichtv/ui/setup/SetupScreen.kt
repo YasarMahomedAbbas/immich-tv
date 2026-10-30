@@ -106,6 +106,7 @@ private fun SetupContent(
                 SecondaryButton(
                     text = stringResource(if (state.keyVisible) R.string.setup_hide_key else R.string.setup_show_key),
                     onClick = onToggleKeyVisible,
+                    compact = true,
                 )
             }
             PrimaryButton(
