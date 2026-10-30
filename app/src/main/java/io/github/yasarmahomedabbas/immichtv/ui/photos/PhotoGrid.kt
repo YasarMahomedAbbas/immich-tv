@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +41,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.ui.components.PhotoTile
 import io.github.yasarmahomedabbas.immichtv.ui.components.SecondaryButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
+import io.github.yasarmahomedabbas.immichtv.ui.components.lostFocus
 import java.text.NumberFormat
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -74,6 +76,17 @@ fun PhotoGrid(
             focusedOnce = runCatching { firstTile.requestFocus() }.isSuccess
         }
     }
+    // A refresh can take away the tile the remote is on; focus then starts again from the top.
+    var lastFocused by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(sections) {
+        val present = sections.flatMap { section -> section.tiles().indices.map { tileKey(section.month, it) } }
+        if (lostFocus(lastFocused, present)) {
+            lastFocused = null
+            gridState.scrollToItem(0)
+            withFrameNanos { }
+            runCatching { firstTile.requestFocus() }
+        }
+    }
     LazyVerticalGrid(
         columns = GridCells.Fixed(COLUMNS),
         state = gridState,
@@ -83,15 +96,18 @@ fun PhotoGrid(
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
         sections.forEachIndexed { index, section ->
-            monthSection(section, isFirst = index == 0, firstTile, onNeedMonth, onRetryMonth, onOpen)
+            monthSection(section, isFirst = index == 0, firstTile, { lastFocused = it }, onNeedMonth, onRetryMonth, onOpen)
         }
     }
 }
+
+private fun tileKey(month: YearMonth, index: Int) = "t-$month-$index"
 
 private fun LazyGridScope.monthSection(
     section: MonthSection,
     isFirst: Boolean,
     firstTile: FocusRequester,
+    onTileFocused: (String) -> Unit,
     onNeedMonth: (YearMonth) -> Unit,
     onRetryMonth: (YearMonth) -> Unit,
     onOpen: (Photo) -> Unit,
@@ -112,7 +128,7 @@ private fun LazyGridScope.monthSection(
     // The same key and the same focusable tile before and after the photo arrives: the remote can
     // always move on to a month still loading, and stays on its tile when the photo comes. Tiles
     // the D-pad couldn't land on sent focus search laying out the grid until the app stopped responding.
-    itemsIndexed(tiles, key = { index, _ -> "t-$key-$index" }, contentType = { _, _ -> "tile" }) { index, photo ->
+    itemsIndexed(tiles, key = { index, _ -> tileKey(section.month, index) }, contentType = { _, _ -> "tile" }) { index, photo ->
         if (photo == null) LaunchedEffect(section.month) { onNeedMonth(section.month) }
         PhotoTile(
             photo = photo?.id,
@@ -121,7 +137,8 @@ private fun LazyGridScope.monthSection(
             onClick = { if (photo != null) onOpen(photo) },
             modifier = Modifier
                 .aspectRatio(1f)
-                .then(if (isFirst && index == 0) Modifier.focusRequester(firstTile) else Modifier),
+                .then(if (isFirst && index == 0) Modifier.focusRequester(firstTile) else Modifier)
+                .onFocusChanged { if (it.isFocused) onTileFocused(tileKey(section.month, index)) },
         )
     }
 }

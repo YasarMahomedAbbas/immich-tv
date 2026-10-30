@@ -25,6 +25,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.ui.components.BackLink
 import io.github.yasarmahomedabbas.immichtv.ui.components.EmptyState
 import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
+import io.github.yasarmahomedabbas.immichtv.ui.components.RefreshOnStart
 import io.github.yasarmahomedabbas.immichtv.ui.photos.GridLoad
 import io.github.yasarmahomedabbas.immichtv.ui.photos.MonthPhotos
 import io.github.yasarmahomedabbas.immichtv.ui.photos.MonthSection
@@ -39,6 +40,7 @@ import java.time.YearMonth
 @Composable
 fun AlbumPhotosScreen(albumName: String, viewModel: PhotoGridViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
+    RefreshOnStart(viewModel::refresh)
     AlbumPhotosContent(albumName, state, onBack, viewModel::loadMonth, viewModel::retryMonth, viewModel::retry)
 }
 

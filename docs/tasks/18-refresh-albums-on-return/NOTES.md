@@ -16,3 +16,10 @@ Branch: `fix/18-refresh-albums-on-return`
   - A failed screen retries silently on return.
   - Empty and failed states keep their existing buttons. Refresh runs alongside them.
 - Open risks (flag: open-risk): self-verification only makes read-only calls, so on the TV it can prove "nothing changed keeps focus". Changed-data behaviour rests on unit tests, as the project has no Compose UI tests, unless someone edits an album during that run.
+
+## Implementation
+
+- Shipped: `RefreshOnStart` and `lostFocus` (`ui/components/RefreshOnStart.kt:13`); a quiet `refresh()` on `AlbumsViewModel` (`ui/albums/AlbumsViewModel.kt:73`), `AlbumViewModel` (`ui/album/AlbumViewModel.kt:73`) and `PhotoGridViewModel` (`ui/photos/PhotoGridViewModel.kt:94`), with `mergeMonths` (`ui/photos/PhotoGridViewModel.kt:50`); `LoadAlbum.ifChanged` (`domain/albums/AlbumRepository.kt:38`); focus and scroll handling in `AlbumsScreen`, `AlbumScreen` and `PhotoGrid`; the album's order in the photo grid's ViewModel key (`MainActivity.kt`). `lifecycle-runtime-compose` added.
+- Tests: full CI command green (testDebugUnitTest, koverVerifyDebug, lintDebug, assembleDebug): 206 passed / 0 failed, 0 skipped.
+- Outstanding: none unticked. The Compose focus and scroll code (the 1.3, 2.3 and 3.2 screen changes) compiles and passes lint but has no automated test, as the project has no Compose UI tests; the TV checks in the test plan are for self-verification.
+- Contradicted the plan: nothing in the code contradicted it. Three refinements, with the checklist text updated: `AlbumGrid`'s effect is keyed on the order as well as the list, or a filter leaving the same list would be remembered late and the next refresh would jump to the top; it waits a frame before reading `layoutInfo`, which otherwise describes the old list; `reread` is a suspend function run one after another inside `refreshJob`, so a refresh counts as running until they finish.

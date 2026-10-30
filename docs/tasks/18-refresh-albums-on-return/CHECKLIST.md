@@ -99,7 +99,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumScre
 
 Goal: the grid updates only the months whose count changed, in place.
 
-### [ ] 3.1 — `PhotoGridViewModel.refresh()`
+### [x] 3.1 — `PhotoGridViewModel.refresh()`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/photos/PhotoGridViewModel.kt`
 `fun refresh()`: returns if `load == Loading` or `refreshJob` is active. `timeline.months()`; `Failed` changes nothing. On `Ok`, build the sections in the new order through `internal fun mergeMonths(old: List<MonthSection>, new: List<TimelineMonth>): List<MonthSection>`:
@@ -108,9 +108,9 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/photos/PhotoGri
 - a month not seen: `NotLoaded`.
 - a month gone: dropped.
 
-Set `load` to `Empty` or `Loaded`. Then quietly re-read each month that was `Loaded` and whose count changed: a new `private fun reread(month)` that doesn't set `MonthPhotos.Loading` and, on failure, keeps the old photos. If the first month is `NotLoaded` (the grid was empty or failed), `fetch` it. `retry()` cancels `refreshJob`.
+Set `load` to `Empty` or `Loaded`. Then quietly re-read each month that was `Loaded` and whose count changed: a new `private suspend fun reread(month)`, run one after another inside `refreshJob` so a refresh counts as running until they finish, that doesn't set `MonthPhotos.Loading` and, on failure, keeps the old photos. If the first month is `NotLoaded` (the grid was empty or failed), `fetch` it. `retry()` cancels `refreshJob`.
 
-### [ ] 3.2 — The screens
+### [x] 3.2 — The screens
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumPhotosScreen.kt`
 `AlbumPhotosScreen`: `RefreshOnStart(viewModel::refresh)`.
