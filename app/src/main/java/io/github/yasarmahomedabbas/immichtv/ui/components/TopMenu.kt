@@ -118,8 +118,11 @@ private fun TabPill(tab: Tab, selected: Boolean, onClick: () -> Unit, modifier: 
 }
 
 /** The time, in the device's 12- or 24-hour format, updated on the minute. */
+/** The clock's two looks: at rest in the top menu, or over a photo inside a panel. */
+internal enum class ClockStyle { Menu, OverPhoto }
+
 @Composable
-private fun Clock() {
+internal fun Clock(style: ClockStyle = ClockStyle.Menu) {
     val context = LocalContext.current
     val pattern = if (LocalInspectionMode.current || DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm"
     val formatter = remember(pattern) { DateTimeFormatter.ofPattern(pattern) }
@@ -130,7 +133,11 @@ private fun Clock() {
             delay((60 - now.second) * 1000L)
         }
     }
-    Text(now.format(formatter), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 24.sp)
+    val colors = MaterialTheme.colorScheme
+    when (style) {
+        ClockStyle.Menu -> Text(now.format(formatter), color = colors.onSurfaceVariant, fontSize = 24.sp)
+        ClockStyle.OverPhoto -> Text(now.format(formatter), color = colors.onSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+    }
 }
 
 val Tab.label: Int

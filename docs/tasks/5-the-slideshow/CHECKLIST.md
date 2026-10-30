@@ -119,7 +119,7 @@ Goal: Start slideshow plays the album on the TV, per the board.
 
 Shape: the manual's Slideshow screen. Apply `design-recipe`.
 
-### [ ] 3.1 — Navigation
+### [x] 3.1 — Navigation
 
 File: `…/ui/AppViewModel.kt`: `AppScreen.Slideshow(val album: DomainAlbum, val settings: SlideshowSettings)`, `fun openSlideshow(album, settings)`, `back()` → `AppScreen.Album(current.album.id)`. Test in `AppViewModelTest`.
 
@@ -127,25 +127,26 @@ File: `…/ui/album/AlbumScreen.kt`: `onStartSlideshow: (Album, SlideshowSetting
 
 File: `…/MainActivity.kt`: the new branch. ViewModel key `"slideshow-${System.identityHashCode(current)}"` (with `connection`), so each start begins at the first photo.
 
-### [ ] 3.2 — The screen
+### [x] 3.2 — The screen (written and built; how it looks and behaves is for the TV, below)
 
-File: `…/ui/slideshow/SlideshowScreen.kt` (new), in a black full-screen `Box` (no safe area). `SlideshowContent(state, …)` is stateless for previews.
+File: `…/ui/slideshow/SlideshowScreen.kt` (new), in a full-screen `Box` on the theme's `bg`, as rule 2 keeps colours to tokens (no safe area). `SlideshowContent(state, …)` is stateless for previews.
 
 - **Timer**: `DisposableEffect` lifecycle observer in `SlideshowScreen` runs `viewModel.play()` from ON_START to ON_STOP, with no new dependency.
 - **Keys**: the root `Box` is `focusable`, takes focus on entry, `onPreviewKeyEvent` on `KeyDown` calls `actionFor`. Back stays with the activity's `BackHandler`.
 - **Awake**: `LocalView.current.keepScreenOn = !paused` in an effect, cleared on dispose. Only while `Playing`.
 - **Preload**: `LaunchedEffect(state.next?.photo?.id)` runs `context.imageLoader.execute(ImageRequest.Builder(context).data(Preview(id)).size(1920, 1080).scale(Scale.FILL).precision(Precision.INEXACT).crossfade(false).build())`, then `imageReady` or `imageFailed`. Likewise for `current` after a skip and for `previous`.
 - **Layers**: at most two composed, the outgoing and the incoming. The incoming starts its 1500 ms alpha fade once its image is available; until then the outgoing stays. Requests as above, so at most previous, current and next are held by the slideshow; no strong reference outside the composition. Painted with a `rememberAsyncImagePainter`/`AsyncImage`, no Coil crossfade.
-- **Landscape**: `ContentScale.Crop`, full screen. **Portrait**: a backdrop of the same image, `ContentScale.Crop`, inset -40dp, `Modifier.blur(30.dp)` (a no-op below Android 12), under a 42% black; the photo `ContentScale.Fit` centred with the motion.
+- **Landscape**: `ContentScale.Crop`, full screen. **Portrait**: a backdrop of the same image, `ContentScale.Crop`, inset -40dp, `Modifier.blur(30.dp)` (a no-op below Android 12), under `bg` at 42%; the photo `ContentScale.Fit` centred with the motion.
 - **Motion**: an `Animatable` per slide from `slideMotion(index)`, in `graphicsLayer`, linear over `secondsPerPhoto + 1.5 s`; paused → `stop()`, resumed → the remainder. It must not jump if the slide stays on because the next isn't ready: it just stays at its end.
 - **Progress**: 5dp track full width at the top, `fg` at 18%; fill `fg`, width `position / count`, animated 600 ms. Not amber (rule 3).
-- **Clock**: make `Clock` in `TopMenu.kt` `internal`, or shared with a `Panel` variant; on a `scrim` pill 96dp from the right, 54dp from the top, 22sp 700.
+- **Clock**: `Clock` in `TopMenu.kt` is `internal` with a `ClockStyle.OverPhoto` variant; in a new `OverPhotoPanel` (`ui/components/`, style `Pill`; date and place use `Info`, controls `Controls`) on a `scrim` pill 96dp from the right, 54dp from the top, 22sp 700.
 - **Date and place**: when `settings.showDateAndPlace` and something to show: bottom-left 96/54dp, `scrim` at 55%, 18dp corners, date 30sp 800, place 22sp 500 `fg` with a new pin icon `ic_place.xml`.
 - **Controls**: `AnimatedVisibility` fade, bottom-centre 54dp, `scrim` at 80%, fully round: "‹ Album" label, previous, play/pause (76dp `fg` circle, 4dp amber outline 4dp off, always), next, "37 / 214". Indicators: nothing in it takes focus. New icons `ic_previous.xml`, `ic_next.xml`, `ic_pause.xml`.
 - **States**: `Loading`: black with a `SkeletonBlock` in the date panel's place, Back works. `Empty`: `EmptyState("No photos to play", "This album only has videos, or nothing yet.", "Back to album", onBack)`. `Failed`: `FailedState`, Try again. Strings in `res/values/strings.xml`.
 - `@Preview`s: landscape playing, portrait, paused with controls, no place, loading, empty, failed.
+- [ ] Seen working on the TV, per the test plan: for self-verification. Unit tests and the build can't see it.
 
-### [ ] 3.3 — The manual
+### [x] 3.3 — The manual
 
 File: `docs/design/README.md`: extend the Slideshow row (progress bar off-white and what it measures, clock, indicators only); remove the open decision on the controls fading: they fade after 4 s.
 

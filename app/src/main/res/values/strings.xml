@@ -78,4 +78,14 @@
     <string name="setup_problem_key_lacks_permission">This API key can\'t read your account. Give it the user.read permission, or all permissions.</string>
     <string name="setup_problem_invalid_address">Enter the server address, like http://192.168.1.10:2283.</string>
     <string name="setup_problem_missing_key">Enter an API key.</string>
+
+    <string name="slideshow_back">‹ Album</string>
+    <string name="slideshow_position">%1$d / %2$d</string>
+    <string name="slideshow_previous">Previous photo</string>
+    <string name="slideshow_next">Next photo</string>
+    <string name="slideshow_pause">Pause</string>
+    <string name="slideshow_play">Play</string>
+    <string name="slideshow_empty_title">No photos to play</string>
+    <string name="slideshow_empty_hint">This album only has videos, or nothing yet.</string>
+    <string name="slideshow_empty_action">Back to album</string>
 </resources>

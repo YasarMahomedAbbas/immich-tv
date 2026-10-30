@@ -7,6 +7,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.server.FakeSessionStore
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.ServerAddress
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -82,6 +83,19 @@ class AppViewModelTest {
         assertEquals(AppScreen.Album(summer.id, focusBrowse = true), vm.screen.value)
         assertTrue(vm.back())
         assertEquals(AppScreen.Main(Tab.Albums), vm.screen.value)
+    }
+
+    @Test
+    fun `start slideshow plays with the settings given, and back returns to the album on start slideshow`() = runTest(dispatcher) {
+        val vm = signedIn()
+        val summer = album(id = "a1")
+        val settings = SlideshowSettings(secondsPerPhoto = 5)
+        vm.openAlbum(summer.id)
+        vm.openSlideshow(summer, settings)
+        assertEquals(AppScreen.Slideshow(summer, settings), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Album(summer.id, focusBrowse = false), vm.screen.value)
     }
 
     @Test

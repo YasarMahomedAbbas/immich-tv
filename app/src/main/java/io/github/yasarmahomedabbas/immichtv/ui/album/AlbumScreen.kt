@@ -95,8 +95,8 @@ internal val AlbumContentBottom = ScreenTop + BackLinkHeight + SectionGap + Mosa
 internal val SettingWidth = (AlbumInfoWidth - SettingGap * (SettingsPerRow - 1)) / SettingsPerRow
 
 /**
- * One album: the cover mosaic, its title and counts, Start slideshow (focused when it opens; it
- * plays in #5), Browse photos, the slideshow settings and a strip of its first items.
+ * One album: the cover mosaic, its title and counts, Start slideshow (focused when it opens),
+ * Browse photos, the slideshow settings and a strip of its first items.
  * [focusBrowse] puts focus on Browse photos instead, for coming Back from it.
  */
 @Composable
@@ -104,6 +104,7 @@ fun AlbumScreen(
     viewModel: AlbumViewModel,
     onBack: () -> Unit,
     onBrowsePhotos: (Album) -> Unit,
+    onStartSlideshow: (Album, SlideshowSettings) -> Unit,
     focusBrowse: Boolean = false,
 ) {
     val state by viewModel.state.collectAsState()
@@ -111,7 +112,7 @@ fun AlbumScreen(
         state = state,
         focusBrowse = focusBrowse,
         onBack = onBack,
-        onStartSlideshow = {},
+        onStartSlideshow = onStartSlideshow,
         onBrowsePhotos = onBrowsePhotos,
         onCycleSeconds = viewModel::cycleSeconds,
         onCycleOrder = viewModel::cycleOrder,
@@ -126,7 +127,7 @@ private fun AlbumContent(
     state: AlbumState,
     focusBrowse: Boolean,
     onBack: () -> Unit,
-    onStartSlideshow: () -> Unit,
+    onStartSlideshow: (Album, SlideshowSettings) -> Unit,
     onBrowsePhotos: (Album) -> Unit,
     onCycleSeconds: () -> Unit,
     onCycleOrder: () -> Unit,
@@ -154,7 +155,7 @@ private fun AlbumContent(
                 page = load.page,
                 settings = state.settings,
                 focusBrowse = focusBrowse,
-                onStartSlideshow = onStartSlideshow,
+                onStartSlideshow = { onStartSlideshow(load.page.album, state.settings) },
                 onBrowsePhotos = { onBrowsePhotos(load.page.album) },
                 onCycleSeconds = onCycleSeconds,
                 onCycleOrder = onCycleOrder,
@@ -361,7 +362,7 @@ private val previewPage = AlbumPage(
 
 @Composable
 private fun AlbumPreview(state: AlbumState) {
-    ImmichTvTheme { AlbumContent(state, false, {}, {}, {}, {}, {}, {}, {}, {}) }
+    ImmichTvTheme { AlbumContent(state, false, {}, { _, _ -> }, {}, {}, {}, {}, {}, {}) }
 }
 
 @Preview(device = Devices.TV_1080p)
