@@ -13,6 +13,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,6 +42,7 @@ class AlbumViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(AlbumState())
     val state: StateFlow<AlbumState> = _state.asStateFlow()
+    private var refreshJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -60,7 +62,21 @@ class AlbumViewModel(
 
     fun retry() {
         if (_state.value.load == AlbumLoad.Loading) return
+        refreshJob?.cancel()
         load()
+    }
+
+    /**
+     * Reads the album again without the skeleton, so focus stays where it is, and its contents only
+     * if the album changed. A failure leaves the screen as it was; the next refresh tries again.
+     */
+    fun refresh() {
+        val load = _state.value.load
+        if (load == AlbumLoad.Loading || refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.launch {
+            val result = if (load is AlbumLoad.Loaded) loadAlbum.ifChanged(load.page) else loadAlbum(id)
+            if (result is ServerResult.Ok) _state.update { it.copy(load = AlbumLoad.Loaded(result.value)) }
+        }
     }
 
     private fun change(step: (SlideshowSettings) -> SlideshowSettings) {

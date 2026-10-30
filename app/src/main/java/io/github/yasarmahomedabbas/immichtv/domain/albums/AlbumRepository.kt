@@ -34,6 +34,16 @@ class LoadAlbum(private val repository: AlbumRepository) {
         return repository.contents(album, STRIP_SIZE).map { AlbumPage(album, it) }
     }
 
+    /** [known] again if its album hasn't changed, for one call; otherwise the page read afresh. */
+    suspend fun ifChanged(known: AlbumPage): ServerResult<AlbumPage> {
+        val album = when (val result = repository.album(known.album.id)) {
+            is ServerResult.Ok -> result.value
+            is ServerResult.Failed -> return result
+        }
+        if (album == known.album) return ServerResult.Ok(known)
+        return repository.contents(album, STRIP_SIZE).map { AlbumPage(album, it) }
+    }
+
     companion object {
         /** How many items the album screen's strip shows. */
         const val STRIP_SIZE = 30

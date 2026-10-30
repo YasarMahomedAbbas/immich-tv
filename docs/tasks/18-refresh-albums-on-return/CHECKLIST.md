@@ -71,19 +71,19 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/albums/AlbumsSc
 
 Goal: the album's counts, mosaic and strip update when the album changed, for one call when it hasn't.
 
-### [ ] 2.1 — `LoadAlbum.ifChanged`
+### [x] 2.1 — `LoadAlbum.ifChanged`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/albums/AlbumRepository.kt`
 `suspend fun ifChanged(known: AlbumPage): ServerResult<AlbumPage>`: `repository.album(known.album.id)`; `Failed` is returned; if equal to `known.album`, `Ok(known)` with no contents call; otherwise `repository.contents(album, STRIP_SIZE).map { AlbumPage(album, it) }`.
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/domain/albums/AlbumsTest.kt`: unchanged skips contents (`contentsLimits` empty); changed `itemCount` or `updatedAt` reads them; failure of either call is `Failed`.
 
-### [ ] 2.2 — `AlbumViewModel.refresh()`
+### [x] 2.2 — `AlbumViewModel.refresh()`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumViewModel.kt`
 `fun refresh()` with the same guards and `refreshJob` as 1.2: from `Loaded(page)` calls `loadAlbum.ifChanged(page)`; from `Failed` calls `loadAlbum(id)`. `Ok` sets `Loaded`; `Failed` changes nothing. `settings` untouched. `retry()` cancels `refreshJob`.
 
-### [ ] 2.3 — The screen
+### [x] 2.3 — The screen
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumScreen.kt`
 `AlbumScreen`: `RefreshOnStart(viewModel::refresh)`. `Strip` takes `onFocusLost: () -> Unit`; each tile's modifier adds `.onFocusChanged { if (it.isFocused) lastFocused = photo.id }`, with `lastFocused` remembered in `Strip`. `LaunchedEffect(items)`: if `lostFocus(lastFocused, items.map { it.id })`, clear it and call `onFocusLost`. `LoadedAlbum` passes `{ runCatching { startFocus.requestFocus() } }`. `lastFocused` isn't cleared on moving to a button, so a tile vanishing then moves focus from that button to Start slideshow: rare and harmless, and it keeps this simple.
