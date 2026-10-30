@@ -94,7 +94,7 @@ Goal: the remote does what the ticket says, and the manual says so.
 
 File: `…/ui/album/AlbumPhotosScreen.kt`: `AlbumPhotosScreen(albumName, viewModel, onBack, returning: Boolean, onOpenPhoto: () -> Unit, onStartSlideshow: (PhotoId) -> Unit)`. Mirror `PhotosScreen`: `onOpen` calls `viewModel.open(photo)` then `onOpenPhoto()`; `onHold` calls `viewModel.open(photo)` then `onStartSlideshow(photo.id)`. Pass to `PhotoGrid` `onOpen`, `onHold` and `restoreTo = if (returning) state.viewing?.id else null`. Under the `Loaded` grid, `KeyHint` with the same two hints as `PhotosContent`, bottom-right, in a `Box` wrapping the `PhotoGrid`. Leave the focus on Back while loading as it is; the `LaunchedEffect` giving Back focus on `Loaded` runs before the grid's restore, which waits a frame. Update the previews.
 
-- [ ] On the TV: focus lands on the restored tile, not Back (self-verification).
+- [x] On the TV: focus lands on the restored tile, not Back (self-verification).
 
 ### [x] 3.2 — The activity
 

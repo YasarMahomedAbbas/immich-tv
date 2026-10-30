@@ -42,3 +42,27 @@ Branch: `feat/23-open-photo-from-album-grid`
 - Skipped: `returning` and the show's use of the grid's order — the KDoc on `AppScreen` and `LoadSlideshowFromPhoto` says it, the tests enforce it, and the manual has the behaviour.
 - Skipped: README's architecture and server sections, and `CLAUDE.md` — still true: no new layer, permission, server call or command; new ViewModel keys take `connection` as README requires.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: not run here, per the user's speed note; the full command runs once in `raise-pr`. `assembleDebug` built in Docker. No tests were run in this stage and no code changed.
+- Server: Immich 3.3.5. `data/` is unchanged, so the spec was not re-read here (checked at planning); the calls the show from a tile relies on were repeated live.
+- TV: installed the debug build on the Chromecast. Driven from Home's row (Cats, 699 items, oldest first) and the Albums tab (Bamberg, 9 photos, newest first). Lock held 12:49:44 to 12:57:59 UTC.
+- Verified:
+  - Server: `GET /api/albums`, then `timeline/buckets` and `timeline/bucket` with `albumId` and both `order` values for all 15 albums. Every album's item count matched, and `desc` was the exact reverse of `asc`.
+  - OK opens the photo full-screen; a video is a still with its badge.
+  - Left stops at the album's first photo and right at its last (two presses past each end: Cats' start, Bamberg's end).
+  - Right crossed two month boundaries, and Back focused the viewed tile in December, 50 photos in, with the grid scrolled to it.
+  - Hold OK starts the show at the held photo with its date shown; the held key didn't pause it, as it advanced on its own. Back returned to the held tile, not the one the show had reached.
+  - Hold on a video with Play muted: the video plays. With Skip videos: the show starts at the next photo and skips the following video, on the album's saved 12 seconds. That run had Shuffle saved and still followed the grid.
+  - An oldest-first album's show runs in grid order (Cats, by date). A newest-first album's last tile opens as 9 / 9 (Bamberg), and its show says "‹ Album".
+  - Back from the grid reaches the album on Browse photos, then Browse photos again starts at the top on the first tile. From the Albums tab, Back goes on to that tab on the album's tile.
+  - The key hint shows on the grid. No error lines from the app or `AndroidRuntime` in logcat.
+- Failed: none
+- Not self-verifiable:
+  - The memory grid: this server has no memories, so it is proven by tests only. To check by hand: Home's View photos on a memory, then OK, left/right, Back, hold OK, and "‹ Memory".
+  - Back while the album's settings are loading, and an album grid opened from Home's hero: tests only.
+- Observed, not a bug in this branch's scope: 60 fast scripted right presses in the viewer moved about 50 photos, so some were dropped around month loads. The viewer and the grid still agreed on the photo. A person pressing at a normal pace wasn't tested for this.
+- Left as found: Cats' saved settings were changed for the checks and put back (8 seconds, Oldest first, Play muted, date and place on); the TV was returned to its launcher.
