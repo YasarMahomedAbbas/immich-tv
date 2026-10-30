@@ -12,3 +12,10 @@ Branch: `fix/27-pace-grid-key-presses`
 - Tests: the cause can't be reproduced off the device, because the project has no Robolectric or Compose UI tests. A JVM test covers the pacing logic and fails without it; the TV check is the proof.
 - Speed note from the user for 2026-10-30: unit tests for changed classes only, the full CI command once in `raise-pr`, the TV check limited to this ticket with the lock held 10 minutes at most and released before any fix.
 - Open risks: the cause is a hypothesis from Compose's main-branch source and two stack samples, not proven; pacing should bound it anyway. A quick double tap under 100 ms loses its second press. The TV may be unavailable: the window ends about 14:25 CET on 2026-10-30 and the lock is shared; if skipped, the fix ships unproven on the device. Release builds may behave better than the debug build the ANR was seen on; not measured.
+
+## Implementation
+
+- Shipped: `MovePace`, the plain pacing logic (`ui/photos/MovePace.kt:15`); the grid consumes an Up or Down press it refuses, and counts a frame after each accepted one (`ui/photos/PhotoGrid.kt:129`). Left, Right, OK and key up pass through untouched.
+- Tests: `MovePaceTest` 6 passed / 0 failed; with `accept` always true, 4 of the 6 fail. The grid wiring has no unit test (no Compose UI tests in the project); the TV check covers it. The full CI command wasn't run here, per the speed note: it runs once, in `raise-pr`.
+- Outstanding: none in the checklist's tasks. The on-TV checks in the test plan are for self-verification.
+- Contradicted the plan: none. One test added beyond the plan: an accepted move needs a new frame before the next.

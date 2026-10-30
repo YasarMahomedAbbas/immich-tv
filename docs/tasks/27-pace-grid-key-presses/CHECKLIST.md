@@ -37,7 +37,7 @@ Problem: A fast run of Down presses on the Photos grid stops the app responding,
 
 Goal: a burst of Up or Down presses can't queue focus searches on the grid; single presses move as before.
 
-### [ ] 1.1 — The pacing logic, with its test
+### [x] 1.1 — The pacing logic, with its test
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/photos/MovePace.kt`
 Plain Kotlin, no Compose or Android imports:
@@ -56,9 +56,9 @@ internal class MovePace(private val minGapMillis: Long = MIN_MOVE_GAP_MILLIS) {
 The first move is always accepted. Only an accepted move updates the last time and clears the frame flag.
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/photos/MovePaceTest.kt`
-The unit cases in the test plan, mirroring `MonthTilesTest`.
+The unit cases in the test plan, plus one that an accepted move needs a new frame before the next, mirroring `MonthTilesTest`.
 
-### [ ] 1.2 — Apply it to the grid
+### [x] 1.2 — Apply it to the grid
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/photos/PhotoGrid.kt`
 `val pace = remember { MovePace() }`, `val scope = rememberCoroutineScope()`. On the `LazyVerticalGrid`'s modifier, `modifier.fillMaxSize().onPreviewKeyEvent { ... }`: for `KeyEventType.KeyDown` of `Key.DirectionUp` or `Key.DirectionDown`, call `pace.accept(SystemClock.uptimeMillis())`. Accepted: `scope.launch { withFrameNanos { }; pace.frameDrawn() }` and return false, so focus search runs. Refused: return true, consuming the press. Every other key and key up returns false. Add a line to the KDoc saying why: a backlog of presses froze the app until an ANR.
