@@ -36,7 +36,7 @@ ViewModels live in the activity's store, keyed by `AppViewModel.connection`, and
 
 Goal: the Albums tab picks up new, changed and removed albums silently, keeping focus.
 
-### [ ] 1.1 — The trigger and the focus helper
+### [x] 1.1 — The trigger and the focus helper
 
 File: `gradle/libs.versions.toml`, `app/build.gradle.kts`
 Add `lifecycle-runtime-compose` (`androidx.lifecycle`, version.ref `lifecycle`) and `implementation(libs.lifecycle.runtime.compose)`.
@@ -47,18 +47,18 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/components/Refr
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/components/RefreshOnStartTest.kt` (new): `lostFocus` with null, present and gone.
 
-### [ ] 1.2 — `AlbumsViewModel.refresh()`
+### [x] 1.2 — `AlbumsViewModel.refresh()`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/albums/AlbumsViewModel.kt`
 `fun refresh()`: returns if `load == Loading` or `refreshJob?.isActive == true`. Launches into `private var refreshJob: Job?`: `loadAlbums()`; `Ok` sets `load = Loaded(value)`; `Failed` changes nothing, on a `Failed` screen too. Never sets `Loading`. `retry()` cancels `refreshJob` first, so an older answer can't overwrite its result.
 
-### [ ] 1.3 — The screen
+### [x] 1.3 — The screen
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/albums/AlbumsScreen.kt`
-`AlbumsScreen`: `RefreshOnStart(viewModel::refresh)`. Pass `state.filter` and `state.sort` to `AlbumGrid`. Replace the `shown` effect so it holds the last `albums` and `filter to sort`, on `LaunchedEffect(albums)`:
+`AlbumsScreen`: `RefreshOnStart(viewModel::refresh)`. Pass `state.filter to state.sort` to `AlbumGrid`. Replace the `shown` effect so it holds the last `albums` and `filter to sort`, on `LaunchedEffect(albums, order)` (keyed on the order too: a filter that leaves the same list must still be remembered, or the next refresh would read as a filter change and jump to the top):
 - filter or sort changed: `scrollToItem(0)`, as now.
 - otherwise, `lostFocus(focused, albums.map { it.id })` and `focused` was in the last list: `scrollToItem(0)`, a frame, `targetFocus.requestFocus()` in `runCatching`.
-- otherwise, the focused album isn't in `gridState.layoutInfo.visibleItemsInfo`: `scrollToItem(index - index % COLUMNS)`, so focus stays visible when "Recently updated" moves it.
+- otherwise, after a frame (so the layout read is of the new list), the focused album isn't in `gridState.layoutInfo.visibleItemsInfo`: `scrollToItem(index - index % COLUMNS)`, so focus stays visible when "Recently updated" moves it.
 
 ### Verify
 

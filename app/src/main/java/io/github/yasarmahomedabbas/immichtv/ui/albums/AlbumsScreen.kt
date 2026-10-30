@@ -45,9 +45,11 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.AlbumCard
 import io.github.yasarmahomedabbas.immichtv.ui.components.Chip
 import io.github.yasarmahomedabbas.immichtv.ui.components.EmptyState
 import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
+import io.github.yasarmahomedabbas.immichtv.ui.components.RefreshOnStart
 import io.github.yasarmahomedabbas.immichtv.ui.components.SecondaryButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
 import io.github.yasarmahomedabbas.immichtv.ui.components.TileStyle
+import io.github.yasarmahomedabbas.immichtv.ui.components.lostFocus
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 import java.time.Instant
@@ -62,6 +64,7 @@ private val FocusRoom = 8.dp
 @Composable
 fun AlbumsScreen(viewModel: AlbumsViewModel, onOpenAlbum: (AlbumId) -> Unit) {
     val state by viewModel.state.collectAsState()
+    RefreshOnStart(viewModel::refresh)
     AlbumsContent(
         state = state,
         onFilter = viewModel::setFilter,
@@ -104,7 +107,7 @@ private fun AlbumsContent(
                         onAction = { onFilter(AlbumFilter.All) },
                     )
                 } else {
-                    AlbumGrid(visible, state.focused, onFocused, onOpen)
+                    AlbumGrid(visible, state.filter to state.sort, state.focused, onFocused, onOpen)
                 }
             }
         }
@@ -132,7 +135,13 @@ private fun Toolbar(filter: AlbumFilter, sort: AlbumSort, onFilter: (AlbumFilter
  * else the first, once the cards are laid out; the grid scrolls to keep the focused card in view.
  */
 @Composable
-private fun AlbumGrid(albums: List<Album>, focused: AlbumId?, onFocused: (AlbumId) -> Unit, onOpen: (AlbumId) -> Unit) {
+private fun AlbumGrid(
+    albums: List<Album>,
+    order: Pair<AlbumFilter, AlbumSort>,
+    focused: AlbumId?,
+    onFocused: (AlbumId) -> Unit,
+    onOpen: (AlbumId) -> Unit,
+) {
     val target = albums.indexOfFirst { it.id == focused }.coerceAtLeast(0)
     val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = target - target % COLUMNS)
     val targetFocus = remember { FocusRequester() }
@@ -141,12 +150,31 @@ private fun AlbumGrid(albums: List<Album>, focused: AlbumId?, onFocused: (AlbumI
         runCatching { targetFocus.requestFocus() }
     }
     // A lazy grid follows its first item's key, so a new filter or sort would leave it scrolled to
-    // wherever that album landed. A new list starts from the top.
+    // wherever that album landed: those start from the top. A refresh that changed the list keeps
+    // focus on its album and that album in view, or starts from the top if the album has gone.
     var shown by remember { mutableStateOf(albums) }
-    LaunchedEffect(albums) {
-        if (albums != shown) {
-            shown = albums
-            gridState.scrollToItem(0)
+    var shownOrder by remember { mutableStateOf(order) }
+    LaunchedEffect(albums, order) {
+        val last = shown
+        val lastOrder = shownOrder
+        shown = albums
+        shownOrder = order
+        if (albums == last) return@LaunchedEffect
+        val ids = albums.map { it.id }
+        when {
+            order != lastOrder -> gridState.scrollToItem(0)
+            lostFocus(focused, ids) && last.any { it.id == focused } -> {
+                gridState.scrollToItem(0)
+                withFrameNanos { }
+                runCatching { targetFocus.requestFocus() }
+            }
+            else -> {
+                // After a frame, so the layout it reads is of the new list.
+                withFrameNanos { }
+                val index = ids.indexOf(focused)
+                val inView = gridState.layoutInfo.visibleItemsInfo.any { it.key == focused?.value }
+                if (index >= 0 && !inView) gridState.scrollToItem(index - index % COLUMNS)
+            }
         }
     }
     LazyVerticalGrid(
