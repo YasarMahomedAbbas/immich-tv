@@ -180,7 +180,7 @@ internal class ImmichAlbumRepository(
 private val Album.order get() = if (newestFirst) "desc" else "asc"
 
 /** Maps every item, or fails as [Problem.Unreachable] if one can't be read (a bad date). */
-private inline fun <A, B> mapAll(items: List<A>, transform: (A) -> B): ServerResult<List<B>> = try {
+internal inline fun <A, B> mapAll(items: List<A>, transform: (A) -> B): ServerResult<List<B>> = try {
     ServerResult.Ok(items.map(transform))
 } catch (_: DateTimeParseException) {
     ServerResult.Failed(Problem.Unreachable)
@@ -231,7 +231,7 @@ private data class AlbumDto(
  * `startDate`/`endDate` are the "UTC representation of (local)" date: the day the photo was taken,
  * written as midnight UTC. Read in the device's zone they would land on the day before, west of UTC.
  */
-private fun calendarDay(value: String): LocalDate = Instant.parse(value).atOffset(ZoneOffset.UTC).toLocalDate()
+internal fun calendarDay(value: String): LocalDate = Instant.parse(value).atOffset(ZoneOffset.UTC).toLocalDate()
 
 @Serializable
 private data class AlbumUserDto(val user: UserDto)

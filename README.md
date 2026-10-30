@@ -2,11 +2,12 @@
 
 An Android TV app for a Chromecast with Google TV that shows your photos from a self-hosted [Immich](https://immich.app/) server.
 
-- **Albums**: filter and sort them, open one to see its photos, set up its slideshow and start it.
-- **Slideshow**: crossfades with a slow zoom, portrait photos on a blurred copy of themselves, the date and place in a corner, and the remote's left/right/OK to skip and pause. It plays an album on a loop, and the Videos setting decides its videos: played to their end, muted or with sound, or left out by Skip. It also plays the whole library's photos on a loop, leaving its videos out.
-- **Photos**: your own timeline by month, as Immich's Photos page shows it (partners' photos and photos only in albums others shared with you stay out). Jump by month, open a photo full screen and move left and right, or hold OK on a photo to start a slideshow from it.
+- **Home**: today's memory, or else your most recently updated album, ready to play as a slideshow or open as photos; then a row of albums and a row of your newest photos (by date taken, so an old photo uploaded today isn't among them).
+- **Albums**: filter and sort them, open one to see its photos, set up its slideshow and start it. In its photos, or a memory's from Home, open one full screen and move left and right, or hold OK on one to start a slideshow from it.
+- **Slideshow**: crossfades with a slow zoom, portrait photos on a blurred copy of themselves, the date and place in a corner, and the remote's left/right/OK to skip and pause. It plays an album on a loop, and the Videos setting decides its videos: played to their end, muted or with sound, or left out by Skip. It also plays the whole library on a loop, its videos muted and in their place, and search results on a loop, leaving their videos out.
+- **Photos**: your own timeline by month, as Immich's Photos page shows it (partners' photos and photos only in albums others shared with you stay out). Jump by month, open a photo full screen and move left and right, or hold OK on a photo or video to start a slideshow from it.
 - **Screensaver**: when the TV goes idle it plays a random selection of your library's photos, or an album you choose in Settings, with a clock on the plain ground when the server can't be reached. It's [turned on over `adb`](#screensaver), once.
-- **Search** (planned, #8): Immich's smart search ("dog on the beach"), by voice from the remote.
+- **Search**: Immich's smart search ("dog on the beach"), typed or by voice through the system's speech prompt, or a named person's photos; play the results as a slideshow. It shows the 100 best matches, or a person's 1000 newest photos, and needs smart search turned on in Immich ([source](https://github.com/immich-app/immich/blob/v3.3.5/server/src/services/search.service.ts)).
 
 The app talks only to your own server. It's built for a server reached over the home network or a VPN such as Tailscale, so plain `http://` addresses are allowed.
 
@@ -16,7 +17,7 @@ The app talks only to your own server. It's built for a server reached over the 
 2. Or from a computer on the same network, with developer options and network debugging on: download `immich-tv-<version>.apk` from the [latest release](../../releases/latest) and run `adb connect <tv-ip>:5555 && adb install immich-tv-<version>.apk`.
 3. Open Immich TV and enter the server address and an API key (Immich web → Account Settings → API Keys).
 
-The app needs Immich v1.133 or newer, the release that gave the timeline its current shape ([release notes](https://github.com/immich-app/immich/releases/tag/v1.133.0)); it refuses older servers when connecting. The API key needs `user.read`, `album.read`, `asset.read` and `asset.view` ([API reference](https://api.immich.app)), or all permissions.
+The app needs Immich v1.133 or newer, the release that gave the timeline its current shape ([release notes](https://github.com/immich-app/immich/releases/tag/v1.133.0)); it refuses older servers when connecting. The API key needs `user.read`, `album.read`, `asset.read`, `asset.view` and `memory.read` ([API reference](https://api.immich.app)), or all permissions. Without `memory.read`, Home shows an album instead of a memory. Add `person.read` for the People row on the Search tab; without it the row is left out and search still works.
 
 ## Screensaver
 
@@ -48,7 +49,9 @@ data/     The Immich REST client and stored settings
 
 A ViewModel that holds server data takes `AppViewModel.connection` in its key (see `MainActivity`): ViewModels live as long as the activity, so without it a screen keeps showing the old server's data after connecting to another.
 
-For the same reason a screen that shows server data calls `RefreshOnStart` with a quiet `refresh()` on its ViewModel, or it never sees changes made on the server. A quiet refresh reads one cheap summary and fetches more only if that changed, never shows the skeleton, keeps focus and scroll when nothing changed, and leaves the screen alone on failure. The exceptions: a slideshow or the screensaver reads its photos once, when it starts, and Settings reads the albums once per server connection, its screensaver picker again on each entry, so neither sees a change made while the app stays open on it.
+For the same reason a screen that shows server data calls `RefreshOnStart` with a quiet `refresh()` on its ViewModel, or it never sees changes made on the server. A quiet refresh reads one cheap summary and fetches more only if that changed, never shows the skeleton, keeps focus and scroll when nothing changed, and leaves the screen alone on failure. Home is the exception to the first part: it has no one summary for its memory, albums and photos, so it reads its whole page each time. The exception here is Settings, which reads the albums once per server connection and its screensaver picker again on each entry, so it doesn't see a change made while the app stays open on it.
+
+Slideshows are the exception to both: their ViewModels live in `AppViewModel.shows`, which is emptied on every screen change so a finished show's slides don't stay in memory. Each show loads anew, so it needs neither the key nor a refresh. The screensaver is a show too, with its ViewModel in the dream's own store: it reads its photos once when it starts.
 
 Any change to an Immich call follows the API of the server's version (see `CLAUDE.md`).
 
