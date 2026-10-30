@@ -1,18 +1,18 @@
 [versions]
-agp = "8.7.3"
-kotlin = "2.1.0"
-kover = "0.9.0"
-composeBom = "2024.12.01"
-tvMaterial = "1.0.0"
+agp = "9.5.0"
+kotlin = "2.4.21"
+kover = "0.9.11"
+composeBom = "2026.09.00"
+tvMaterial = "1.1.0"
 activityCompose = "1.9.3"
 lifecycle = "2.8.7"
-coroutines = "1.9.0"
-serialization = "1.7.3"
-okhttp = "4.12.0"
+coroutines = "1.11.0"
+serialization = "1.12.0"
+okhttp = "5.5.1"
 junit = "4.13.2"
-coil = "3.0.4"
+coil = "3.6.3"
 media3 = "1.5.1"
-robolectric = "4.14.1"
+robolectric = "4.17"
 
 [libraries]
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -39,8 +39,8 @@ compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 # The Android jars Robolectric 4.14.1 asks for: both, though the tests only name SDK 34. They go with the
 # robolectric version above; a missing one fails the tests, naming the jar.
-android-all-instrumented-sdk34 = { group = "org.robolectric", name = "android-all-instrumented", version = "14-robolectric-10818077-i7" }
-android-all-instrumented-sdk35 = { group = "org.robolectric", name = "android-all-instrumented", version = "15-robolectric-12650502-i7" }
+android-all-instrumented-sdk34 = { group = "org.robolectric", name = "android-all-instrumented", version = "17-robolectric-15733970-i7" }
+android-all-instrumented-sdk35 = { group = "org.robolectric", name = "android-all-instrumented", version = "17-robolectric-15733970-i7" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
