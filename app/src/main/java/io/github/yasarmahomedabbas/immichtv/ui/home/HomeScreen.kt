@@ -426,6 +426,8 @@ private fun HomePreview(state: HomeState) {
             tab = Tab.Home,
             onSelectTab = {},
             onOpenSettings = {},
+            onVoiceKey = {},
+            search = {},
             home = { HomeContent(state, {}, {}, HomeActions({}, { _, _ -> }, {}, {}, {}, {}, {})) },
             albums = {},
             photos = {},

@@ -1,5 +1,6 @@
 package io.github.yasarmahomedabbas.immichtv.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import androidx.tv.material3.Border
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
@@ -129,6 +131,37 @@ fun IconButton(icon: Painter, contentDescription: String, onClick: () -> Unit, m
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(28.dp), tint = colors.onSurface)
+        }
+    }
+}
+
+/**
+ * The Search tab's voice button: the one amber fill (rule 3's exception, it is that screen's action),
+ * so its focus outline is `fg`.
+ */
+@Composable
+fun VoiceButton(contentDescription: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val fill = colors.border
+    Button(
+        onClick = onClick,
+        modifier = modifier.size(88.dp),
+        shape = ButtonDefaults.shape(shape = CircleShape),
+        contentPadding = PaddingValues(0.dp),
+        colors = ButtonDefaults.colors(
+            containerColor = fill,
+            contentColor = colors.onPrimary,
+            focusedContainerColor = fill,
+            focusedContentColor = colors.onPrimary,
+            pressedContainerColor = fill,
+            pressedContentColor = colors.onPrimary,
+        ),
+        border = ButtonDefaults.border(
+            focusedBorder = Border(BorderStroke(4.dp, colors.primary), inset = (-4).dp, shape = CircleShape),
+        ),
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(painterResource(R.drawable.ic_mic), contentDescription = contentDescription, modifier = Modifier.size(44.dp), tint = colors.onPrimary)
         }
     }
 }

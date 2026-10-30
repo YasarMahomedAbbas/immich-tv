@@ -11,6 +11,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,8 +38,8 @@ sealed interface AppScreen {
      */
     data class Setup(val firstRun: Boolean, val current: Session?, val from: AppScreen = Main(Tab.Home)) : AppScreen
 
-    /** The top menu with [tab]'s content under it. */
-    data class Main(val tab: Tab) : AppScreen
+    /** The top menu with [tab]'s content under it. [focusResults]: coming Back from a slideshow of its results. */
+    data class Main(val tab: Tab, val focusResults: Boolean = false) : AppScreen
 
     /** [focusBrowse]: coming Back from its photos, so focus goes to Browse photos. */
     data class Album(val id: AlbumId, val focusBrowse: Boolean = false, val cameFrom: CameFrom = CameFrom.AlbumsTab) : AppScreen
@@ -58,6 +59,9 @@ sealed interface AppScreen {
 
     /** Home's memory as a grid under [title]. */
     data class MemoryPhotos(val memory: Memory, val title: String) : AppScreen
+
+    /** [slides], search results, playing at the default timing. */
+    data class ResultsSlideshow(val slides: List<Slide>) : AppScreen
 
     /** One photo of the timeline full-screen; which one is the grid's to say. [fromHome]: Back goes to Home, not the Photos tab. */
     data class PhotoViewer(val fromHome: Boolean = false) : AppScreen
@@ -109,6 +113,10 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
         _screen.value = AppScreen.MemoryPhotos(memory, title)
     }
 
+    fun openResultsSlideshow(slides: List<Slide>) {
+        _screen.value = AppScreen.ResultsSlideshow(slides)
+    }
+
     fun openPhotoViewer(fromHome: Boolean = false) {
         _screen.value = AppScreen.PhotoViewer(fromHome)
     }
@@ -145,6 +153,7 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
                 AppScreen.Album(current.album.id, cameFrom = current.cameFrom)
             }
             is AppScreen.MemorySlideshow, is AppScreen.MemoryPhotos -> HOME
+            is AppScreen.ResultsSlideshow -> AppScreen.Main(Tab.Search, focusResults = true)
             is AppScreen.PhotoViewer -> if (current.fromHome) HOME else AppScreen.Main(Tab.Photos)
             is AppScreen.TimelineSlideshow -> AppScreen.Main(Tab.Photos)
             is AppScreen.Main -> if (current.tab == Tab.Home) null else HOME

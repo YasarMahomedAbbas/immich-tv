@@ -15,6 +15,9 @@ enum class Problem {
 
     /** No session is stored: the app has not been set up. */
     NotSignedIn,
+
+    /** This server has smart search turned off. */
+    SearchUnavailable,
 }
 
 /** [transform] on success; a failure passes through. */
