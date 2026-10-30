@@ -503,6 +503,33 @@ class PhotoGridViewModelTest {
     }
 
     @Test
+    fun `a photo opened from outside, in a month not loaded, finds its month and moves`() = runTest(dispatcher) {
+        val vm = PhotoGridViewModel(timeline)
+        advanceUntilIdle()
+        vm.open(julyPhotos.single())
+
+        vm.viewerMove(-1)
+        advanceUntilIdle()
+
+        assertEquals(augustPhotos.last(), vm.state.value.viewing)
+        assertEquals(MonthPhotos.Loaded(julyPhotos), vm.section(july).photos)
+    }
+
+    @Test
+    fun `a photo opened from outside that no month holds stays once all are loaded`() = runTest(dispatcher) {
+        val vm = PhotoGridViewModel(timeline)
+        advanceUntilIdle()
+        val gone = Photo(PhotoId("gone"), false)
+        vm.open(gone)
+
+        vm.viewerMove(1)
+        advanceUntilIdle()
+
+        assertEquals(gone, vm.state.value.viewing)
+        assertEquals(listOf(august, july), timeline.asked)
+    }
+
+    @Test
     fun `no photo open moves nowhere`() = runTest(dispatcher) {
         val vm = PhotoGridViewModel(timeline)
         advanceUntilIdle()

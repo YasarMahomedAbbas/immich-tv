@@ -10,6 +10,8 @@ import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Album
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
+import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
+import io.github.yasarmahomedabbas.immichtv.domain.home.playlistFrom
 import io.github.yasarmahomedabbas.immichtv.domain.map
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
@@ -259,16 +261,42 @@ class SlideshowViewModel(
             }
         }
 
+        /** Home's memory, in the server's order, with [TimelineSettings]. */
+        fun fromMemory(memory: Memory) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(TimelineSettings) { ServerResult.Ok(Playlist(memory.slides)) }
+            }
+        }
+
+        /** A memory from the photo [from] onward, in its grid's order, with [TimelineSettings]. */
+        fun fromMemoryPhoto(memory: Memory, from: PhotoId) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(TimelineSettings) { ServerResult.Ok(memory.playlistFrom(from)) }
+            }
+        }
+
+        /** An album from the photo [from] onward, in its grid's order, with its time, videos and date and place. */
+        fun fromAlbumPhoto(container: AppContainer, album: Album, from: PhotoId, settings: SlideshowSettings) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(settings) { container.loadSlideshowFromPhoto(album, from, settings.videos) }
+            }
+        }
+
         /** The whole library from the photo [from] onward, with [TimelineSettings]. */
         fun fromTimeline(container: AppContainer, from: PhotoId) = viewModelFactory {
             initializer {
                 SlideshowViewModel(TimelineSettings) { container.loadLibrarySlideshow(from) }
             }
         }
+
+        /** [slides] in the order given, at the default timing. */
+        fun factory(slides: List<Slide>) = viewModelFactory {
+            initializer { SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(Playlist(slides)) } }
+        }
     }
 }
 
-/** A library show can't be set up: the defaults (8 s, date and place on), newest to oldest. */
+/** A library show can't be set up: the defaults (8 s, date and place on, videos muted), newest to oldest. */
 val TimelineSettings = SlideshowSettings(order = SlideshowOrder.NewestFirst)
 
 /** The date ("23 August 2025") and place ("Lisbon, Portugal") to show, each null when unknown. */

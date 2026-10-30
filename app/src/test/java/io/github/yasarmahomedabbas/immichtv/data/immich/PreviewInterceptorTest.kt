@@ -1,6 +1,7 @@
 package io.github.yasarmahomedabbas.immichtv.data.immich
 
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
+import io.github.yasarmahomedabbas.immichtv.domain.search.PersonId
 import io.github.yasarmahomedabbas.immichtv.domain.server.ServerAddress
 import okhttp3.Request
 import okhttp3.mockwebserver.MockResponse
@@ -37,6 +38,30 @@ class PreviewInterceptorTest {
     fun `the cache key is the photo alone`() {
         assertEquals("preview:${photo.value}", previewCacheKey(photo))
         assertFalse("http" in previewCacheKey(photo))
+    }
+
+    @Test
+    fun `a face url is the person's thumbnail and its cache key the person alone`() {
+        val person = PersonId("p1")
+        assertEquals("https://photos.example.com/api/people/p1/thumbnail", personFaceUrl(ServerAddress.parse("https://photos.example.com")!!, person))
+        assertEquals("face:p1", personFaceCacheKey(person))
+    }
+
+    @Test
+    fun `a face request carries the key in the header, not the url`() {
+        val server = MockWebServer().apply {
+            enqueue(MockResponse().setHeader("Content-Type", "image/jpeg").setBody("jpeg"))
+            start()
+        }
+        try {
+            fetch(personFaceUrl(ServerAddress.parse(server.url("/").toString())!!, PersonId("p1")))
+
+            val request = server.takeRequest()
+            assertEquals("/api/people/p1/thumbnail", request.path)
+            assertEquals(KEY, request.getHeader("x-api-key"))
+        } finally {
+            server.shutdown()
+        }
     }
 
     @Test

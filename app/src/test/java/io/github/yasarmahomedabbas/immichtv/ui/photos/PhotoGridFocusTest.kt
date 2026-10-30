@@ -59,6 +59,9 @@ class PhotoGridFocusTest {
                     Tab.Photos,
                     {},
                     {},
+                    home = {},
+                    onVoiceKey = {},
+                    search = {},
                     albums = {},
                     photos = { mayTakeFocus ->
                         PhotosContent(

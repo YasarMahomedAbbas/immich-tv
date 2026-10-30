@@ -1,5 +1,6 @@
 package io.github.yasarmahomedabbas.immichtv.ui.photos
 
+import android.os.SystemClock
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -29,6 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +50,7 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.PhotoTile
 import io.github.yasarmahomedabbas.immichtv.ui.components.SecondaryButton
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
 import io.github.yasarmahomedabbas.immichtv.ui.components.lostFocus
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -63,6 +71,7 @@ private val FocusRoom = 8.dp
  * is scrolled to with its first tile focused (its Try again, if it failed), then [onJumped] is called.
  * The screen is torn down when a photo opens, so [restoreTo] says which tile to come back to, scrolled
  * there and focused in place of the first; one no longer there falls back to the first.
+ * Up and Down are paced ([MovePace]): a backlog of presses froze the app until Android killed it (ANR).
  */
 @Composable
 fun PhotoGrid(
@@ -79,6 +88,8 @@ fun PhotoGrid(
     mayTakeFirstFocus: () -> Boolean = { true },
 ) {
     val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = restoreTo?.let { gridIndexOfPhoto(sections, it) } ?: 0)
+    val pace = remember { MovePace() }
+    val scope = rememberCoroutineScope()
     val restoreFocus = remember { FocusRequester() }
     val firstOfMonth = remember { mutableMapOf<YearMonth, FocusRequester>() }
     val requesterOf = { month: YearMonth -> firstOfMonth.getOrPut(month) { FocusRequester() } }
@@ -118,7 +129,20 @@ fun PhotoGrid(
     LazyVerticalGrid(
         columns = GridCells.Fixed(COLUMNS),
         state = gridState,
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().onPreviewKeyEvent { event ->
+            val isVerticalMove = event.type == KeyEventType.KeyDown && (event.key == Key.DirectionUp || event.key == Key.DirectionDown)
+            when {
+                !isVerticalMove -> false
+                pace.accept(SystemClock.uptimeMillis()) -> {
+                    scope.launch {
+                        withFrameNanos { }
+                        pace.frameDrawn()
+                    }
+                    false
+                }
+                else -> true
+            }
+        },
         contentPadding = PaddingValues(start = FocusRoom, end = FocusRoom, top = FocusRoom, bottom = 48.dp),
         horizontalArrangement = Arrangement.spacedBy(Gap),
         verticalArrangement = Arrangement.spacedBy(Gap),
