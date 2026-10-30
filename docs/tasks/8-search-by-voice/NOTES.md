@@ -40,3 +40,15 @@ Branch: `feat/8-search-by-voice`
 - Raised: none
 - API: `POST /api/search/smart` and `POST /api/search/metadata`: match the v3.3.5 and v1.133.0 specs; the top-level `visibility`, like `personIds` and `order`, is deprecated since v3.2 but accepted, with the same enum in both, and 3.3.5 answered 200 with only timeline assets. The server has no archived photos, so the exclusion itself is proven from its source and the request tests, not by a real archived photo. `GET /api/people?size=1000` and `GET /api/people/{id}/thumbnail`: match both specs.
 - Layers: clean
+
+## Doc drift
+
+- Applied: README.md:Features — Search no longer "planned, #8"; says what it does, its caps and that it needs smart search on (rung 3). The remote's mic button is deliberately not claimed: it is still unproven, for self-verification.
+- Applied: README.md:Features — the slideshow plays search results too, not only an album (rung 3).
+- Applied: README.md:Install — `person.read` is optional and what its absence does (rung 3). `GET /people` and `/people/{id}/thumbnail` need it in the v3.3.5 spec and in v1.133.0's `person.controller.ts`.
+- Applied: docs/design/README.md:Components — Failed lists the smart-search-off reason; Screens — the progress bar is the position in the show, not the album (rung 4).
+- Skipped: `problem_key_lacks_permission` and the manual's matching sentence not widened to person.read: it is shown only for a failure that reaches the screen, and a people failure never does (`SearchViewModel.refreshPeople`). Search and a person's photos need asset.read (v3.3.5 spec), which it names. Naming person.read would send people to change a key for an error it can't fix.
+- Skipped: the system speech prompt / no microphone permission: the manual already says it, the manifest shows it.
+- Skipped: the 60 s search timeout and the `visibility` field: code comments at the point of use say why.
+- Skipped: CLAUDE.md: no new cross-cutting rule. The face thumbnail isn't a preview-size exception worth a line: it is its own small endpoint, in `data/`, and goes through the same client. The architecture block, RefreshOnStart and the `connection` key rule still hold (`SearchScreen`, `MainActivity`).
+- Stale, fixed separately: none

@@ -3,9 +3,9 @@
 An Android TV app for a Chromecast with Google TV that shows your photos from a self-hosted [Immich](https://immich.app/) server.
 
 - **Albums**: filter and sort them, open one to see its photos, set up its slideshow and start it.
-- **Slideshow**: crossfades with a slow zoom, portrait photos on a blurred copy of themselves, the date and place in a corner, and the remote's left/right/OK to skip and pause. It plays an album's photos on a loop; videos are left out whatever the Videos setting says, until #6.
+- **Slideshow**: crossfades with a slow zoom, portrait photos on a blurred copy of themselves, the date and place in a corner, and the remote's left/right/OK to skip and pause. It plays an album's photos or search results on a loop; videos are left out whatever the Videos setting says, until #6.
 - **Photos** (planned, #7): the whole timeline by month; start a slideshow from any photo.
-- **Search** (planned, #8): Immich's smart search ("dog on the beach"), by voice from the remote.
+- **Search**: Immich's smart search ("dog on the beach"), typed or by voice through the system's speech prompt, or a named person's photos; play the results as a slideshow. It shows the 100 best matches, or a person's 1000 newest photos, and needs smart search turned on in Immich ([source](https://github.com/immich-app/immich/blob/v3.3.5/server/src/services/search.service.ts)).
 
 The app talks only to your own server. It's built for a server reached over the home network or a VPN such as Tailscale, so plain `http://` addresses are allowed.
 
@@ -15,7 +15,7 @@ The app talks only to your own server. It's built for a server reached over the 
 2. Or from a computer on the same network, with developer options and network debugging on: download `immich-tv-<version>.apk` from the [latest release](../../releases/latest) and run `adb connect <tv-ip>:5555 && adb install immich-tv-<version>.apk`.
 3. Open Immich TV and enter the server address and an API key (Immich web → Account Settings → API Keys).
 
-The app needs Immich v1.133 or newer, the release that gave the timeline its current shape ([release notes](https://github.com/immich-app/immich/releases/tag/v1.133.0)); it refuses older servers when connecting. The API key needs `user.read`, `album.read`, `asset.read` and `asset.view` ([API reference](https://api.immich.app)), or all permissions.
+The app needs Immich v1.133 or newer, the release that gave the timeline its current shape ([release notes](https://github.com/immich-app/immich/releases/tag/v1.133.0)); it refuses older servers when connecting. The API key needs `user.read`, `album.read`, `asset.read` and `asset.view` ([API reference](https://api.immich.app)), or all permissions. Add `person.read` for the People row on the Search tab; without it the row is left out and search still works.
 
 ## Architecture
 
