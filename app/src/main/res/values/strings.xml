@@ -15,6 +15,7 @@
     <string name="problem_key_rejected">The server refused the API key. Open Settings and enter a new key from Immich → Account Settings → API Keys.</string>
     <string name="problem_key_lacks_permission">This API key can\'t read your albums and photos. Give it album.read, asset.read and asset.view, or all permissions.</string>
     <string name="problem_not_signed_in">Immich TV isn\'t connected to a server. Open Settings to connect.</string>
+    <string name="problem_search_unavailable">Smart search is turned off on this server. Turn on machine learning in Immich, then try again.</string>
 
     <plurals name="photo_count">
         <item quantity="one">%1$s photo</item>

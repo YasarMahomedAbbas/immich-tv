@@ -1,6 +1,7 @@
 package io.github.yasarmahomedabbas.immichtv.data.immich
 
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
+import io.github.yasarmahomedabbas.immichtv.domain.search.PersonId
 import io.github.yasarmahomedabbas.immichtv.domain.server.ServerAddress
 
 /**
@@ -18,3 +19,14 @@ internal fun previewUrl(server: ServerAddress, photo: PhotoId): String =
 
 /** The memory and disk cache key for a photo's preview: the photo alone, so no key or server URL is in it. */
 internal fun previewCacheKey(photo: PhotoId): String = "preview:${photo.value}"
+
+/** `<server>/api/people/<id>/thumbnail`: a person's face. The key goes in the header here too. */
+internal fun personFaceUrl(server: ServerAddress, person: PersonId): String =
+    apiUrl(server, "people").newBuilder()
+        .addPathSegment(person.value)
+        .addPathSegment("thumbnail")
+        .build()
+        .toString()
+
+/** The memory and disk cache key for a person's face: the person alone. */
+internal fun personFaceCacheKey(person: PersonId): String = "face:${person.value}"

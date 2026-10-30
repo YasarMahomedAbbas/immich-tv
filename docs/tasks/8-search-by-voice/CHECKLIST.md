@@ -39,7 +39,7 @@ The Search tab is `PlaceholderTab`. `ImmichAlbumRepository` and its MockWebServe
 
 Goal: the app can ask for photos by description or person and for named people, in domain terms, against both API shapes.
 
-### [ ] 1.1 — The domain
+### [x] 1.1 — The domain
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/search/Search.kt` (new)
 
@@ -66,7 +66,7 @@ File: `domain/ServerResult.kt`: add `Problem.SearchUnavailable` ("this server ha
 File: `ui/components/StateCards.kt` and `res/values/strings.xml`: its message, `problem_search_unavailable`: "Smart search is turned off on this server. Turn on machine learning in Immich, then try again."
 Test: `domain/search/SearchTest.kt`, with `domain/search/Fakes.kt` (`FakeSearchRepository`).
 
-### [ ] 1.2 — The Immich implementation
+### [x] 1.2 — The Immich implementation
 
 File: `data/immich/ImmichSearchRepository.kt` (new), `internal class ImmichSearchRepository(client: OkHttpClient, sessions: SessionStore) : SearchRepository`.
 
@@ -74,7 +74,7 @@ File: `data/immich/ImmichSearchRepository.kt` (new), `internal class ImmichSearc
 - Status mapping as in `ImmichAlbumRepository.get`, plus 400 on smart search → `SearchUnavailable`.
 - Both search calls use `client.newBuilder().readTimeout(60, SECONDS).build()`, one instance: it keeps `KeepKeyOnServer`. The first query after the model unloads is slow.
 - `@Serializable` DTOs read `assets.items`: `id`, `type`, `width?`, `height?`, `localDateTime?`, `exifInfo?` (`city?`, `country?`, `exifImageWidth?`, `exifImageHeight?`, `orientation?`). Portrait: `width/height` when both are there, else exif sizes swapped for orientation 5–8, else false. `takenOn` is `localDateTime.take(10)`, unknown if it can't be read. `isVideo` is `type == "VIDEO"`.
-- `place()` is private in `ImmichAlbumRepository.kt`: make it `internal` and reuse it.
+- `place()` and `decode()` are private in `ImmichAlbumRepository.kt`: make them `internal` and reuse them.
 
 File: `data/immich/PreviewInterceptor.kt`: also handle `PersonFace`: `people/<id>/thumbnail`, the header, cache key `face:<id>`. File: `data/immich/ImmichImages.kt`: add `personFaceUrl`, `personFaceCacheKey`.
 File: `AppContainer.kt`: `private val search = ImmichSearchRepository(http, sessions)`; `val searchPhotos`, `loadPeople`, `loadPhotosOf`.
