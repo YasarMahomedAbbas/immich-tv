@@ -73,20 +73,20 @@ File: `app/src/main/java/.../AppContainer.kt`
 
 Goal: with the system setting on, the TV's idle screen is our slideshow, and any key wakes it.
 
-### [ ] 2.1 — The show, reused
+### [x] 2.1 — The show, reused
 
 Files: `app/src/main/java/.../ui/slideshow/SlideshowScreen.kt`, `.../ui/slideshow/SlideshowViewModel.kt`
 
 - Make `Playing` and `RunWhileStarted` `internal`. No behaviour change. The controls never show because nothing calls `showControls`; the progress bar stays, as the same slideshow.
 - Add `SlideshowViewModel.forScreensaver(container: AppContainer)` to the companion: `SlideshowViewModel(ScreensaverShow) { container.loadScreensaver() }`.
 
-### [ ] 2.2 — The screen
+### [x] 2.2 — The screen
 
 File: `app/src/main/java/.../ui/screensaver/ScreensaverScreen.kt`
 
 `@Composable fun ScreensaverScreen(viewModel: SlideshowViewModel)`: `bg` ground, `RunWhileStarted(viewModel)`, and `Playing(state, ScreensaverShow, SlideshowSource.Library, …)` once playing. Its `newPlayer` is `{ error("A screensaver plays no videos") }`: `VideoMode.Skip` means nothing asks. Nothing focusable. The ground alone while loading: no skeleton on an idle TV. Failed and Empty are empty ground until checkpoint 3.
 
-### [ ] 2.3 — The service
+### [x] 2.3 — The service
 
 File: `app/src/main/java/.../ui/screensaver/ScreensaverService.kt`
 
@@ -99,7 +99,7 @@ File: `app/src/main/java/.../ui/screensaver/ScreensaverService.kt`
 
 `container` is `(application as ImmichTvApp).container`, so Coil's one loader and the key header come along. Add `androidx.savedstate` to the version catalogue only if the transitive one doesn't resolve.
 
-### [ ] 2.4 — The manifest
+### [x] 2.4 — The manifest
 
 File: `app/src/main/AndroidManifest.xml`
 
@@ -115,11 +115,11 @@ File: `app/src/main/AndroidManifest.xml`
 </service>
 ```
 
-### [ ] 2.5 — Coverage
+### [x] 2.5 — Coverage
 
 File: `app/build.gradle.kts`
 
-Kover's `"*Screen*"` swallows every `*Screensaver*` class. Exclude `"*ScreensaverScreen*"` and `"*.ScreensaverService*"` by name, and keep the domain and data classes counted (change `"*Screen*"` to patterns that don't match `Screensaver`, such as `"*Screen"`, `"*Screen$*"`, `"*ScreenKt*"`).
+Kover's `"*Screen*"` swallows every `*Screensaver*` class. Exclude `"*.ScreensaverService*"` by name (`"*ScreenKt*"` already covers `ScreensaverScreenKt`), and keep the domain and data classes counted (change `"*Screen*"` to patterns that don't match `Screensaver`, such as `"*Screen"`, `"*Screen$*"`, `"*ScreenKt*"`).
 
 ### Verify
 

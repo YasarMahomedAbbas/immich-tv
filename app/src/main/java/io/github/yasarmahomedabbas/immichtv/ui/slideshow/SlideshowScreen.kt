@@ -160,7 +160,7 @@ fun SlideshowScreen(
 
 /** Runs the timer from start to stop, so it ends with the screen and when the app is left. */
 @Composable
-private fun RunWhileStarted(viewModel: SlideshowViewModel) {
+internal fun RunWhileStarted(viewModel: SlideshowViewModel) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
     DisposableEffect(lifecycle, viewModel) {
@@ -256,7 +256,7 @@ private fun SlideshowContent(
 }
 
 @Composable
-private fun Playing(
+internal fun Playing(
     state: SlideshowState,
     settings: SlideshowSettings,
     source: SlideshowSource,

@@ -12,6 +12,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.Album
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.map
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ScreensaverShow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowOrder
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
@@ -263,6 +264,13 @@ class SlideshowViewModel(
         fun fromTimeline(container: AppContainer, from: PhotoId) = viewModelFactory {
             initializer {
                 SlideshowViewModel(TimelineSettings) { container.loadLibrarySlideshow(from) }
+            }
+        }
+
+        /** What the TV's screensaver plays, always with [ScreensaverShow]. */
+        fun forScreensaver(container: AppContainer) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(ScreensaverShow) { container.loadScreensaver() }
             }
         }
     }
