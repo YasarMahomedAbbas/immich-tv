@@ -51,6 +51,23 @@ internal class ImmichLibraryRepository(client: OkHttpClient, sessions: SessionSt
         ServerResult.Ok(slides)
     }
 
+    override suspend fun recent(limit: Int): ServerResult<List<Photo>> = api.signedIn { session ->
+        val buckets = when (val result = api.get<List<BucketDto>>(session, "timeline/buckets", QUERY)) {
+            is ServerResult.Ok -> result.value
+            is ServerResult.Failed -> return@signedIn result
+        }
+        // One month at a time, stopping early: a library's newest items are usually all in its newest month.
+        val photos = mutableListOf<Photo>()
+        for (bucket in buckets) {
+            if (photos.size >= limit) break
+            when (val month = api.get<BucketAssetsDto>(session, "timeline/bucket", QUERY + ("timeBucket" to bucket.timeBucket))) {
+                is ServerResult.Ok -> photos += month.value.toPhotos()
+                is ServerResult.Failed -> return@signedIn month
+            }
+        }
+        ServerResult.Ok(photos.take(limit))
+    }
+
     /** The bucket string Immich sent for a month is what goes back for it: see [toMonths]. */
     private inner class LibraryMonths : Timeline {
         private val bucketOf = ConcurrentHashMap<YearMonth, String>()

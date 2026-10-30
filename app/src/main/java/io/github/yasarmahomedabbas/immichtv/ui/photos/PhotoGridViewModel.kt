@@ -75,7 +75,11 @@ private sealed interface ViewerStep {
 private fun PhotoGridState.step(by: Int): ViewerStep {
     val id = viewing?.id ?: return ViewerStep.End
     val at = sections.indexOfFirst { section -> section.loaded().any { it.id == id } }
-    if (at < 0) return ViewerStep.End
+    if (at < 0) {
+        // Opened from outside the grid (Home's Recently added), so its month may not be here yet.
+        val missing = sections.firstOrNull { it.photos !is MonthPhotos.Loaded } ?: return ViewerStep.End
+        return if (missing.photos is MonthPhotos.Failed) ViewerStep.TryAgain(missing.month) else ViewerStep.Wait(missing.month)
+    }
     val photos = sections[at].loaded()
     photos.getOrNull(photos.indexOfFirst { it.id == id } + by)?.let { return ViewerStep.Arrive(it) }
     var next = at + by

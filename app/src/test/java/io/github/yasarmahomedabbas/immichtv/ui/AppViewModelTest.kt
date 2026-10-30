@@ -4,6 +4,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.album
+import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
 import io.github.yasarmahomedabbas.immichtv.domain.server.ApiKey
 import io.github.yasarmahomedabbas.immichtv.domain.server.FakeSessionStore
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
@@ -25,12 +26,14 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val session = Session(ServerAddress.parse("nas:2283")!!, ApiKey("key"))
     private val home = AppScreen.Main(Tab.Home)
+    private val memory = Memory(LocalDate.of(2025, 10, 30), emptyList())
 
     @Before
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -130,7 +133,7 @@ class AppViewModelTest {
         val vm = signedIn()
         vm.selectTab(Tab.Photos)
         vm.openPhotoViewer()
-        assertEquals(AppScreen.PhotoViewer, vm.screen.value)
+        assertEquals(AppScreen.PhotoViewer(), vm.screen.value)
 
         assertTrue(vm.back())
         assertEquals(AppScreen.Main(Tab.Photos), vm.screen.value)
@@ -145,6 +148,81 @@ class AppViewModelTest {
 
         assertTrue(vm.back())
         assertEquals(AppScreen.Main(Tab.Photos), vm.screen.value)
+    }
+
+    @Test
+    fun `a card in home's row opens the album, and back returns home`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openAlbum(AlbumId("a1"), CameFrom.HomeRow)
+        assertEquals(AppScreen.Album(AlbumId("a1"), cameFrom = CameFrom.HomeRow), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(home, vm.screen.value)
+    }
+
+    @Test
+    fun `an album opened from home's row keeps that through its photos and slideshow`() = runTest(dispatcher) {
+        val vm = signedIn()
+        val summer = album(id = "a1")
+        vm.openAlbum(summer.id, CameFrom.HomeRow)
+        vm.openAlbumPhotos(summer, CameFrom.HomeRow)
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Album(summer.id, focusBrowse = true, cameFrom = CameFrom.HomeRow), vm.screen.value)
+
+        vm.openSlideshow(summer, SlideshowSettings(), CameFrom.HomeRow)
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Album(summer.id, cameFrom = CameFrom.HomeRow), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(home, vm.screen.value)
+    }
+
+    @Test
+    fun `the hero's album photos go back straight to home`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openAlbumPhotos(album(id = "a1"), CameFrom.HomeHero)
+
+        assertTrue(vm.back())
+        assertEquals(home, vm.screen.value)
+    }
+
+    @Test
+    fun `the hero's album slideshow goes back straight to home`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openSlideshow(album(id = "a1"), SlideshowSettings(), CameFrom.HomeHero)
+
+        assertTrue(vm.back())
+        assertEquals(home, vm.screen.value)
+    }
+
+    @Test
+    fun `a memory's slideshow plays, and back returns home`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openMemorySlideshow(memory)
+        assertEquals(AppScreen.MemorySlideshow(memory), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(home, vm.screen.value)
+    }
+
+    @Test
+    fun `a memory's photos open under its title, and back returns home`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openMemoryPhotos(memory, "One year ago today")
+        assertEquals(AppScreen.MemoryPhotos(memory, "One year ago today"), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(home, vm.screen.value)
+    }
+
+    @Test
+    fun `a recent photo opens the viewer, and back returns home`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openPhotoViewer(fromHome = true)
+        assertEquals(AppScreen.PhotoViewer(fromHome = true), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(home, vm.screen.value)
     }
 
     @Test

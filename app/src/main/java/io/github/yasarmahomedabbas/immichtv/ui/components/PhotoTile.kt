@@ -35,6 +35,9 @@ enum class TileStyle(val corner: Dp) {
 
     /** The album screen's cover mosaic, sized like a panel. */
     Mosaic(18.dp),
+
+    /** Home's hero photo. */
+    Hero(22.dp),
 }
 
 /**
