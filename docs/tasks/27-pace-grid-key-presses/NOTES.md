@@ -35,3 +35,21 @@ Branch: `fix/27-pace-grid-key-presses`
 - Skipped: a general rule to pace every grid: the cause isn't proven, and the Albums and search grids are out of this ticket's scope.
 - Skipped: a README line on the capped speed in the grid: it's tuning, not a feature someone uses or configures.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: not run here, per the user's speed note for 2026-10-30; the full command runs once, in `raise-pr`. `assembleDebug` built the APK in Docker. `MovePaceTest` results are under Implementation.
+- Server: not applicable; the branch adds and changes no Immich call.
+- TV: installed the debug build on the Chromecast and drove the Photos grid and one album's photos, the lock held about 8 minutes. One process throughout (same pid), and the `reason=6` count in `dumpsys activity exit-info` stayed at 2 from before the install to after the last check; the newest ANR on record is 13:05, before this install. No `immichtv`, `AndroidRuntime` or `ANR in` lines in logcat errors.
+- Verified: 33 Downs as one `input keyevent` command, twice: the app stays open, focus visible on a tile; the first run went from the top of March 2025 into December 2024.
+- Verified: 150 Ups as one command from December 2024: the grid is back at its top and focus is in the top bar. 120 Ups mid-grid and 33 Downs at the grid's last row: no stall.
+- Verified: single presses at about 1.5 a second: three presses from mid-grid moved focus row by row; the shots after the first and third show each press landed.
+- Verified: straight after a burst, Left reached the month rail (from the first column), OK opened the focused photo and Back returned to the grid.
+- Verified: 33 Downs twice on an album's photos: focus reached the last row, Back returned to the album screen. That album has only 14 items, so it reached the end within the burst.
+- Failed: none
+- Not self-verifiable: the held Down on the real remote: hold Down on the Photos grid for about 10 seconds and check the app stays open. Planned as a hand check.
+- Not self-verifiable: the paced stand-in at the planned 20 to 30 keys a second. No sender was confirmed at that rate: `monkey --port` with an acknowledgement per press gave about 4.5 a second, and sending 25 a second without waiting got 286 of 500 key events acknowledged in about 15 seconds, about 10 presses a second. Three `input keyevent` senders in parallel, 300 Downs, took at most about 18 seconds, so at least about 16 a second. All of these stayed clear of an ANR, but they are slower than the plan's rate and the 100 ms gap wasn't tuned because nothing called for it.
+- Not self-verifiable: a burst into a month still loading. The first burst after a fresh install crossed into months not yet shown, but no loading state was seen on screen, so this edge isn't proven.
+- Not measured: the same bursts on the build without the fix, this session; the ANR before the fix rests on the ticket's reports and the exit history. Release build: only the debug build was driven.
