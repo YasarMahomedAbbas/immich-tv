@@ -11,7 +11,7 @@ import java.time.LocalDate
 import kotlin.random.Random
 
 /**
- * One item of an album or the library, as a slideshow needs it.
+ * One item of an album, the library or search results, as a slideshow needs it.
  *
  * @property portrait taller than wide, so it sits on a backdrop of itself; false when unknown.
  * @property takenOn the calendar day where it was taken, when known.
@@ -21,6 +21,9 @@ data class Slide(val photo: Photo, val portrait: Boolean, val takenOn: LocalDate
 /** Where a photo was taken: never both null. */
 data class Place(val city: String?, val country: String?)
 
+/** These without their videos: a Skip show, and a show of search results, which plays photos only. */
+fun List<Slide>.withoutVideos(): List<Slide> = filterNot { it.photo.isVideo }
+
 /** What a slideshow plays, and the slide it begins on. */
 data class Playlist(val slides: List<Slide>, val start: Int = 0)
 
@@ -28,7 +31,7 @@ data class Playlist(val slides: List<Slide>, val start: Int = 0)
 class LoadSlideshow(private val repository: AlbumRepository, private val random: Random = Random.Default) {
     suspend operator fun invoke(album: Album, order: SlideshowOrder, videos: VideoMode): ServerResult<List<Slide>> =
         repository.slides(album).map { all ->
-            val slides = if (videos == VideoMode.Skip) all.filterNot { it.photo.isVideo } else all
+            val slides = if (videos == VideoMode.Skip) all.withoutVideos() else all
             when (order) {
                 SlideshowOrder.OldestFirst -> slides
                 SlideshowOrder.NewestFirst -> slides.reversed()

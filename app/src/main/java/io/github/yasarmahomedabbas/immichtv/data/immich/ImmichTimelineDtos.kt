@@ -61,7 +61,7 @@ private fun takenOn(localDateTime: String?, fileCreatedAt: String?, offsetHours:
 
 private const val SECONDS_PER_HOUR = 3600
 
-private fun place(city: String?, country: String?): Place? {
+internal fun place(city: String?, country: String?): Place? {
     val knownCity = city?.takeIf { it.isNotBlank() }
     val knownCountry = country?.takeIf { it.isNotBlank() }
     return if (knownCity == null && knownCountry == null) null else Place(knownCity, knownCountry)

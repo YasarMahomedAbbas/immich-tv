@@ -15,6 +15,7 @@
     <string name="problem_key_rejected">The server refused the API key. Open Settings and enter a new key from Immich → Account Settings → API Keys.</string>
     <string name="problem_key_lacks_permission">This API key can\'t read your albums and photos. Give it album.read, asset.read and asset.view, or all permissions.</string>
     <string name="problem_not_signed_in">Immich TV isn\'t connected to a server. Open Settings to connect.</string>
+    <string name="problem_search_unavailable">Smart search is turned off on this server. Turn on machine learning in Immich, then try again.</string>
 
     <plurals name="photo_count">
         <item quantity="one">%1$s photo</item>
@@ -69,6 +70,19 @@
     <string name="setting_on">On</string>
     <string name="setting_off">Off</string>
 
+    <string name="search_placeholder">Search your photos</string>
+    <string name="search_voice">Search by voice</string>
+    <string name="search_voice_hint">Press the mic on your remote and say it</string>
+    <string name="search_try">Try</string>
+    <string name="search_people">People</string>
+    <string name="search_heading">“%1$s”</string>
+    <string name="search_best_matches">%1$s best matches</string>
+    <string name="search_newest_photos">%1$s newest photos</string>
+    <string name="search_play">Play as slideshow</string>
+    <string name="search_empty_title">Nothing found</string>
+    <string name="search_empty_hint">Try describing it another way.</string>
+    <string name="search_clear">Clear search</string>
+
     <string name="setup_title">Connect to Immich</string>
     <string name="setup_hint">Server address and an API key from Immich → Account Settings → API Keys</string>
     <string name="setup_address">Server address</string>
@@ -87,6 +101,7 @@
     <string name="setup_problem_missing_key">Enter an API key.</string>
 
     <string name="slideshow_back">‹ Album</string>
+    <string name="slideshow_back_search">‹ Search</string>
     <string name="slideshow_position">%1$d / %2$d</string>
     <string name="slideshow_previous">Previous photo</string>
     <string name="slideshow_next">Next photo</string>
@@ -98,4 +113,6 @@
     <string name="slideshow_back_photos">‹ Photos</string>
     <string name="slideshow_empty_hint_library">Your library only has videos, or nothing yet.</string>
     <string name="slideshow_empty_action_library">Back to photos</string>
+    <string name="slideshow_empty_hint_search">These results only have videos.</string>
+    <string name="slideshow_empty_action_search">Back to search</string>
 </resources>

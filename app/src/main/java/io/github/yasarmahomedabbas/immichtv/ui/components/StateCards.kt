@@ -70,4 +70,5 @@ private val Problem.message: Int
         Problem.KeyRejected -> R.string.problem_key_rejected
         Problem.KeyLacksPermission -> R.string.problem_key_lacks_permission
         Problem.NotSignedIn -> R.string.problem_not_signed_in
+        Problem.SearchUnavailable -> R.string.problem_search_unavailable
     }

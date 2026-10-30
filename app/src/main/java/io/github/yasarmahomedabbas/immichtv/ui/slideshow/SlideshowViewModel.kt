@@ -265,6 +265,11 @@ class SlideshowViewModel(
                 SlideshowViewModel(TimelineSettings) { container.loadLibrarySlideshow(from) }
             }
         }
+
+        /** [slides] in the order given, at the default timing. */
+        fun factory(slides: List<Slide>) = viewModelFactory {
+            initializer { SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(Playlist(slides)) } }
+        }
     }
 }
 

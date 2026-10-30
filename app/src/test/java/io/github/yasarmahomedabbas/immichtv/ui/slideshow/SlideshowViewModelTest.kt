@@ -90,6 +90,28 @@ class SlideshowViewModelTest {
     }
 
     @Test
+    fun `a list plays in the order given, and only asks once`() = runTest(dispatcher) {
+        var calls = 0
+        val slides = listOf(slide("c"), slide("a"), slide("b"))
+        val vm = SlideshowViewModel(SlideshowSettings()) {
+            calls++
+            ServerResult.Ok(Playlist(slides))
+        }
+        advanceUntilIdle()
+
+        assertEquals(SlideshowLoad.Playing, vm.state.value.load)
+        assertEquals(slides, vm.state.value.slides)
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun `an empty list has nothing to play`() = runTest(dispatcher) {
+        val vm = SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(Playlist(emptyList())) }
+        advanceUntilIdle()
+        assertEquals(SlideshowLoad.Empty, vm.state.value.load)
+    }
+
+    @Test
     fun `a playlist with a start plays from there, and moves on and back from there`() = runTest(dispatcher) {
         val slides = listOf(slide("a"), slide("b"), slide("c"))
         val vm = SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(Playlist(slides, start = 2)) }

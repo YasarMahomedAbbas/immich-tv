@@ -133,7 +133,7 @@ private val previewSections = listOf(
 @Composable
 private fun PhotosPreview(state: PhotoGridState) {
     ImmichTvTheme {
-        MainScreen(Tab.Photos, {}, {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}, {}, {}, {}) })
+        MainScreen(Tab.Photos, {}, {}, onVoiceKey = {}, search = {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}, {}, {}, {}) })
     }
 }
 

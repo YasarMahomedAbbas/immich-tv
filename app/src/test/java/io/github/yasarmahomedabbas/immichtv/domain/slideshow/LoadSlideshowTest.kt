@@ -39,6 +39,12 @@ class LoadSlideshowTest {
     }
 
     @Test
+    fun `withoutVideos leaves out videos and keeps the order`() {
+        val list = listOf(slide("b"), slide("v", isVideo = true), slide("a"))
+        assertEquals(listOf(slide("b"), slide("a")), list.withoutVideos())
+    }
+
+    @Test
     fun `skip leaves the videos out in each order`() = runTest {
         for (order in SlideshowOrder.entries) {
             assertEquals(false, "v" in ids(order, VideoMode.Skip))

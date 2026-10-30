@@ -5,6 +5,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import coil3.ImageLoader
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichAlbumRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichLibraryRepository
+import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichSearchRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichServerConnector
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichHttpClient
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichImageLoader
@@ -17,6 +18,9 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbums
 import io.github.yasarmahomedabbas.immichtv.domain.photos.LibraryTimeline
+import io.github.yasarmahomedabbas.immichtv.domain.search.LoadPeople
+import io.github.yasarmahomedabbas.immichtv.domain.search.LoadPhotosOf
+import io.github.yasarmahomedabbas.immichtv.domain.search.SearchPhotos
 import io.github.yasarmahomedabbas.immichtv.domain.server.ConnectToServer
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
@@ -47,6 +51,11 @@ class AppContainer(context: Context) {
     private val library = ImmichLibraryRepository(http, sessions)
     val libraryTimeline = LibraryTimeline(library)
     val loadLibrarySlideshow = LoadLibrarySlideshow(library)
+
+    private val search = ImmichSearchRepository(http, sessions)
+    val searchPhotos = SearchPhotos(search)
+    val loadPeople = LoadPeople(search)
+    val loadPhotosOf = LoadPhotosOf(search)
 
     private val slideshowSettings = StoredSlideshowSettings(
         SharedPreferencesStorage(context.getSharedPreferences("slideshow", Context.MODE_PRIVATE)),

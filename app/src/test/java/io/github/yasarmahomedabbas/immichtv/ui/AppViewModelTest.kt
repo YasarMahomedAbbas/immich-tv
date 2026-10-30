@@ -1,6 +1,7 @@
 package io.github.yasarmahomedabbas.immichtv.ui
 
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
+import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.album
 import io.github.yasarmahomedabbas.immichtv.domain.server.ApiKey
@@ -8,6 +9,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.server.FakeSessionStore
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.ServerAddress
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -97,6 +99,30 @@ class AppViewModelTest {
 
         assertTrue(vm.back())
         assertEquals(AppScreen.Album(summer.id, focusBrowse = false), vm.screen.value)
+    }
+
+    @Test
+    fun `results play as a slideshow, and back returns to search with focus on the results`() = runTest(dispatcher) {
+        val vm = signedIn()
+        val slides = listOf(Slide(Photo(PhotoId("a"), false), false, null, null))
+        vm.selectTab(Tab.Search)
+        vm.openResultsSlideshow(slides)
+        assertEquals(AppScreen.ResultsSlideshow(slides), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Main(Tab.Search, focusResults = true), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(home, vm.screen.value)
+    }
+
+    @Test
+    fun `selecting search again forgets the focus on the results`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openResultsSlideshow(emptyList())
+        vm.back()
+        vm.selectTab(Tab.Search)
+        assertEquals(AppScreen.Main(Tab.Search), vm.screen.value)
     }
 
     @Test
