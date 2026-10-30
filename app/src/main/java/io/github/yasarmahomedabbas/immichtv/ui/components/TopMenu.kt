@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
@@ -46,7 +47,8 @@ import java.time.format.DateTimeFormatter
 /**
  * The top of every main screen: the logo, the tab pills (OK selects), the clock and the
  * Settings gear. The logo is `fg`, not amber: amber is only focus. [selectedFocus] is attached to
- * the selected pill so a screen can put focus there when it opens.
+ * the selected pill so a screen can put focus there when it opens, and [onSelectedFocusChanged] says
+ * whether that pill holds focus.
  */
 @Composable
 fun TopMenu(
@@ -55,6 +57,7 @@ fun TopMenu(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     selectedFocus: FocusRequester = remember { FocusRequester() },
+    onSelectedFocusChanged: (Boolean) -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
     Row(
@@ -70,7 +73,11 @@ fun TopMenu(
                 tab = tab,
                 selected = tab == selected,
                 onClick = { onSelect(tab) },
-                modifier = if (tab == selected) Modifier.focusRequester(selectedFocus) else Modifier,
+                modifier = if (tab == selected) {
+                    Modifier.focusRequester(selectedFocus).onFocusChanged { onSelectedFocusChanged(it.isFocused) }
+                } else {
+                    Modifier
+                },
             )
         }
         Spacer(Modifier.weight(1f))

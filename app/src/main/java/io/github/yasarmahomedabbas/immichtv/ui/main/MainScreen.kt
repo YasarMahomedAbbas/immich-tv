@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -27,7 +31,9 @@ import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 
 /**
  * The top menu over the selected tab's content. Focus enters on the selected pill; a tab's
- * content may then move it (Home and the Albums grid do, once they are laid out).
+ * content may then move it (Home and the Albums grid do, once they are laid out). The Photos tab is
+ * handed `mayTakeFocus` to ask first: yes only while the pill still holds focus or nothing on the
+ * screen does, as when a pressed Try again has gone.
  */
 @Composable
 fun MainScreen(
@@ -38,13 +44,16 @@ fun MainScreen(
     onVoiceKey: () -> Unit,
     search: @Composable () -> Unit,
     albums: @Composable () -> Unit,
-    photos: @Composable () -> Unit,
+    photos: @Composable (mayTakeFocus: () -> Boolean) -> Unit,
 ) {
     val menuFocus = remember { FocusRequester() }
+    var pillHoldsFocus by remember { mutableStateOf(false) }
+    var screenHoldsFocus by remember { mutableStateOf(false) }
     LaunchedEffect(tab) { runCatching { menuFocus.requestFocus() } }
     Column(
         Modifier
             .fillMaxSize()
+            .onFocusChanged { screenHoldsFocus = it.hasFocus }
             .background(MaterialTheme.colorScheme.background)
             .padding(top = 48.dp, start = 96.dp, end = 96.dp)
             .onPreviewKeyEvent { event ->
@@ -54,14 +63,14 @@ fun MainScreen(
                 true
             },
     ) {
-        TopMenu(selected = tab, onSelect = onSelectTab, onOpenSettings = onOpenSettings, selectedFocus = menuFocus)
+        TopMenu(selected = tab, onSelect = onSelectTab, onOpenSettings = onOpenSettings, selectedFocus = menuFocus, onSelectedFocusChanged = { pillHoldsFocus = it })
         Spacer(Modifier.height(40.dp))
         Box(Modifier.weight(1f)) {
             when (tab) {
                 Tab.Home -> home()
                 Tab.Albums -> albums()
                 Tab.Search -> search()
-                Tab.Photos -> photos()
+                Tab.Photos -> photos { pillHoldsFocus || !screenHoldsFocus }
             }
         }
     }

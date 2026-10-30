@@ -39,7 +39,12 @@ private val RailGap = 48.dp
 
 /** The Photos tab's content, under the top menu: the whole library by month, a rail beside the grid. */
 @Composable
-fun PhotosScreen(viewModel: PhotoGridViewModel, onOpenPhoto: () -> Unit, onStartSlideshow: (PhotoId) -> Unit) {
+fun PhotosScreen(
+    viewModel: PhotoGridViewModel,
+    onOpenPhoto: () -> Unit,
+    onStartSlideshow: (PhotoId) -> Unit,
+    mayTakeFirstFocus: () -> Boolean,
+) {
     val state by viewModel.state.collectAsState()
     RefreshOnStart(viewModel::refresh)
     PhotosContent(
@@ -58,11 +63,12 @@ fun PhotosScreen(viewModel: PhotoGridViewModel, onOpenPhoto: () -> Unit, onStart
             viewModel.open(photo)
             onStartSlideshow(photo.id)
         },
+        mayTakeFirstFocus = mayTakeFirstFocus,
     )
 }
 
 @Composable
-private fun PhotosContent(
+internal fun PhotosContent(
     state: PhotoGridState,
     onNeedMonth: (YearMonth) -> Unit,
     onRetryMonth: (YearMonth) -> Unit,
@@ -71,9 +77,10 @@ private fun PhotosContent(
     onMonthFocused: (YearMonth) -> Unit,
     onOpen: (Photo) -> Unit,
     onHold: (Photo) -> Unit,
+    mayTakeFirstFocus: () -> Boolean,
 ) {
     when (val load = state.load) {
-        // Focus stays on the menu pill, which MainScreen gave it, until the first tiles are there.
+        // Nothing here takes focus: it stays on the menu, where MainScreen put it and the remote can move it.
         GridLoad.Loading -> Row(horizontalArrangement = Arrangement.spacedBy(RailGap)) {
             RailSkeleton()
             PhotoGridSkeleton()
@@ -102,6 +109,7 @@ private fun PhotosContent(
                     onJumped = { jumpTo = null },
                     restoreTo = state.viewing?.id,
                     onHold = onHold,
+                    mayTakeFirstFocus = mayTakeFirstFocus,
                 )
             }
             KeyHint(
@@ -133,7 +141,7 @@ private val previewSections = listOf(
 @Composable
 private fun PhotosPreview(state: PhotoGridState) {
     ImmichTvTheme {
-        MainScreen(Tab.Photos, {}, {}, onVoiceKey = {}, home = {}, search = {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}, {}, {}, {}) })
+        MainScreen(Tab.Photos, {}, {}, onVoiceKey = {}, home = {}, search = {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}, {}, {}, {}, mayTakeFirstFocus = { true }) })
     }
 }
 

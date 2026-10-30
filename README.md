@@ -68,7 +68,9 @@ TV_ADB=<tv-ip>:5555 ./build.sh install         # build, install on the TV and op
 
 To reach the Chromecast over the network: Settings → System → About → click **Android TV OS build** seven times, then Settings → System → Developer options → turn on **USB debugging**. The first `adb connect` shows a prompt on the TV; allow it and tick "Always allow".
 
-Tests cover the domain and data layers and the ViewModels, with the HTTP client tested against MockWebServer. CI fails when line coverage drops below 80%. Compose screens need a device and aren't counted.
+Tests cover the domain and data layers and the ViewModels, with the HTTP client tested against MockWebServer. `PhotoGridFocusTest` presses real keys through the top menu and Photos grid under Robolectric. CI fails when line coverage drops below 80%. Compose screens aren't counted.
+
+Robolectric runs offline: Gradle fetches and caches its Android jars (`syncRobolectricJars`). A Robolectric bump, Dependabot's included, also means updating the two `android-all-instrumented` versions pinned in `gradle/libs.versions.toml`; a missing jar fails the tests, naming it.
 
 ## CI/CD
 

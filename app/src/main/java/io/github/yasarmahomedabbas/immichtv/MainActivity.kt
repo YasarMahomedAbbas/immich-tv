@@ -121,12 +121,13 @@ class MainActivity : ComponentActivity() {
                                     onOpenAlbum = { app.openAlbum(it) },
                                 )
                             },
-                            photos = {
+                            photos = { mayTakeFocus ->
                                 // The viewer uses the same ViewModel, so the grid knows where it got to.
                                 PhotosScreen(
                                     viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
                                     onOpenPhoto = { app.openPhotoViewer() },
                                     onStartSlideshow = app::openTimelineSlideshow,
+                                    mayTakeFirstFocus = mayTakeFocus,
                                 )
                             },
                         )
