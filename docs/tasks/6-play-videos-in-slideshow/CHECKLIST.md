@@ -129,29 +129,29 @@ Tests: `SlideshowViewModelTest`, per the test plan; a `video(id)` helper next to
 
 Goal: every "Done when" line holds on the device. Use `design-recipe` for this checkpoint.
 
-### [ ] 4.1 — The still under it
+### [x] 4.1 — The still under it
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/slideshow/SlideshowScreen.kt`
 In `SlideLayer`, for `slide.photo.isVideo`: no motion (the progress effect doesn't run) and `ContentScale.Fit` for a landscape video too. The portrait backdrop stays as it is.
 
-### [ ] 4.2 — The player
+### [x] 4.2 — The player
 
-Same file. `Stage` composes `VideoLayer` above the current layer only when `current.photo.isVideo` and `layers.shown?.photo?.id == current.photo.id`, so the fade has finished and a held right key starts no loads.
+Same file. `Stage` composes `VideoLayer` above the current layer when `current.photo.isVideo`; it streams only while `showing` (`layers.shown?.photo?.id == current.photo.id`), so the fade has finished and a held right key starts no loads.
 
-`VideoLayer(slide, run, paused, newPlayer: (Context) -> Player, sound: Boolean, onPlaying, onWaiting, onEnded, onFailed: (serverFailure: Boolean) -> Unit)`:
-- `remember` one player from `newPlayer`, `DisposableEffect` to `release()`. As `VideoLayer` leaves with the slide, a photo holds no player. Keep the player in a `key`-free slot above the per-video effects, so moving between videos reuses it.
-- `LaunchedEffect(slide.photo.id, run)`: `setMediaItem(MediaItem.Builder().setMediaId(Video(slide.photo.id).photo.value).build())`, `prepare()`.
+`VideoLayer(slide, run, showing, paused, newPlayer: (Context) -> Player, sound: Boolean, onPlaying, onWaiting, onEnded, onFailed: (PhotoId, serverFailure: Boolean) -> Unit)`, each report naming the video the player has, so a late one is ignored by the show:
+- `remember` one player from `newPlayer`, `DisposableEffect` to `release()`. As `VideoLayer` leaves with the slide, a photo holds no player. It stays composed while videos follow each other, so moving between them reuses it.
+- `LaunchedEffect(player, slide.photo.id, run, showing)`: when showing, `setMediaItem(MediaItem.Builder().setMediaId(Video(slide.photo.id).photo.value).build())`, `prepare()`; otherwise `stop()`, `clearMediaItems()`, so a video's sound ends as the next fades in.
 - Muted: `trackSelectionParameters` with `C.TRACK_TYPE_AUDIO` disabled. With sound: `setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), /* handleAudioFocus = */ true)`.
 - `playWhenReady = !paused && lifecycle at least STARTED` (`currentStateAsState()`), so leaving the app pauses it.
-- `Player.Listener`: `onIsPlayingChanged(true)` → `onPlaying`; `onPlaybackStateChanged`: `STATE_BUFFERING` → `onWaiting`, `STATE_ENDED` → `onEnded`; `onPlayerError` → `onFailed(isServerFailure(error.errorCode))`.
-- The picture: `AndroidView` of a non-focusable `TextureView` with `isOpaque = false` and `player.setVideoTextureView`, centred, sized by `Modifier.aspectRatio` from `onVideoSizeChanged` (height-first for portrait), not composed until the size is known. It stays transparent until its first frame, so the preview shows through.
+- `Player.Listener`: `onIsPlayingChanged(true)` → `onPlaying`; `onPlaybackStateChanged`: `STATE_BUFFERING` → `onWaiting`, `STATE_ENDED` → `onEnded`; `onPlayerError` → `onFailed(id, isServerFailure(error.errorCode))`.
+- The picture: `AndroidView` of a non-focusable `TextureView` with `isOpaque = false` and `player.setVideoTextureView`, centred, sized by `Modifier.aspectRatio` from `onVideoSizeChanged` (height-first for portrait). Its view alpha stays 0 until `onRenderedFirstFrame` for this video, so the preview shows through and the view doesn't keep showing the last video's last frame.
 
-### [ ] 4.3 — Wiring
+### [x] 4.3 — Wiring
 
 Files: `SlideshowScreen.kt`, `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 `SlideshowScreen(viewModel, settings, newPlayer: (Context) -> Player, onBack)`; `MainActivity` passes `container::videoPlayer`. `SlideshowContent` and `Playing` pass it on with the four reports; `sound = settings.videos == VideoMode.PlayWithSound`. Previews pass a lambda that is never called, and one gains a video slide.
 
-### [ ] 4.4 — Docs
+### [x] 4.4 — Docs
 
 Files: `docs/design/README.md`, `README.md`
 The manual's Slideshow row: a video's preview crossfades in, then the video plays fitted and without motion until its end. `README.md`: the line saying videos stay out until #6 now says what the setting does.

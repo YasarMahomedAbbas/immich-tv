@@ -24,3 +24,14 @@ Branch: `feat/6-play-videos-in-slideshow`
 - Open risks:
   - open-risk: some originals may not decode on the Chromecast. The server has no transcodes for the 25 longest of its 263 videos (mp4 or QuickTime originals, longest about 2 minutes). They are skipped; only the TV check can measure how many.
   - The on-TV check is only allowed until about 12:20 CET on 2026-10-30, under the adb lock in the issue's comment; after that it is skipped and recorded as skipped.
+
+## Implementation
+
+- Shipped: the Videos setting decides at load (`domain/slideshow/Slideshow.kt:24`); the playback stream with the key as a header (`data/immich/ImmichVideo.kt:15`) and a player that resolves a domain `Video` on the loader thread (`data/immich/ImmichVideoPlayer.kt:30`, `AppContainer.kt:51`); the show's video rules in virtual time (`ui/slideshow/SlideshowViewModel.kt:155`, `:166`, `:180`, `:307`); the video on screen (`ui/slideshow/SlideshowScreen.kt:370`); the manual's Slideshow row and `README.md`.
+- Tests: 289 passed / 0 failed / 0 skipped; `koverVerifyDebug`, `lintDebug` and `assembleDebug` pass.
+- Outstanding: nothing on the checklist is unticked, but no video has played on a device yet: playback, sound, the first-frame hand-over and the real-server checks are self-verification's (see the test plan's window and lock). The Compose layer has no unit tests.
+- Contradicted the plan:
+  - 4.2 asked for `VideoLayer` to be composed only after the fade and also to reuse its player between videos, which can't both hold: each video-to-video move would release it. `VideoLayer` now stays composed for any current video and takes `showing`; it streams only while showing and otherwise stops, so the old video's sound ends as the next fades in.
+  - 4.2 relied on the `TextureView` being transparent until its first frame and on composing it once the size is known. A reused view keeps the last video's last frame, and `onVideoSizeChanged` isn't sure to fire again for a same-size video, so the view is always composed and its alpha stays 0 until `onRenderedFirstFrame` for this video.
+  - 4.2's `onFailed: (serverFailure)` became `(PhotoId, serverFailure)`, and the other reports take a `PhotoId` too: each names the video the player has, so a late one is ignored as the ViewModel's rule intends.
+  - 2.3: `"*.VideoSourceFactory*"` joined the Kover excludes, since the factory is its own class.

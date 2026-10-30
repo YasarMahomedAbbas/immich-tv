@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
                             factory = SlideshowViewModel.factory(container, current.album, current.settings),
                         ),
                         settings = current.settings,
+                        newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                     )
                 }
