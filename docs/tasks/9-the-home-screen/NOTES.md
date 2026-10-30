@@ -81,3 +81,9 @@ Result: partial
   - The empty state and the no-hero page: the real library can't produce them.
   - A real v1.133 server: date-only `for` still rests on its spec and source.
 
+
+## Raise PR
+
+- Merged origin/main (Search, #8): conflicts in 10 files, both sides kept. The merge also needed Home's preview given Search's slots, and removed `PlaceholderTab` and `coming_soon`, unused now that no tab is a placeholder.
+- CI build (run of record, on the merged tree): 438 tests passed, 0 failed, 0 skipped; line coverage 87.3% (minimum 80); lint 0 errors, 30 warnings; APK built.
+- The on-TV and real-server runs in Self verification came before this merge, and were not repeated: Home beside the real Search tab was not seen on the TV.
