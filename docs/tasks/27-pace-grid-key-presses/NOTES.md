@@ -26,3 +26,12 @@ Branch: `fix/27-pace-grid-key-presses`
 - Raised: none
 - API: none touched; the branch adds and changes no Immich call.
 - Layers: clean
+
+## Doc drift
+
+- No drift found.
+- Checked: README's feature list and architecture block (it names layers, not files, so `MovePace` changes nothing), CLAUDE.md's and README's commands against `ci.yml` and `build.sh` (CLAUDE.md leaves out CI's two Kover report tasks, which only produce reports), `docs/design/README.md`'s `PhotoGrid` rows.
+- Skipped: the pacing of Up and Down on `PhotoGrid`: `PhotoGrid`'s KDoc says it and why, and `MovePaceTest` holds the logic, so anyone changing the grid sees it.
+- Skipped: a general rule to pace every grid: the cause isn't proven, and the Albums and search grids are out of this ticket's scope.
+- Skipped: a README line on the capped speed in the grid: it's tuning, not a feature someone uses or configures.
+- Stale, fixed separately: none
