@@ -73,7 +73,8 @@ class MainActivity : ComponentActivity() {
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
                         albumName = current.album.name,
                         viewModel = viewModel(
-                            key = "album-photos-$connection-${current.album.id.value}",
+                            // The timeline keeps the order it was created with, so a new order needs a new grid.
+                            key = "album-photos-$connection-${current.album.id.value}-${current.album.newestFirst}",
                             factory = PhotoGridViewModel.factory(container.albumTimeline(current.album)),
                         ),
                         onBack = { app.back() },

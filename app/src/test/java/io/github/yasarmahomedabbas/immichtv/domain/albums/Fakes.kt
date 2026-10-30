@@ -5,6 +5,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.photos.FakeTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
+import kotlinx.coroutines.CompletableDeferred
 import java.time.Instant
 import java.time.LocalDate
 
@@ -37,15 +38,22 @@ class FakeAlbumRepository(
     var contents: ServerResult<AlbumContents> = ServerResult.Ok(AlbumContents(3, 1, emptyList())),
 ) : AlbumRepository {
     var albumsCalls = 0
+    var albumCalls = 0
     val contentsLimits = mutableListOf<Int>()
     var albumFailure: Problem? = null
 
+    /** While set, reading albums waits for it: a request still on its way. */
+    var gate: CompletableDeferred<Unit>? = null
+
     override suspend fun albums(): ServerResult<List<Album>> {
         albumsCalls++
+        gate?.await()
         return albums
     }
 
     override suspend fun album(id: AlbumId): ServerResult<Album> {
+        albumCalls++
+        gate?.await()
         albumFailure?.let { return ServerResult.Failed(it) }
         val all = (albums as? ServerResult.Ok)?.value.orEmpty()
         return all.firstOrNull { it.id == id }?.let { ServerResult.Ok(it) } ?: ServerResult.Failed(Problem.Unreachable)

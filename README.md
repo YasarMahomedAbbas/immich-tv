@@ -33,6 +33,8 @@ data/     The Immich REST client and stored settings
 
 A ViewModel that holds server data takes `AppViewModel.connection` in its key (see `MainActivity`): ViewModels live as long as the activity, so without it a screen keeps showing the old server's data after connecting to another.
 
+For the same reason a screen that shows server data calls `RefreshOnStart` with a quiet `refresh()` on its ViewModel, or it never sees changes made on the server. A quiet refresh reads one cheap summary and fetches more only if that changed, never shows the skeleton, keeps focus and scroll when nothing changed, and leaves the screen alone on failure.
+
 Any change to an Immich call follows the API of the server's version (see `CLAUDE.md`).
 
 ## Development

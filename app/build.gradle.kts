@@ -97,6 +97,7 @@ dependencies {
     implementation(libs.tv.material)
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime.compose)
     implementation(libs.coroutines.android)
     implementation(libs.okhttp)
     implementation(libs.serialization.json)
