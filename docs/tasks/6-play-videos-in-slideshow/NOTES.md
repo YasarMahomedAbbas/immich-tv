@@ -42,3 +42,14 @@ Branch: `feat/6-play-videos-in-slideshow`
 - Raised: none
 - API: `GET /api/assets/{id}/video/playback` (`playAssetVideo`): matches the v3.3.5 spec read from the running server's version: path, GET, optional `key` and `slug` never sent, `application/octet-stream`, `asset.view`; the key goes as the `x-api-key` header.
 - Layers: clean
+
+## Doc drift
+
+- Applied: `CLAUDE.md`, Immich API, Auth: the key rule named only API calls and images; it now names video requests too, which `immichVideoPlayer` sends through `immichHttpClient()` (rung 2, a cross-cutting security rule).
+- Skipped: `README.md` features and `docs/design/README.md` Slideshow row: already updated on this branch and checked against the code (1.5 s fade, fitted video and preview, no zoom on video, backdrop for portrait, the three Videos modes).
+- Skipped: `CLAUDE.md` preview-size rule: it is about images and still holds; a video's preview uses it and the playback stream isn't an image.
+- Skipped: `README.md` architecture block: "the Immich REST client" already covers the player, as it does the image loader, at that altitude; `AppContainer` remains the only place naming `data/`.
+- Skipped: Media3 types in `ui/`: `ui/` still imports no `data/` and builds no URL (a `MediaItem` carries only the id); `ArchitectureTest` enforces the import rule and the planning note records the choice.
+- Skipped: one player and nothing buffered ahead, the 30 s stall, and which failures count: the code's comments and `SlideshowViewModelTest` carry them.
+- Skipped: Kover excludes for the player: commented in `app/build.gradle.kts`; the README's 80% and CI command still match the build and `ci.yml`.
+- Stale, fixed separately: none
