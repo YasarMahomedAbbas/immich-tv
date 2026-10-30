@@ -40,7 +40,7 @@ enum class TileStyle(val corner: Dp) {
 /**
  * A photo's preview, cropped to fill. A `surface` block while it loads or when there is no
  * [photo]. A video gets a small play badge. A [focusable] tile shows the house focus and calls
- * [onClick] on OK.
+ * [onClick] on OK, and [onLongClick] when OK is held.
  */
 @Composable
 fun PhotoTile(
@@ -50,12 +50,14 @@ fun PhotoTile(
     isVideo: Boolean = false,
     focusable: Boolean = false,
     onClick: () -> Unit = {},
+    onLongClick: (() -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(style.corner)
     val surface = MaterialTheme.colorScheme.surface
     if (focusable) {
         Surface(
             onClick = onClick,
+            onLongClick = onLongClick,
             modifier = modifier,
             shape = ClickableSurfaceDefaults.shape(shape),
             colors = ClickableSurfaceDefaults.colors(
@@ -81,17 +83,19 @@ private fun BoxScope.TileContent(photo: PhotoId?, isVideo: Boolean) {
             modifier = Modifier.fillMaxSize(),
         )
     }
-    if (isVideo) {
-        val colors = MaterialTheme.colorScheme
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .padding(10.dp)
-                .size(36.dp)
-                .background(colors.background.copy(alpha = 0.7f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = colors.onSurface, modifier = Modifier.size(22.dp))
-        }
+    if (isVideo) VideoBadge(Modifier.align(Alignment.BottomStart).padding(10.dp))
+}
+
+/** Says a photo is a video's still: a small play icon on a dark circle. */
+@Composable
+internal fun VideoBadge(modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .size(36.dp)
+            .background(colors.background.copy(alpha = 0.7f), CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = colors.onSurface, modifier = Modifier.size(22.dp))
     }
 }

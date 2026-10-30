@@ -45,6 +45,13 @@
     <string name="album_photos_empty_hint">Add photos to it in Immich and they show up here.</string>
     <string name="album_photos_back">Back to the album</string>
     <string name="photos_month_failed">Couldn\'t load this month.</string>
+    <string name="photo_failed">Couldn\'t load this photo.</string>
+    <string name="photos_empty_title">No photos yet</string>
+    <string name="photos_empty_hint">Add some in Immich and they show up here.</string>
+    <string name="hint_ok">OK</string>
+    <string name="hint_open">open</string>
+    <string name="hint_hold_ok">hold OK</string>
+    <string name="hint_slideshow_from_here">slideshow from here</string>
     <string name="setting_seconds">Each photo for</string>
     <plurals name="setting_seconds_value">
         <item quantity="one">%1$d second</item>
@@ -88,4 +95,7 @@
     <string name="slideshow_empty_title">No photos to play</string>
     <string name="slideshow_empty_hint">This album only has videos, or nothing yet.</string>
     <string name="slideshow_empty_action">Back to album</string>
+    <string name="slideshow_back_photos">‹ Photos</string>
+    <string name="slideshow_empty_hint_library">Your library only has videos, or nothing yet.</string>
+    <string name="slideshow_empty_action_library">Back to photos</string>
 </resources>

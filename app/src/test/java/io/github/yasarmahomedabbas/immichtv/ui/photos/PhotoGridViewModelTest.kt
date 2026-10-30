@@ -350,4 +350,187 @@ class PhotoGridViewModelTest {
         advanceUntilIdle()
         assertSame(loaded, vm.state.value)
     }
+
+    @Test
+    fun `the rail's month is the first until the remote is on another`() = runTest(dispatcher) {
+        val vm = PhotoGridViewModel(timeline)
+        advanceUntilIdle()
+        assertEquals(august, vm.state.value.selectedMonth)
+
+        vm.monthFocused(july)
+        assertEquals(july, vm.state.value.selectedMonth)
+    }
+
+    @Test
+    fun `a refresh keeps the focused month, and one no longer there goes back to the first`() = runTest(dispatcher) {
+        val vm = PhotoGridViewModel(timeline)
+        advanceUntilIdle()
+        vm.monthFocused(july)
+
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals(july, vm.state.value.selectedMonth)
+
+        timeline.months = months(august to 2)
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals(august, vm.state.value.selectedMonth)
+    }
+
+    private val june = YearMonth.of(2025, 6)
+    private val junePhotos = listOf(Photo(PhotoId("p3"), false), Photo(PhotoId("p4"), false))
+
+    /** Three months loaded as far as [loaded] says, with the first photo of [opening] open. */
+    private fun TestScope.viewer(opening: Photo, vararg loaded: YearMonth): PhotoGridViewModel {
+        timeline.months = months(august to 2, july to 1, june to 2)
+        timeline.photos[june] = ServerResult.Ok(junePhotos)
+        val vm = PhotoGridViewModel(timeline)
+        advanceUntilIdle()
+        loaded.forEach { vm.loadMonth(it) }
+        advanceUntilIdle()
+        vm.open(opening)
+        return vm
+    }
+
+    private val PhotoGridViewModel.viewed get() = state.value.viewing?.id?.value
+
+    @Test
+    fun `opening a photo views it, and moves within its month`() = runTest(dispatcher) {
+        val vm = viewer(augustPhotos[0])
+        assertEquals("p1", vm.viewed)
+
+        vm.viewerMove(1)
+        assertEquals("v1", vm.viewed)
+        vm.viewerMove(-1)
+        assertEquals("p1", vm.viewed)
+    }
+
+    @Test
+    fun `moving past a month's end lands in the next loaded month, at its near end`() = runTest(dispatcher) {
+        val vm = viewer(augustPhotos[1], july, june)
+
+        vm.viewerMove(1)
+        assertEquals("p2", vm.viewed)
+        vm.viewerMove(1)
+        assertEquals("p3", vm.viewed)
+
+        vm.viewerMove(-1)
+        assertEquals("p2", vm.viewed)
+        vm.viewerMove(-1)
+        assertEquals("v1", vm.viewed)
+    }
+
+    @Test
+    fun `moving into a month not loaded stays until it arrives, then moves`() = runTest(dispatcher) {
+        val vm = viewer(augustPhotos[1])
+
+        vm.viewerMove(1)
+        assertEquals("v1", vm.viewed)
+        assertEquals(MonthPhotos.Loading, vm.section(july).photos)
+
+        advanceUntilIdle()
+        assertEquals("p2", vm.viewed)
+    }
+
+    @Test
+    fun `closing the viewer drops the press waiting for a month`() = runTest(dispatcher) {
+        val vm = viewer(augustPhotos[1])
+
+        vm.viewerMove(1)
+        vm.viewerClosed()
+
+        advanceUntilIdle()
+        assertEquals("v1", vm.viewed)
+        assertEquals(MonthPhotos.Loaded(julyPhotos), vm.section(july).photos)
+    }
+
+    @Test
+    fun `a later press replaces the one waiting for a month`() = runTest(dispatcher) {
+        val vm = viewer(augustPhotos[1])
+
+        vm.viewerMove(1)
+        vm.viewerMove(-1)
+        assertEquals("p1", vm.viewed)
+
+        advanceUntilIdle()
+        assertEquals("p1", vm.viewed)
+        assertEquals(MonthPhotos.Loaded(julyPhotos), vm.section(july).photos)
+    }
+
+    @Test
+    fun `an empty month is passed over`() = runTest(dispatcher) {
+        timeline.photos[july] = ServerResult.Ok(emptyList())
+        val vm = viewer(augustPhotos[1], june)
+
+        vm.viewerMove(1)
+        advanceUntilIdle()
+        assertEquals("p3", vm.viewed)
+
+        vm.viewerMove(-1)
+        assertEquals("v1", vm.viewed)
+    }
+
+    @Test
+    fun `both ends of the timeline stay put, with no wrap`() = runTest(dispatcher) {
+        val vm = viewer(augustPhotos[0], july, june)
+
+        vm.viewerMove(-1)
+        assertEquals("p1", vm.viewed)
+
+        vm.open(junePhotos[1])
+        vm.viewerMove(1)
+        assertEquals("p4", vm.viewed)
+    }
+
+    @Test
+    fun `a month that fails stays put, and a later press tries it again`() = runTest(dispatcher) {
+        timeline.photos[july] = ServerResult.Failed(Problem.Unreachable)
+        val vm = viewer(augustPhotos[1])
+
+        vm.viewerMove(1)
+        advanceUntilIdle()
+        assertEquals("v1", vm.viewed)
+        assertEquals(MonthPhotos.Failed(Problem.Unreachable), vm.section(july).photos)
+
+        timeline.photos[july] = ServerResult.Ok(julyPhotos)
+        vm.viewerMove(1)
+        advanceUntilIdle()
+        assertEquals("v1", vm.viewed)
+        assertEquals(MonthPhotos.Loaded(julyPhotos), vm.section(july).photos)
+
+        vm.viewerMove(1)
+        assertEquals("p2", vm.viewed)
+    }
+
+    @Test
+    fun `no photo open moves nowhere`() = runTest(dispatcher) {
+        val vm = PhotoGridViewModel(timeline)
+        advanceUntilIdle()
+        vm.viewerMove(1)
+        advanceUntilIdle()
+        assertEquals(null, vm.state.value.viewing)
+        assertEquals(listOf(august), timeline.asked)
+    }
+
+    @Test
+    fun `the grid position follows the viewed photo, and a refresh keeps it`() = runTest(dispatcher) {
+        val vm = viewer(augustPhotos[1], july)
+        vm.viewerMove(1)
+        assertEquals(4, gridIndexOfPhoto(vm.state.value.sections, vm.state.value.viewing!!.id))
+
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals("p2", vm.viewed)
+    }
+
+    @Test
+    fun `a neighbour is known only once it is here`() = runTest(dispatcher) {
+        val vm = viewer(augustPhotos[1])
+        assertEquals(augustPhotos[0], vm.state.value.neighbour(-1))
+        assertEquals(null, vm.state.value.neighbour(1))
+
+        vm.loadMonth(july)
+        advanceUntilIdle()
+        assertEquals(julyPhotos[0], vm.state.value.neighbour(1))
+    }
 }

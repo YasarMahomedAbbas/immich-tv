@@ -10,8 +10,10 @@ import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Album
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
-import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
+import io.github.yasarmahomedabbas.immichtv.domain.map
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowOrder
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,7 +28,7 @@ import java.util.Locale
 sealed interface SlideshowLoad {
     data object Loading : SlideshowLoad
 
-    /** The album has no photos to play. */
+    /** There are no photos to play. */
     data object Empty : SlideshowLoad
     data class Failed(val problem: Problem) : SlideshowLoad
     data object Playing : SlideshowLoad
@@ -59,9 +61,8 @@ data class SlideshowState(
  * what the current video's player does ([videoPlaying], [videoWaiting], [videoEnded], [videoFailed]).
  */
 class SlideshowViewModel(
-    private val album: Album,
     private val settings: SlideshowSettings,
-    private val loadSlideshow: LoadSlideshow,
+    private val loadPlaylist: suspend () -> ServerResult<Playlist>,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SlideshowState())
     val state: StateFlow<SlideshowState> = _state.asStateFlow()
@@ -229,10 +230,11 @@ class SlideshowViewModel(
         ready.clear()
         _state.value = SlideshowState()
         viewModelScope.launch {
-            _state.value = when (val result = loadSlideshow(album, settings.order, settings.videos)) {
+            _state.value = when (val result = loadPlaylist()) {
                 is ServerResult.Ok -> SlideshowState(
-                    load = if (result.value.isEmpty()) SlideshowLoad.Empty else SlideshowLoad.Playing,
-                    slides = result.value,
+                    load = if (result.value.slides.isEmpty()) SlideshowLoad.Empty else SlideshowLoad.Playing,
+                    slides = result.value.slides,
+                    index = result.value.start,
                 )
                 is ServerResult.Failed -> SlideshowState(load = SlideshowLoad.Failed(result.problem))
             }
@@ -252,10 +254,22 @@ class SlideshowViewModel(
         private const val READY_KEPT = 8
 
         fun factory(container: AppContainer, album: Album, settings: SlideshowSettings) = viewModelFactory {
-            initializer { SlideshowViewModel(album, settings, container.loadSlideshow) }
+            initializer {
+                SlideshowViewModel(settings) { container.loadSlideshow(album, settings.order, settings.videos).map { Playlist(it) } }
+            }
+        }
+
+        /** The whole library from the photo [from] onward, with [TimelineSettings]. */
+        fun fromTimeline(container: AppContainer, from: PhotoId) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(TimelineSettings) { container.loadLibrarySlideshow(from) }
+            }
         }
     }
 }
+
+/** A library show can't be set up: the defaults (8 s, date and place on), newest to oldest. */
+val TimelineSettings = SlideshowSettings(order = SlideshowOrder.NewestFirst)
 
 /** The date ("23 August 2025") and place ("Lisbon, Portugal") to show, each null when unknown. */
 internal fun dateAndPlace(slide: Slide, locale: Locale = Locale.getDefault()): Pair<String?, String?> {
@@ -306,7 +320,10 @@ internal data class StageLayers(val shown: Slide? = null, val lastLoaded: Slide?
 /** Whether a player's error means the server couldn't be reached: Media3's `ERROR_CODE_IO_*` range. */
 internal fun isServerFailure(errorCode: Int): Boolean = errorCode in 2000..2999
 
-/** [whenHeld]: whether a held key's repeats count. A held OK would otherwise flip the pause on and off. */
+/**
+ * [whenHeld]: whether a held key's repeats count. A held OK would otherwise flip the pause on and off,
+ * and holding OK on a tile is what starts a library show: the rest of that hold's repeats arrive here.
+ */
 internal enum class SlideshowAction(val whenHeld: Boolean = true) { Back, Forward, TogglePause(whenHeld = false), ShowControls }
 
 /** What a key on the remote does while the slideshow plays; null leaves it alone (Back, for one). */

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.yasarmahomedabbas.immichtv.AppContainer
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Album as DomainAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
+import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
@@ -40,6 +41,12 @@ sealed interface AppScreen {
 
     /** [album] playing with [settings], as the album screen had them when it started. */
     data class Slideshow(val album: DomainAlbum, val settings: SlideshowSettings) : AppScreen
+
+    /** One photo of the Photos tab full-screen; which one is the grid's to say. */
+    data object PhotoViewer : AppScreen
+
+    /** The whole library playing, from the photo [from] onward. */
+    data class TimelineSlideshow(val from: PhotoId) : AppScreen
 }
 
 /** Chooses Setup or Home at launch and moves between screens; Back walks up toward Home. */
@@ -77,6 +84,14 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
         _screen.value = AppScreen.Slideshow(album, settings)
     }
 
+    fun openPhotoViewer() {
+        _screen.value = AppScreen.PhotoViewer
+    }
+
+    fun openTimelineSlideshow(from: PhotoId) {
+        _screen.value = AppScreen.TimelineSlideshow(from)
+    }
+
     fun openSettings() {
         val from = _screen.value
         viewModelScope.launch {
@@ -96,6 +111,7 @@ class AppViewModel(private val getSession: GetSession) : ViewModel() {
             is AppScreen.Album -> AppScreen.Main(Tab.Albums)
             is AppScreen.AlbumPhotos -> AppScreen.Album(current.album.id, focusBrowse = true)
             is AppScreen.Slideshow -> AppScreen.Album(current.album.id)
+            AppScreen.PhotoViewer, is AppScreen.TimelineSlideshow -> AppScreen.Main(Tab.Photos)
             is AppScreen.Main -> if (current.tab == Tab.Home) null else HOME
             AppScreen.Loading -> null
         } ?: return false

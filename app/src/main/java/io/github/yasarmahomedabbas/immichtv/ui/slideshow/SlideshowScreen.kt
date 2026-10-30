@@ -2,6 +2,7 @@ package io.github.yasarmahomedabbas.immichtv.ui.slideshow
 
 import android.content.Context
 import android.view.TextureView
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -75,16 +76,11 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import coil3.imageLoader
 import coil3.request.ErrorResult
-import coil3.request.ImageRequest
 import coil3.request.SuccessResult
-import coil3.request.crossfade
-import coil3.size.Precision
-import coil3.size.Scale
 import io.github.yasarmahomedabbas.immichtv.R
 import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
-import io.github.yasarmahomedabbas.immichtv.domain.albums.Preview as PhotoPreview
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Video
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Place
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
@@ -97,10 +93,17 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
 import io.github.yasarmahomedabbas.immichtv.ui.components.OverPhotoPanel
 import io.github.yasarmahomedabbas.immichtv.ui.components.OverPhotoStyle
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
+import io.github.yasarmahomedabbas.immichtv.ui.components.fullScreenRequest
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+
+/** What a show plays, for the words that name it. */
+enum class SlideshowSource(@StringRes val back: Int, @StringRes val emptyHint: Int, @StringRes val emptyAction: Int) {
+    Album(R.string.slideshow_back, R.string.slideshow_empty_hint, R.string.slideshow_empty_action),
+    Library(R.string.slideshow_back_photos, R.string.slideshow_empty_hint_library, R.string.slideshow_empty_action_library),
+}
 
 private const val FADE_MS = 1_500
 private const val PROGRESS_MS = 600
@@ -114,14 +117,11 @@ private val PlayButton = 76.dp
 private val FocusGap = 4.dp
 private val FocusWidth = 4.dp
 
-// What a slide's image is decoded for: the Chromecast's screen, however big the preview is.
-private const val SCREEN_WIDTH_PX = 1920
-private const val SCREEN_HEIGHT_PX = 1080
-
 /**
  * The full-screen slideshow: the album's photos crossfading, each moving slowly, and its videos
  * playing to their end, with the date and place, a thin progress bar and controls that show on a key
- * press. The remote works the show directly, so the controls are indicators and nothing in them takes focus.
+ * press. The remote works the show directly, so the controls are indicators and nothing in them takes
+ * focus. [source] is what Back returns to, which its words name.
  */
 @Composable
 fun SlideshowScreen(
@@ -129,6 +129,7 @@ fun SlideshowScreen(
     settings: SlideshowSettings,
     newPlayer: (Context) -> Player,
     onBack: () -> Unit,
+    source: SlideshowSource = SlideshowSource.Album,
 ) {
     val state by viewModel.state.collectAsState()
     RunWhileStarted(viewModel)
@@ -136,6 +137,7 @@ fun SlideshowScreen(
     SlideshowContent(
         state = state,
         settings = settings,
+        source = source,
         onBack = onBack,
         onRetry = viewModel::retry,
         onAction = { action ->
@@ -191,6 +193,7 @@ private fun KeepScreenOn(awake: Boolean) {
 private fun SlideshowContent(
     state: SlideshowState,
     settings: SlideshowSettings,
+    source: SlideshowSource,
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onAction: (SlideshowAction) -> Unit,
@@ -231,14 +234,15 @@ private fun SlideshowContent(
             )
             SlideshowLoad.Empty -> EmptyState(
                 title = stringResource(R.string.slideshow_empty_title),
-                hint = stringResource(R.string.slideshow_empty_hint),
-                actionLabel = stringResource(R.string.slideshow_empty_action),
+                hint = stringResource(source.emptyHint),
+                actionLabel = stringResource(source.emptyAction),
                 onAction = onBack,
             )
             is SlideshowLoad.Failed -> FailedState(load.problem, onRetry)
             SlideshowLoad.Playing -> Playing(
                 state,
                 settings,
+                source,
                 onImageReady,
                 onImageFailed,
                 newPlayer,
@@ -255,6 +259,7 @@ private fun SlideshowContent(
 private fun Playing(
     state: SlideshowState,
     settings: SlideshowSettings,
+    source: SlideshowSource,
     onImageReady: (PhotoId) -> Unit,
     onImageFailed: (PhotoId) -> Unit,
     newPlayer: (Context) -> Player,
@@ -283,7 +288,7 @@ private fun Playing(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = OverlayEdge),
-        ) { Controls(state) }
+        ) { Controls(state, source) }
     }
 }
 
@@ -301,16 +306,6 @@ private fun Preload(slide: Slide?, onReady: (PhotoId) -> Unit, onFailed: (PhotoI
         }
     }
 }
-
-/** One request for a slide's image, for the preload and the layers alike, so they share the bitmap. */
-private fun fullScreenRequest(context: Context, id: PhotoId): ImageRequest =
-    ImageRequest.Builder(context)
-        .data(PhotoPreview(id))
-        .size(SCREEN_WIDTH_PX, SCREEN_HEIGHT_PX)
-        .scale(Scale.FILL)
-        .precision(Precision.INEXACT)
-        .crossfade(false)
-        .build()
 
 /**
  * At most two slides are composed: the one on screen and the one fading in over it. A new slide
@@ -576,7 +571,7 @@ private fun DateAndPlace(slide: Slide, modifier: Modifier) {
 
 /** Shows what the remote does; the keys work whether this is showing or not. */
 @Composable
-private fun Controls(state: SlideshowState) {
+private fun Controls(state: SlideshowState, source: SlideshowSource) {
     val colors = MaterialTheme.colorScheme
     OverPhotoPanel(OverPhotoStyle.Controls) {
         Row(
@@ -584,7 +579,7 @@ private fun Controls(state: SlideshowState) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(28.dp),
         ) {
-            Text(stringResource(R.string.slideshow_back), color = colors.onSurfaceVariant, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(source.back), color = colors.onSurfaceVariant, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
             Icon(painterResource(R.drawable.ic_previous), stringResource(R.string.slideshow_previous), tint = colors.onSurface, modifier = Modifier.size(44.dp))
             Box(
                 Modifier
@@ -620,7 +615,21 @@ private val previewSlides = List(214) { previewSlide(it) }
 private fun SlideshowPreview(state: SlideshowState, settings: SlideshowSettings = SlideshowSettings()) {
     // Stage composes no video layer in a preview, so nothing asks for this player.
     ImmichTvTheme {
-        SlideshowContent(state, settings, {}, {}, {}, {}, {}, { error("No player in a preview") }, {}, {}, {}, { _, _ -> })
+        SlideshowContent(
+            state,
+            settings,
+            SlideshowSource.Album,
+            {},
+            {},
+            {},
+            {},
+            {},
+            { error("No player in a preview") },
+            {},
+            {},
+            {},
+            { _, _ -> },
+        )
     }
 }
 

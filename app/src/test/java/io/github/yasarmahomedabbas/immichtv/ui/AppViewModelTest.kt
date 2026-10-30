@@ -1,6 +1,7 @@
 package io.github.yasarmahomedabbas.immichtv.ui
 
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
+import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.album
 import io.github.yasarmahomedabbas.immichtv.domain.server.ApiKey
 import io.github.yasarmahomedabbas.immichtv.domain.server.FakeSessionStore
@@ -96,6 +97,28 @@ class AppViewModelTest {
 
         assertTrue(vm.back())
         assertEquals(AppScreen.Album(summer.id, focusBrowse = false), vm.screen.value)
+    }
+
+    @Test
+    fun `opening a photo shows the viewer, and back returns to the photos tab`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.selectTab(Tab.Photos)
+        vm.openPhotoViewer()
+        assertEquals(AppScreen.PhotoViewer, vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Main(Tab.Photos), vm.screen.value)
+    }
+
+    @Test
+    fun `a slideshow from a photo plays, and back returns to the photos tab`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.selectTab(Tab.Photos)
+        vm.openTimelineSlideshow(PhotoId("p1"))
+        assertEquals(AppScreen.TimelineSlideshow(PhotoId("p1")), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Main(Tab.Photos), vm.screen.value)
     }
 
     @Test

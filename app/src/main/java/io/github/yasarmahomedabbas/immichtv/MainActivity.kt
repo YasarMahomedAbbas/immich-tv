@@ -21,10 +21,14 @@ import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsScreen
 import io.github.yasarmahomedabbas.immichtv.ui.albums.AlbumsViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
 import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoViewerScreen
+import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotosScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowScreen
+import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowSource
 import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.slideshow.TimelineSettings
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 
 class MainActivity : ComponentActivity() {
@@ -53,13 +57,22 @@ class MainActivity : ComponentActivity() {
                         tab = current.tab,
                         onSelectTab = app::selectTab,
                         onOpenSettings = app::openSettings,
-                    ) {
-                        // Scoped to the activity, so the list and the focused album survive opening one.
-                        AlbumsScreen(
-                            viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
-                            onOpenAlbum = app::openAlbum,
-                        )
-                    }
+                        albums = {
+                            // Scoped to the activity, so the list and the focused album survive opening one.
+                            AlbumsScreen(
+                                viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
+                                onOpenAlbum = app::openAlbum,
+                            )
+                        },
+                        photos = {
+                            // The viewer uses the same ViewModel, so the grid knows where it got to.
+                            PhotosScreen(
+                                viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
+                                onOpenPhoto = app::openPhotoViewer,
+                                onStartSlideshow = app::openTimelineSlideshow,
+                            )
+                        },
+                    )
                     is AppScreen.Album -> AlbumScreen(
                         viewModel = viewModel(
                             key = "album-$connection-${current.id.value}",
@@ -79,6 +92,10 @@ class MainActivity : ComponentActivity() {
                         ),
                         onBack = { app.back() },
                     )
+                    AppScreen.PhotoViewer -> PhotoViewerScreen(
+                        viewModel = viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
+                        onBack = { app.back() },
+                    )
                     is AppScreen.Slideshow -> SlideshowScreen(
                         // A fresh ViewModel each time it starts, so it begins at the first photo.
                         viewModel = viewModel(
@@ -88,6 +105,16 @@ class MainActivity : ComponentActivity() {
                         settings = current.settings,
                         newPlayer = container::videoPlayer,
                         onBack = { app.back() },
+                    )
+                    is AppScreen.TimelineSlideshow -> SlideshowScreen(
+                        viewModel = viewModel(
+                            key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            factory = SlideshowViewModel.fromTimeline(container, current.from),
+                        ),
+                        settings = TimelineSettings,
+                        newPlayer = container::videoPlayer,
+                        onBack = { app.back() },
+                        source = SlideshowSource.Library,
                     )
                 }
             }

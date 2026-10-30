@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.media3.exoplayer.ExoPlayer
 import coil3.ImageLoader
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichAlbumRepository
+import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichLibraryRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichServerConnector
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichHttpClient
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichImageLoader
@@ -15,9 +16,11 @@ import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSlideshowSetting
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbums
+import io.github.yasarmahomedabbas.immichtv.domain.photos.LibraryTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.server.ConnectToServer
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadLibrarySlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveSlideshowSettings
 
@@ -40,6 +43,10 @@ class AppContainer(context: Context) {
     val loadAlbum = LoadAlbum(albums)
     val albumTimeline = AlbumTimeline(albums)
     val loadSlideshow = LoadSlideshow(albums)
+
+    private val library = ImmichLibraryRepository(http, sessions)
+    val libraryTimeline = LibraryTimeline(library)
+    val loadLibrarySlideshow = LoadLibrarySlideshow(library)
 
     private val slideshowSettings = StoredSlideshowSettings(
         SharedPreferencesStorage(context.getSharedPreferences("slideshow", Context.MODE_PRIVATE)),
