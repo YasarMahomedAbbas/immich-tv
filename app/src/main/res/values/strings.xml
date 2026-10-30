@@ -2,6 +2,14 @@
     <string name="app_name">Immich TV</string>
 
     <string name="settings">Settings</string>
+    <string name="settings_server">Server</string>
+    <string name="settings_server_none">Not set up</string>
+    <string name="screensaver_title">Screensaver</string>
+    <string name="screensaver_random">Random from my library</string>
+    <string name="screensaver_album">An album</string>
+    <string name="screensaver_album_gone">Album no longer there</string>
+    <string name="screensaver_no_albums">No albums yet. Make one in Immich and it shows up here.</string>
+    <string name="picker_selected">Selected</string>
 
     <string name="tab_home">Home</string>
     <string name="tab_albums">Albums</string>

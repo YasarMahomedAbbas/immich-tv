@@ -69,7 +69,11 @@ kover {
                     "*.ImmichTvApp",
                     "*.AppContainer*",
                     "*.ComposableSingletons*",
-                    "*Screen*",
+                    // Not "*Screen*", which would also hide every *Screensaver* class.
+                    "*Screen",
+                    "*Screen$*",
+                    "*ScreenKt*",
+                    "*.ScreensaverService*",
                     // Thin wrappers over the AndroidKeyStore and SharedPreferences: they need a
                     // device. The logic behind them is tested with fakes.
                     "*.KeystoreCipher*",

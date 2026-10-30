@@ -14,6 +14,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
 import io.github.yasarmahomedabbas.immichtv.domain.home.playlistFrom
 import io.github.yasarmahomedabbas.immichtv.domain.map
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ScreensaverShow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowOrder
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
@@ -293,6 +294,28 @@ class SlideshowViewModel(
         fun factory(slides: List<Slide>) = viewModelFactory {
             initializer { SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(Playlist(slides)) } }
         }
+
+        /** What the TV's screensaver plays, always with [ScreensaverShow]. */
+        fun forScreensaver(container: AppContainer) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(ScreensaverShow) { container.loadScreensaver() }
+            }
+        }
+    }
+}
+
+/** How often the screensaver asks again when it has no photos to play. */
+const val SCREENSAVER_RETRY_MS = 60_000L
+
+/**
+ * Loads the show again every [everyMs] while it has stopped for want of photos, so the screensaver
+ * returns to them by itself once the server answers. Runs until cancelled, and leaves a playing show alone.
+ */
+suspend fun SlideshowViewModel.retryWhileStopped(everyMs: Long = SCREENSAVER_RETRY_MS) {
+    while (true) {
+        delay(everyMs)
+        val load = state.value.load
+        if (load is SlideshowLoad.Failed || load == SlideshowLoad.Empty) retry()
     }
 }
 
