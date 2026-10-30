@@ -357,15 +357,58 @@ class AppViewModelTest {
     }
 
     @Test
-    fun `settings opens setup with the stored session, and back returns where it came from`() = runTest(dispatcher) {
+    fun `the gear opens settings, and back returns where it came from`() = runTest(dispatcher) {
         val vm = signedIn()
         vm.selectTab(Tab.Albums)
         vm.openSettings()
-        advanceUntilIdle()
-        assertEquals(AppScreen.Setup(firstRun = false, current = session, from = AppScreen.Main(Tab.Albums)), vm.screen.value)
+        assertEquals(AppScreen.Settings(from = AppScreen.Main(Tab.Albums)), vm.screen.value)
 
         assertTrue(vm.back())
         assertEquals(AppScreen.Main(Tab.Albums), vm.screen.value)
+    }
+
+    @Test
+    fun `opening settings from settings stays put`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openSettings()
+        vm.openSettings()
+        assertEquals(AppScreen.Settings(from = home), vm.screen.value)
+    }
+
+    @Test
+    fun `server opens setup with the stored session, and back returns to settings`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.selectTab(Tab.Albums)
+        vm.openSettings()
+        val settings = AppScreen.Settings(from = AppScreen.Main(Tab.Albums))
+        vm.openServerSetup()
+        advanceUntilIdle()
+        assertEquals(AppScreen.Setup(firstRun = false, current = session, from = settings), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(settings, vm.screen.value)
+    }
+
+    @Test
+    fun `screensaver opens the picker, and back returns to settings on screensaver, then to where it came from`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.selectTab(Tab.Photos)
+        vm.openSettings()
+        val settings = AppScreen.Settings(from = AppScreen.Main(Tab.Photos))
+        vm.openScreensaverPicker()
+        assertEquals(AppScreen.ScreensaverPicker(settings), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(settings.copy(focusScreensaver = true), vm.screen.value)
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Main(Tab.Photos), vm.screen.value)
+    }
+
+    @Test
+    fun `the picker only opens from settings`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.openScreensaverPicker()
+        assertEquals(home, vm.screen.value)
     }
 
     @Test
@@ -383,11 +426,14 @@ class AppViewModelTest {
         val before = vm.connection.value
 
         vm.openSettings()
+        vm.openServerSetup()
         advanceUntilIdle()
+        vm.back()
         vm.back()
         assertEquals(before, vm.connection.value)
 
         vm.openSettings()
+        vm.openServerSetup()
         advanceUntilIdle()
         vm.connected()
         assertTrue(vm.connection.value != before)

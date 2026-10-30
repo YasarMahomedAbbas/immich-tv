@@ -670,4 +670,50 @@ class SlideshowViewModelTest {
         repeat(2) { vm.failCurrent(serverFailure = true) }
         assertEquals(SlideshowLoad.Playing, vm.state.value.load)
     }
+
+    private fun TestScope.retrying(vm: SlideshowViewModel) = backgroundScope.launch { vm.retryWhileStopped() }
+
+    @Test
+    fun `the screensaver retries a failed load each minute, and plays when the server answers`() = runTest(dispatcher) {
+        repository.slides = ServerResult.Failed(Problem.Unreachable)
+        val vm = albumShow(SlideshowSettings())
+        retrying(vm)
+        runCurrent()
+        assertEquals(SlideshowLoad.Failed(Problem.Unreachable), vm.state.value.load)
+        assertEquals(1, repository.slidesCalls)
+
+        pass(SCREENSAVER_RETRY_MS - 1)
+        assertEquals(1, repository.slidesCalls)
+        pass(1)
+        assertEquals(2, repository.slidesCalls)
+        assertEquals(SlideshowLoad.Failed(Problem.Unreachable), vm.state.value.load)
+
+        repository.slides = ServerResult.Ok(listOf(slide("a")))
+        pass(SCREENSAVER_RETRY_MS)
+        assertEquals(SlideshowLoad.Playing, vm.state.value.load)
+        assertEquals("a", vm.shown)
+    }
+
+    @Test
+    fun `the screensaver retries an empty show`() = runTest(dispatcher) {
+        repository.slides = ServerResult.Ok(emptyList())
+        val vm = albumShow(SlideshowSettings())
+        retrying(vm)
+        runCurrent()
+        assertEquals(SlideshowLoad.Empty, vm.state.value.load)
+
+        repository.slides = ServerResult.Ok(listOf(slide("a")))
+        pass(SCREENSAVER_RETRY_MS)
+        assertEquals(SlideshowLoad.Playing, vm.state.value.load)
+    }
+
+    @Test
+    fun `the screensaver leaves a playing show alone`() = runTest(dispatcher) {
+        val vm = loaded("a", "b")
+        val calls = repository.slidesCalls
+        retrying(vm)
+        pass(SCREENSAVER_RETRY_MS * 3)
+        assertEquals(calls, repository.slidesCalls)
+        assertEquals(SlideshowLoad.Playing, vm.state.value.load)
+    }
 }

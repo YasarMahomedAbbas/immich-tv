@@ -41,6 +41,12 @@ sealed interface AppScreen {
      */
     data class Setup(val firstRun: Boolean, val current: Session?, val from: AppScreen = Main(Tab.Home)) : AppScreen
 
+    /** The gear's screen; Back returns to [from]. [focusScreensaver]: coming Back from the picker. */
+    data class Settings(val from: AppScreen, val focusScreensaver: Boolean = false) : AppScreen
+
+    /** What the screensaver plays; Back returns to [settings]. */
+    data class ScreensaverPicker(val settings: Settings) : AppScreen
+
     /** The top menu with [tab]'s content under it. [focusResults]: coming Back from a slideshow of its results. */
     data class Main(val tab: Tab, val focusResults: Boolean = false) : AppScreen
 
@@ -189,9 +195,21 @@ class AppViewModel(
 
     fun openSettings() {
         val from = _screen.value
+        if (from !is AppScreen.Settings) _screen.value = AppScreen.Settings(from)
+    }
+
+    /** From Settings, whose Server row this is. */
+    fun openServerSetup() {
+        val from = _screen.value
         viewModelScope.launch {
             moveTo(AppScreen.Setup(firstRun = false, current = getSession(), from = from))
         }
+    }
+
+    /** From Settings, whose Screensaver row this is. */
+    fun openScreensaverPicker() {
+        val settings = _screen.value as? AppScreen.Settings ?: return
+        _screen.value = AppScreen.ScreensaverPicker(settings)
     }
 
     fun connected() {
@@ -203,6 +221,8 @@ class AppViewModel(
     fun back(): Boolean {
         val next = when (val current = _screen.value) {
             is AppScreen.Setup -> if (current.firstRun) null else current.from
+            is AppScreen.Settings -> current.from
+            is AppScreen.ScreensaverPicker -> current.settings.copy(focusScreensaver = true)
             is AppScreen.Album -> if (current.cameFrom == CameFrom.HomeRow) HOME else AppScreen.Main(Tab.Albums)
             is AppScreen.AlbumPhotos -> if (current.cameFrom == CameFrom.HomeHero) {
                 HOME
