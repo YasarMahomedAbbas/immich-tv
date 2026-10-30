@@ -38,13 +38,13 @@ internal class ImmichSearchRepository(
     private val searchClient = client.newBuilder().readTimeout(SEARCH_TIMEOUT_SECONDS, TimeUnit.SECONDS).build()
 
     override suspend fun search(description: String, limit: Int): ServerResult<List<Slide>> = signedIn { session ->
-        val body = immichJson.encodeToString(SmartSearchBody(description, limit, withExif = true))
+        val body = immichJson.encodeToString(SmartSearchBody(description, limit, withExif = true, visibility = TIMELINE))
         // Immich answers 400 to an empty query, which never leaves the domain, and when smart search is off.
         post<SearchResponseDto>(session, "search/smart", body, on400 = Problem.SearchUnavailable).map { it.toSlides() }
     }
 
     override suspend fun photosOf(person: PersonId, limit: Int): ServerResult<List<Slide>> = signedIn { session ->
-        val body = immichJson.encodeToString(PersonSearchBody(listOf(person.value), limit, withExif = true, order = "desc"))
+        val body = immichJson.encodeToString(PersonSearchBody(listOf(person.value), limit, withExif = true, order = "desc", visibility = TIMELINE))
         post<SearchResponseDto>(session, "search/metadata", body, on400 = Problem.Unreachable).map { it.toSlides() }
     }
 
@@ -103,16 +103,25 @@ internal class ImmichSearchRepository(
     private companion object {
         const val SEARCH_TIMEOUT_SECONDS = 60L
         const val PEOPLE_PAGE = "1000"
+
+        /** Asked for by name: left out, v3 also returns archived and hidden assets, where v1.133 returned the timeline. */
+        const val TIMELINE = "timeline"
         val JSON = "application/json".toMediaType()
     }
 }
 
 @Serializable
-private data class SmartSearchBody(val query: String, val size: Int, val withExif: Boolean)
+private data class SmartSearchBody(val query: String, val size: Int, val withExif: Boolean, val visibility: String)
 
-/** Top-level `personIds` and `order` are deprecated since v3.2 but accepted; `filter.personIds` doesn't exist before it. */
+/** Top-level `personIds`, `order` and `visibility` are deprecated since v3.2 but accepted; `filter.personIds` doesn't exist before it. */
 @Serializable
-private data class PersonSearchBody(val personIds: List<String>, val size: Int, val withExif: Boolean, val order: String)
+private data class PersonSearchBody(
+    val personIds: List<String>,
+    val size: Int,
+    val withExif: Boolean,
+    val order: String,
+    val visibility: String,
+)
 
 @Serializable
 private data class SearchResponseDto(val assets: SearchAssetsDto) {

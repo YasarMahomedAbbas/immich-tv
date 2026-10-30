@@ -33,3 +33,10 @@ Branch: `feat/8-search-by-voice`
 - Tests: 304 passed / 0 failed; full CI command (testDebugUnitTest koverVerifyDebug lintDebug assembleDebug) green.
 - Outstanding: nothing unticked in the checklist. The test plan's real-server and on-the-TV checks are self-verification's, including the physical mic button (still unproven) and whether moving focus to the field opens the keyboard (on Back from results, and when a load takes away what the remote was on).
 - Contradicted the plan: none. Added beyond its text, each edited into the checklist: `decode()` made internal alongside `place()`; a `backLabel` on `SlideshowScreen` ("‹ Search"), as the controls' "‹ Album" is wrong for results; `resultCount` returns a `ResultCount` so the wording is tested without resources; focus moves to the field when a load removes what the remote was on; `VoiceButton` is a shared component.
+
+## Review
+
+- Fixed: archived and hidden assets could appear in search and person results on v3 (`data/immich/ImmichSearchRepository.kt`). With no `visibility`, v3.3.5 searches everything but locked (`search.service.ts`: `'not-locked'`), while v1.133 defaulted to the timeline, so an archived photo would have shown and played on a current server. Both bodies now send `"visibility":"timeline"`; the request tests fail without it.
+- Raised: none
+- API: `POST /api/search/smart` and `POST /api/search/metadata`: match the v3.3.5 and v1.133.0 specs; the top-level `visibility`, like `personIds` and `order`, is deprecated since v3.2 but accepted, with the same enum in both, and 3.3.5 answered 200 with only timeline assets. The server has no archived photos, so the exclusion itself is proven from its source and the request tests, not by a real archived photo. `GET /api/people?size=1000` and `GET /api/people/{id}/thumbnail`: match both specs.
+- Layers: clean

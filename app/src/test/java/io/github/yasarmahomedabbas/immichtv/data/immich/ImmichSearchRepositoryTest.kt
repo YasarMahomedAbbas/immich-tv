@@ -80,7 +80,8 @@ class ImmichSearchRepositoryTest {
         assertEquals(KEY, request.getHeader("x-api-key"))
         assertFalse(KEY in request.requestUrl.toString())
         val body = Json.parseToJsonElement(request.body.readUtf8()).jsonObject
-        assertEquals(setOf("query", "size", "withExif"), body.keys)
+        assertEquals(setOf("query", "size", "withExif", "visibility"), body.keys)
+        assertEquals("timeline", body.getValue("visibility").jsonPrimitive.content)
         assertEquals("dog on the beach", body.getValue("query").jsonPrimitive.content)
         assertEquals("100", body.getValue("size").jsonPrimitive.content)
         assertEquals("true", body.getValue("withExif").jsonPrimitive.content)
@@ -145,6 +146,7 @@ class ImmichSearchRepositoryTest {
         assertEquals("""["p1"]""", body.getValue("personIds").toString())
         assertEquals("1000", body.getValue("size").jsonPrimitive.content)
         assertEquals("desc", body.getValue("order").jsonPrimitive.content)
+        assertEquals("timeline", body.getValue("visibility").jsonPrimitive.content)
         assertEquals("true", body.getValue("withExif").jsonPrimitive.content)
     }
 

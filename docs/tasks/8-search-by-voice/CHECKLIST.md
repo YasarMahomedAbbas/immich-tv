@@ -70,7 +70,7 @@ Test: `domain/search/SearchTest.kt`, with `domain/search/Fakes.kt` (`FakeSearchR
 
 File: `data/immich/ImmichSearchRepository.kt` (new), `internal class ImmichSearchRepository(client: OkHttpClient, sessions: SessionStore) : SearchRepository`.
 
-- `search`: `POST search/smart`, body `{"query":…,"size":limit,"withExif":true}`. `photosOf`: `POST search/metadata`, body `{"personIds":[…],"size":limit,"withExif":true,"order":"desc"}`. `people`: `GET people?size=1000`, dropping `isHidden`.
+- `search`: `POST search/smart`, body `{"query":…,"size":limit,"withExif":true,"visibility":"timeline"}`. `photosOf`: `POST search/metadata`, body `{"personIds":[…],"size":limit,"withExif":true,"order":"desc","visibility":"timeline"}`. `people`: `GET people?size=1000`, dropping `isHidden`.
 - Status mapping as in `ImmichAlbumRepository.get`, plus 400 on smart search → `SearchUnavailable`.
 - Both search calls use `client.newBuilder().readTimeout(60, SECONDS).build()`, one instance: it keeps `KeepKeyOnServer`. The first query after the model unloads is slow.
 - `@Serializable` DTOs read `assets.items`: `id`, `type`, `width?`, `height?`, `localDateTime?`, `exifInfo?` (`city?`, `country?`, `exifImageWidth?`, `exifImageHeight?`, `orientation?`). Portrait: `width/height` when both are there, else exif sizes swapped for orientation 5–8, else false. `takenOn` is `localDateTime.take(10)`, unknown if it can't be read. `isVideo` is `type == "VIDEO"`.
