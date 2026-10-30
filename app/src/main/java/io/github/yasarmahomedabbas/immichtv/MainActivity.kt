@@ -128,11 +128,17 @@ class MainActivity : ComponentActivity() {
                         albumName = current.album.name,
                         viewModel = albumGrid(container, connection, current.album),
                         onBack = { app.back() },
+                        returning = current.returning,
+                        onOpenPhoto = { app.openAlbumPhotoViewer(current.album, current.cameFrom) },
+                        onStartSlideshow = { app.openAlbumPhotoSlideshow(current.album, it, current.cameFrom) },
                     )
                     is AppScreen.MemoryPhotos -> AlbumPhotosScreen(
                         albumName = current.title,
                         viewModel = memoryGrid(connection, current.memory),
                         onBack = { app.back() },
+                        returning = current.returning,
+                        onOpenPhoto = { app.openMemoryPhotoViewer(current.memory, current.title) },
+                        onStartSlideshow = { app.openMemoryPhotoSlideshow(current.memory, current.title, it) },
                     )
                     is AppScreen.AlbumPhotoViewer -> PhotoViewerScreen(
                         viewModel = albumGrid(container, connection, current.album),

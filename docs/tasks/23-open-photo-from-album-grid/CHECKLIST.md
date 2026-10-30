@@ -90,15 +90,17 @@ Test: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModelTes
 
 Goal: the remote does what the ticket says, and the manual says so.
 
-### [ ] 3.1 — The grid screen
+### [x] 3.1 — The grid screen
 
-File: `…/ui/album/AlbumPhotosScreen.kt`: `AlbumPhotosScreen(albumName, viewModel, onBack, returning: Boolean, onOpenPhoto: () -> Unit, onStartSlideshow: (PhotoId) -> Unit)`. Mirror `PhotosScreen`: `onOpen` calls `viewModel.open(photo)` then `onOpenPhoto()`; `onHold` calls `viewModel.open(photo)` then `onStartSlideshow(photo.id)`. Pass to `PhotoGrid` `onOpen`, `onHold` and `restoreTo = if (returning) state.viewing?.id else null`. Under the `Loaded` grid, `KeyHint` with the same two hints as `PhotosContent`, bottom-right, in a `Box` wrapping the `PhotoGrid`. Leave the focus on Back while loading as it is; the `LaunchedEffect` giving Back focus on `Loaded` runs before the grid's restore, which waits a frame: confirm on the TV. Update the previews.
+File: `…/ui/album/AlbumPhotosScreen.kt`: `AlbumPhotosScreen(albumName, viewModel, onBack, returning: Boolean, onOpenPhoto: () -> Unit, onStartSlideshow: (PhotoId) -> Unit)`. Mirror `PhotosScreen`: `onOpen` calls `viewModel.open(photo)` then `onOpenPhoto()`; `onHold` calls `viewModel.open(photo)` then `onStartSlideshow(photo.id)`. Pass to `PhotoGrid` `onOpen`, `onHold` and `restoreTo = if (returning) state.viewing?.id else null`. Under the `Loaded` grid, `KeyHint` with the same two hints as `PhotosContent`, bottom-right, in a `Box` wrapping the `PhotoGrid`. Leave the focus on Back while loading as it is; the `LaunchedEffect` giving Back focus on `Loaded` runs before the grid's restore, which waits a frame. Update the previews.
 
-### [ ] 3.2 — The activity
+- [ ] On the TV: focus lands on the restored tile, not Back (self-verification).
+
+### [x] 3.2 — The activity
 
 File: `…/MainActivity.kt`: private helper composables `albumGrid(album)` and `memoryGrid(memory)` returning the `PhotoGridViewModel` with today's keys, so grid and viewer can't drift apart. Wire `AlbumPhotos` and `MemoryPhotos` to the new callbacks and `returning`. The helpers and the screens below went in with checkpoint 2, as `AppScreen`'s `when` can't compile without them. Add `AlbumPhotoViewer` and `MemoryPhotoViewer` (`PhotoViewerScreen` with that grid's ViewModel), `AlbumPhotoSlideshow` (`SlideshowViewModel.fromAlbumPhoto`, `settings = current.settings`, `source = SlideshowSource.Album`, fresh key as the others), `MemoryPhotoSlideshow` (`fromMemoryPhoto`, `TimelineSettings`, `SlideshowSource.Memory`).
 
-### [ ] 3.3 — The manual
+### [x] 3.3 — The manual
 
 File: `docs/design/README.md`: Album photos row: OK opens, hold OK starts a show from there, the `KeyHint`, Browse photos entered afresh starts at the top, and the memory grid is the same. Photo row: moves through "the timeline or album", Back to its grid's tile. Slideshow row: a show from an album grid's tile uses the album's time, videos and date-and-place in the grid's order, says "‹ Album" and goes back to the tile; a memory grid's says "‹ Memory". Remove the album grid's line from Open decisions.
 

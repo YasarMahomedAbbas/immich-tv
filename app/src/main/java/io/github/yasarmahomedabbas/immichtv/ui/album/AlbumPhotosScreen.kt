@@ -2,6 +2,7 @@ package io.github.yasarmahomedabbas.immichtv.ui.album
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -25,6 +27,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.ui.components.BackLink
 import io.github.yasarmahomedabbas.immichtv.ui.components.EmptyState
 import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
+import io.github.yasarmahomedabbas.immichtv.ui.components.KeyHint
 import io.github.yasarmahomedabbas.immichtv.ui.components.RefreshOnStart
 import io.github.yasarmahomedabbas.immichtv.ui.photos.GridLoad
 import io.github.yasarmahomedabbas.immichtv.ui.photos.MonthPhotos
@@ -36,12 +39,36 @@ import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 import java.time.YearMonth
 
-/** Browse photos: "‹ <album>" over the album's photos by month. */
+/** Browse photos: "‹ <album>" over the album's photos by month. [returning]: focus goes back to the tile last viewed. */
 @Composable
-fun AlbumPhotosScreen(albumName: String, viewModel: PhotoGridViewModel, onBack: () -> Unit) {
+fun AlbumPhotosScreen(
+    albumName: String,
+    viewModel: PhotoGridViewModel,
+    onBack: () -> Unit,
+    returning: Boolean,
+    onOpenPhoto: () -> Unit,
+    onStartSlideshow: (PhotoId) -> Unit,
+) {
     val state by viewModel.state.collectAsState()
     RefreshOnStart(viewModel::refresh)
-    AlbumPhotosContent(albumName, state, onBack, viewModel::loadMonth, viewModel::retryMonth, viewModel::retry)
+    AlbumPhotosContent(
+        albumName = albumName,
+        state = state,
+        onBack = onBack,
+        onNeedMonth = viewModel::loadMonth,
+        onRetryMonth = viewModel::retryMonth,
+        onRetry = viewModel::retry,
+        onOpen = { photo ->
+            viewModel.open(photo)
+            onOpenPhoto()
+        },
+        onHold = { photo ->
+            // The show doesn't move this, so focus comes back to the tile it started on.
+            viewModel.open(photo)
+            onStartSlideshow(photo.id)
+        },
+        restoreTo = if (returning) state.viewing?.id else null,
+    )
 }
 
 @Composable
@@ -52,6 +79,9 @@ private fun AlbumPhotosContent(
     onNeedMonth: (YearMonth) -> Unit,
     onRetryMonth: (YearMonth) -> Unit,
     onRetry: () -> Unit,
+    onOpen: (Photo) -> Unit,
+    onHold: (Photo) -> Unit,
+    restoreTo: PhotoId?,
 ) {
     val backFocus = remember { FocusRequester() }
     Column(
@@ -79,7 +109,16 @@ private fun AlbumPhotosContent(
             GridLoad.Loaded -> {
                 // Until the first month's tiles are there, Back holds focus.
                 LaunchedEffect(Unit) { runCatching { backFocus.requestFocus() } }
-                PhotoGrid(state.sections, onNeedMonth, onRetryMonth)
+                Box(Modifier.fillMaxSize()) {
+                    PhotoGrid(state.sections, onNeedMonth, onRetryMonth, onOpen = onOpen, restoreTo = restoreTo, onHold = onHold)
+                    KeyHint(
+                        hints = listOf(
+                            stringResource(R.string.hint_ok) to stringResource(R.string.hint_open),
+                            stringResource(R.string.hint_hold_ok) to stringResource(R.string.hint_slideshow_from_here),
+                        ),
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 32.dp),
+                    )
+                }
             }
         }
     }
@@ -92,7 +131,7 @@ private val previewSections = listOf(
 
 @Composable
 private fun AlbumPhotosPreview(state: PhotoGridState) {
-    ImmichTvTheme { AlbumPhotosContent("Holiday 2025", state, {}, {}, {}, {}) }
+    ImmichTvTheme { AlbumPhotosContent("Holiday 2025", state, {}, {}, {}, {}, {}, {}, null) }
 }
 
 @Preview(device = Devices.TV_1080p)

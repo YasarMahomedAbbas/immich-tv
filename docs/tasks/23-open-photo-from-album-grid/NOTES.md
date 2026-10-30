@@ -19,3 +19,10 @@ Branch: `feat/23-open-photo-from-album-grid`
   - open-risk: focus restoring to a far tile on return, with Back's own focus request just before it, is only provable on the TV. Compose focus code has no automated tests.
   - open-risk: the memory grid can't be driven on the TV, as the server has no memories; tests only.
   - open-risk: the TV check depends on the window in the issue's comments (until 15:30 CET on 2026-10-30) and the shared lock; outside it, it is skipped and recorded.
+
+## Implementation
+
+- Shipped: `LoadSlideshowFromPhoto` and the shared `playlistFrom` (`domain/slideshow/Slideshow.kt:59`, `:71`), `Memory.playlistFrom` (`domain/home/Memory.kt`); the four new screens, `returning` and the settings load that yields to Back (`ui/AppViewModel.kt:59`, `:149`); OK, hold OK, the key hint and the tile restore on the grid (`ui/album/AlbumPhotosScreen.kt:44`); the screens and shared grid keys in the activity (`MainActivity.kt:143`, `:225`); the manual's rows, and the open decision removed.
+- Tests: checkpoint runs only, per the user's speed note. Checkpoint 1: `LoadSlideshowFromPhotoTest` (11), `MemoryTest` (5), `LoadLibrarySlideshowTest` (6, unchanged), build successful. Checkpoints 2 and 3: `AppViewModelTest` 29 passed / 0 failed, `PhotoGridViewModelTest` 35 passed / 0 failed. The full CI command was not run here: it runs once, in `raise-pr`.
+- Outstanding: the on-TV check of 3.1 (focus lands on the restored tile, not Back) stays unticked for self-verification.
+- Contradicted the plan: checkpoint 2 can't compile without the activity's new branches, as the `when` over `AppScreen` is exhaustive. The helpers and those branches went in with checkpoint 2; checkpoint 3 wires the grid's callbacks. No behaviour change from the plan.
