@@ -20,3 +20,10 @@ Branch: `feat/26-videos-in-photos-slideshow`
 - Tests: `LoadLibrarySlideshowTest` 7 passed / 0 failed; `SlideshowViewModelTest` 54 passed / 0 failed. Only these two classes ran. The full CI command did not run here: the speed note on the issue moves it to `raise-pr`.
 - Outstanding: none in the checklist. The on-TV and real-server checks in the test plan belong to self-verification.
 - Contradicted the plan: task 1.4 said the README needed no change. Its Slideshow line said the library show leaves videos out and its Photos line said hold OK "on a photo"; both updated, and the task text with them.
+
+## Review
+
+- Fixed: none
+- Raised: none
+- API: no call added or changed. A library show now reaches `GET /api/timeline/bucket` columns `id` and `isImage` and `GET /api/assets/{id}/video/playback` from the timeline — both match the v3.3.5 spec (live server version); the key stays in the header, through the existing player.
+- Layers: clean
