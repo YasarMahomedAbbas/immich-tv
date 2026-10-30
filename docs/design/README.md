@@ -19,6 +19,7 @@ A dark, almost black ground so the photos are the colour on screen. One warm acc
 7. **Everything works with the D-pad.** A focusable item always shows its focus, a row scrolls to keep focus visible, Back always goes back.
 8. **Every data screen ships three more states**: a skeleton shaped like the loaded screen, an empty state with one next action, and an error with Try again that says to check the home network or VPN.
 9. **Minimum text 18sp** at 1080p; body 22sp; titles 28sp and up.
+10. **1dp is one canvas pixel.** `ImmichTvTheme` provides a density where 1dp = 1/1920 of the screen's width and keeps the system font scale, so every screen is 1920dp wide on any TV (the Chromecast's own density would make it 960dp). Numbers from this manual and the canvas go into the code as written, never halved. Anything drawn outside the theme doesn't get this.
 
 ## Tokens
 

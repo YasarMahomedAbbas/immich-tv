@@ -319,6 +319,33 @@ Files: `test/…/ui/photos/PhotoGridViewModelTest.kt` (a `FakeTimeline` in `test
 
 ---
 
+## Checkpoint 9 — One canvas pixel is one dp · commit: `fix(ui): make 1dp one canvas pixel on any TV`
+
+Goal: every screen fits the TV at the canvas's numbers. The Chromecast renders 1920×1080 px at density 2.0, so the app had 960×540 dp while the manual and the code read canvas px as dp. The user chose this on the issue (option 1).
+
+### [x] 9.1 — The density
+
+File: `…/ui/theme/Theme.kt`
+`ImmichTvTheme` provides `LocalDensity` = `canvasDensity(system, screenWidthDp)`: 1dp = 1/1920 of the screen's width, the system font scale kept, the system density left alone when the width is unknown.
+
+### [x] 9.2 — The manual
+
+File: `docs/design/README.md`
+Rule 10 records it.
+
+### [x] 9.3 — Tests
+
+File: `test/…/ui/theme/CanvasDensityTest.kt`
+The Chromecast (960 dp at 2.0) gets density 1, so 1920dp fills its 1920 px and 18sp is 18 px; a 4K panel at 2.0 (1920 dp) gets 2; a 720p TV gets 2/3; the font scale is kept; an unknown width keeps the system density.
+
+### Verify
+
+- `./build.sh ./gradlew --console=plain testDebugUnitTest --tests '*CanvasDensityTest'`
+- The full CI command: `./build.sh ./gradlew --console=plain testDebugUnitTest koverVerifyDebug lintDebug assembleDebug`.
+- On the TV (self-verification): Setup and the album screen fit at the canvas's sizes.
+
+---
+
 ## Out of scope
 
 - Playing the slideshow (#5) and videos (#6): Start slideshow is a focused no-op; the Videos setting is stored only.
