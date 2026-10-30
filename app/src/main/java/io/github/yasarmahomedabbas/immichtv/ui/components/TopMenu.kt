@@ -117,10 +117,10 @@ private fun TabPill(tab: Tab, selected: Boolean, onClick: () -> Unit, modifier: 
     }
 }
 
-/** The time, in the device's 12- or 24-hour format, updated on the minute. */
 /** The clock's two looks: at rest in the top menu, or over a photo inside a panel. */
 internal enum class ClockStyle { Menu, OverPhoto }
 
+/** The time, in the device's 12- or 24-hour format, updated on the minute. */
 @Composable
 internal fun Clock(style: ClockStyle = ClockStyle.Menu) {
     val context = LocalContext.current

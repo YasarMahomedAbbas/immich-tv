@@ -74,4 +74,42 @@ class SlideshowHelpersTest {
         assertNull(actionFor(Key.Back))
         assertNull(actionFor(Key.A))
     }
+
+    private fun photo(id: String) = Slide(Photo(PhotoId(id), false), false, null, null)
+
+    @Test
+    fun `a slide stays under the next until the next has faded in`() {
+        val (a, b) = photo("a") to photo("b")
+        val showingA = StageLayers().loaded(a).fadedIn(a)
+        val movedToB = showingA.movedTo(b)
+        assertEquals(a, movedToB.under(b))
+        assertEquals(a, movedToB.loaded(b).under(b))
+        assertNull(movedToB.loaded(b).fadedIn(b).under(b))
+    }
+
+    @Test
+    fun `a skip during a fade puts the slide that was fading in underneath`() {
+        val (a, b) = photo("a") to photo("b")
+        val c = photo("c")
+        val fadingInB = StageLayers().loaded(a).fadedIn(a).movedTo(b).loaded(b)
+        assertEquals(b, fadingInB.movedTo(c).under(c))
+    }
+
+    @Test
+    fun `after skipping back during a fade the skipped photo doesn't return at the next move`() {
+        val (a, b) = photo("a") to photo("b")
+        val c = photo("c")
+        val fadingInB = StageLayers().loaded(a).fadedIn(a).movedTo(b).loaded(b)
+        // Back to a, whose layer is still composed with its image: it fades in without loading again.
+        val backOnA = fadingInB.movedTo(a).fadedIn(a)
+        assertNull(backOnA.under(a))
+        assertEquals(a, backOnA.movedTo(c).under(c))
+    }
+
+    @Test
+    fun `holding OK pauses once, while the other keys repeat`() {
+        assertEquals(false, SlideshowAction.TogglePause.whenHeld)
+        assertEquals(true, SlideshowAction.Forward.whenHeld)
+        assertEquals(true, SlideshowAction.Back.whenHeld)
+    }
 }

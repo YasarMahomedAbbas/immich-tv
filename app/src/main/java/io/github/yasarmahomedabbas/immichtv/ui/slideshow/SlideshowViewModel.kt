@@ -205,7 +205,32 @@ internal fun slideMotion(index: Int): SlideMotion = when (index.mod(MOTION_DIREC
     else -> SlideMotion(MOTION_SCALE, MOTION_DRIFT, -MOTION_DRIFT)
 }
 
-internal enum class SlideshowAction { Back, Forward, TogglePause, ShowControls }
+/**
+ * Which slides the stage draws. [shown] has fully faded in; [lastLoaded] is the newest with an image,
+ * which may still be fading in. Only [lastLoaded] and [shown] can ever be under the current slide.
+ */
+internal data class StageLayers(val shown: Slide? = null, val lastLoaded: Slide? = null) {
+    /** What stays under [current] while it loads and fades in; null once it covers everything. */
+    fun under(current: Slide): Slide? =
+        (lastLoaded?.takeIf { !it.sameAs(current) } ?: shown)?.takeIf { !it.sameAs(current) }
+
+    /** A move during a fade: the slide that was fading in, if it could be seen, is now the one under. */
+    fun movedTo(current: Slide): StageLayers =
+        lastLoaded?.takeIf { !it.sameAs(current) }?.let { copy(shown = it) } ?: this
+
+    fun loaded(slide: Slide): StageLayers = copy(lastLoaded = slide)
+
+    /**
+     * Also the newest loaded: a slide skipped back to already has its image and never loads again, and
+     * the one it replaced must not come back from under it at the next move.
+     */
+    fun fadedIn(slide: Slide): StageLayers = copy(shown = slide, lastLoaded = slide)
+
+    private fun Slide.sameAs(other: Slide) = photo.id == other.photo.id
+}
+
+/** [whenHeld]: whether a held key's repeats count. A held OK would otherwise flip the pause on and off. */
+internal enum class SlideshowAction(val whenHeld: Boolean = true) { Back, Forward, TogglePause(whenHeld = false), ShowControls }
 
 /** What a key on the remote does while the slideshow plays; null leaves it alone (Back, for one). */
 internal fun actionFor(key: Key): SlideshowAction? = when (key) {

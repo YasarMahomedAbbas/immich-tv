@@ -188,7 +188,7 @@ private fun SlideshowContent(
             .onPreviewKeyEvent { event ->
                 // Only while playing: a state card's button needs its OK.
                 val action = if (load == SlideshowLoad.Playing && event.type == KeyEventType.KeyDown) actionFor(event.key) else null
-                action?.let(onAction)
+                if (action != null && (action.whenHeld || event.nativeKeyEvent.repeatCount == 0)) onAction(action)
                 action != null
             }
             .focusable(),
@@ -270,31 +270,25 @@ private fun fullScreenRequest(context: Context, id: PhotoId): ImageRequest =
         .build()
 
 /**
- * At most two slides are composed: the one on screen ([shown]) and the one fading in over it. A
- * new slide waits for its image while the old one stays; once it has faded in it is the one shown.
+ * At most two slides are composed: the one on screen and the one fading in over it. A new slide
+ * waits for its image while the old one stays; once it has faded in it is the one shown.
  */
 @Composable
 private fun Stage(state: SlideshowState, settings: SlideshowSettings) {
     val current = state.current ?: return
-    var shown by remember { mutableStateOf<Slide?>(null) }
-    var incomingLoaded by remember { mutableStateOf<Slide?>(null) }
-    // A skip during a fade: the slide that was fading in, if it could be seen, is now the one under.
-    LaunchedEffect(current.photo.id) {
-        incomingLoaded?.takeIf { it.photo.id != current.photo.id }?.let { shown = it }
-    }
-    val loaded = incomingLoaded?.takeIf { it.photo.id != current.photo.id }
-    val under = (loaded ?: shown)?.takeIf { it.photo.id != current.photo.id }
+    var layers by remember { mutableStateOf(StageLayers()) }
+    LaunchedEffect(current.photo.id) { layers = layers.movedTo(current) }
     val photoMs = settings.secondsPerPhoto * 1_000 + FADE_MS
-    for (slide in listOfNotNull(under, current)) {
+    for (slide in listOfNotNull(layers.under(current), current)) {
         key(slide.photo.id) {
             SlideLayer(
                 slide = slide,
                 index = state.index,
-                incoming = slide.photo.id == current.photo.id && shown?.photo?.id != current.photo.id,
+                incoming = slide.photo.id == current.photo.id && layers.shown?.photo?.id != current.photo.id,
                 paused = state.paused,
                 motionMs = photoMs,
-                onLoaded = { incomingLoaded = slide },
-                onFadedIn = { shown = slide },
+                onLoaded = { layers = layers.loaded(slide) },
+                onFadedIn = { layers = layers.fadedIn(slide) },
             )
         }
     }

@@ -31,3 +31,11 @@ Branch: `feat/5-the-slideshow`
 - Outstanding: the "Seen working on the TV" line under 3.2 is unticked: nothing about how the screen looks or behaves has been seen, and `@Preview`s were compiled, not rendered. Real-server checks are also still to do. Both are self-verification's.
 - Contradicted the plan: none disproved it, but these differ from its text and the checklist now says so: the new column items are nullable, because the album screen decodes the same DTO; a photo's time waits for its own image, not only the next's; the screen's ground and the backdrop's darkening use `bg`, not pure black, per rule 2; a new `OverPhotoPanel` component holds the panels.
 - For review: each start keeps its `SlideshowViewModel`, and so its light slide list, in the activity's store until the app closes, the same pattern as Setup's. A skip during a fade shows the fading photo at once rather than finishing its fade.
+
+## Review
+
+- Fixed: skipping back during a fade left the skipped photo behind the current one, and at the next move the current photo vanished and the skipped one showed under the fade (`StageLayers.fadedIn`, tested). Holding OK flipped the pause on and off with each key repeat (`SlideshowAction.whenHeld`; the screen ignores repeats of a key that doesn't count them). A KDoc on `Clock` had landed on `ClockStyle`.
+- Raised: none
+- API: `GET /api/timeline/buckets` and `GET /api/timeline/bucket` (`albumId`, `order`, `timeBucket`) match the v3.3.5 spec and the real server; the columns read match `TimeBucketAssetResponseDto`, every array as long as `id`, no `localDateTime` on v3.3.5, as the code expects. `GET /api/assets/{id}/thumbnail?size=preview` unchanged, through `PreviewInterceptor` with the key as a header.
+- Layers: clean
+- Accepted, not changed: each start's `SlideshowViewModel` keeps its light slide list until the app closes (as Setup's does): no bitmaps, roughly half a MB per start of the largest album. Whether a small grid bitmap is refused for the full screen under the shared memory-cache key, and the crossfade's frame cost over a blurred portrait, are for self-verification on the TV.
