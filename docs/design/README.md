@@ -45,9 +45,10 @@ These live in `.claude/skills/design-canvas/assets/artboard.dc.html` for the can
 | Home | top menu, a memory hero, rows (Albums, Recently added) |
 | Albums | top menu, filter chips + sort, a 5-column grid of album cards |
 | Album | back link, cover mosaic, title and counts, Start slideshow, Browse photos, slideshow settings in two rows of two, a strip of photos (the mosaic's rows are 284dp: the canvas's one row of settings and 300dp rows don't fit the screen) |
-| Album photos | back link, a 6-column grid per month (`PhotoGrid`, built for Photos to reuse in #7) |
-| Slideshow | full screen with no safe area; photos crossfade over 1.5 s, each zooming to 1.08 and drifting 1%; a portrait photo sits on a blurred copy of itself darkened 42%. Date and place bottom-left, the clock top-right, controls bottom-centre (shown on any key, fade after 4 s, also while paused). The controls are indicators and nothing in them takes focus: left/right always skip and OK always pauses, so the play/pause circle keeps its amber outline. A thin progress bar on top, off-white (rule 3) rather than the canvas's amber, shows the position in the album |
-| Photos | top menu, a month rail on the left, a 6-column grid per month |
+| Album photos | back link, a 6-column grid per month (`PhotoGrid`, shared with Photos) |
+| Slideshow | full screen with no safe area; photos crossfade over 1.5 s, each zooming to 1.08 and drifting 1%; a portrait photo sits on a blurred copy of itself darkened 42%. Date and place bottom-left, the clock top-right, controls bottom-centre (shown on any key, fade after 4 s, also while paused). The controls are indicators and nothing in them takes focus: left/right always skip and OK always pauses, so the play/pause circle keeps its amber outline. A thin progress bar on top, off-white (rule 3) rather than the canvas's amber, shows the position in the album or library. A library show starts from the photo held on the Photos grid, with fixed defaults, and says "‹ Photos" where an album's says "‹ Album" |
+| Photos | top menu, a 200dp month rail on the left grouped by year (years aren't focusable; OK on a month jumps the grid there with its first tile focused; moving along the rail alone changes nothing), a 48dp gap, a 6-column grid per month; the rail's selection follows the focused tile. A `KeyHint` bottom-right while the grid is loaded: OK opens, hold OK starts a slideshow from there |
+| Photo | full screen with no safe area; the whole photo fitted on `bg`, no overlays. Left/right move through the timeline and stop at both ends; a video is a still with the play badge bottom-left at the slideshow's margins. Back returns to the last viewed tile |
 | Search | top menu, the search field with the voice button, suggestion chips, People, results in a 7-column grid with Play as slideshow |
 | Setup | a centred panel: title, hint, server address and API key fields (Show beside the key), Connect, the problem under it |
 
@@ -66,6 +67,8 @@ What each shared part in `ui/components/` looks like. A call site picks a varian
 - **Chip** (`Chip`): 20sp, fully round; `raised` with `fg` 600 text at rest, `fg` with `on-fg` 800 text when selected.
 - **Album card** (`AlbumCard`): a 16:10 cover with 14dp corners (the focusable part), the name 22sp 700 on one line, then "1,032 photos · Shared" 18sp `mfg` ("Shared" only for a shared album; the count is photos and videos together).
 - **Photo tile** (`PhotoTile`): the preview cropped to fill, `surface` while it loads; a video has a small play badge bottom-left on a dark circle. Corners by `TileStyle`: 12 tiles, 14 album cards, 18 the album's cover mosaic.
+- **Month rail** (`MonthRail`): 200dp wide. A year is 18sp 700 `mfg`, not focusable. A month is 22sp with 12dp corners and 18×12dp padding, its name in the device's locale: the selected one `fg` with `on-fg` 800 text, the others `mfg` 600 with no fill, turning `fg` on focus. Focus coming in lands on the selected month.
+- **Key hint** (`KeyHint`): a `surface` pill, fully round, of 20sp 600 text, each key a small `fg` chip with `on-fg` 800 text. Never focusable.
 - **Setting button** (`SettingButton`): `surface`, 16dp corners, at least 230dp wide; the label 18sp 600 `mfg` (the canvas's 17sp is under the minimum) over the value 23sp 700. OK steps to the next value.
 - **Empty and failed states** (`EmptyState`, `FailedState`): a `surface` card with 18dp corners in the middle of the content area: a 32sp 800 title, a 22sp `mfg` hint, one primary button that takes focus. Failed says "Couldn't load this" and why: can't reach the server (check the home network or VPN), the key was refused (enter a new one in Settings), or the key lacks album.read, asset.read and asset.view; the button is Try again. The Albums empty state is "No albums yet" / "Make one in Immich and it shows up here." / Refresh; a filter with nothing in it is "Nothing here" / Show all albums.
 - **Panel over a photo** (`OverPhotoPanel`): `scrim` flat, by `OverPhotoStyle`: `Info` 55% with 18dp corners (date and place), `Pill` 55% fully round (the clock), `Controls` 80% fully round.
@@ -75,4 +78,5 @@ A text field (`HouseTextField`) is `raised` with 18dp corners, an 18sp `mfg` lab
 
 ## Open decisions
 
+- OK on an album's Browse photos grid does nothing yet: opening a photo from there waits for its own ticket.
 - How the server address and API key are entered without typing them on the remote (a QR code from the phone is the likely answer).

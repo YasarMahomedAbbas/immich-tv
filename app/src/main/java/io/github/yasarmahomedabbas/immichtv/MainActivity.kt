@@ -26,7 +26,9 @@ import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotosScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupScreen
 import io.github.yasarmahomedabbas.immichtv.ui.setup.SetupViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowScreen
+import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowSource
 import io.github.yasarmahomedabbas.immichtv.ui.slideshow.SlideshowViewModel
+import io.github.yasarmahomedabbas.immichtv.ui.slideshow.TimelineSettings
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 
 class MainActivity : ComponentActivity() {
@@ -67,6 +69,7 @@ class MainActivity : ComponentActivity() {
                             PhotosScreen(
                                 viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
                                 onOpenPhoto = app::openPhotoViewer,
+                                onStartSlideshow = app::openTimelineSlideshow,
                             )
                         },
                     )
@@ -101,6 +104,15 @@ class MainActivity : ComponentActivity() {
                         ),
                         settings = current.settings,
                         onBack = { app.back() },
+                    )
+                    is AppScreen.TimelineSlideshow -> SlideshowScreen(
+                        viewModel = viewModel(
+                            key = "slideshow-$connection-${System.identityHashCode(current)}",
+                            factory = SlideshowViewModel.fromTimeline(container, current.from),
+                        ),
+                        settings = TimelineSettings,
+                        onBack = { app.back() },
+                        source = SlideshowSource.Library,
                     )
                 }
             }

@@ -57,7 +57,8 @@ private val FocusRoom = 8.dp
  * Photos by month in a 6-column grid of square previews, a heading per month. A month not
  * loaded yet shows empty `surface` tiles and asks for its photos ([onNeedMonth]) when the grid reaches
  * it; a month that failed says so with Try again. Focus goes to the first tile once it is there.
- * OK on a tile calls [onOpen]. [onMonthFocused] says which month the remote is on. A [jumpTo] month
+ * OK on a tile calls [onOpen], and holding OK [onHold]; a tile whose photo hasn't arrived ignores both.
+ * [onMonthFocused] says which month the remote is on. A [jumpTo] month
  * is scrolled to with its first tile focused (its Try again, if it failed), then [onJumped] is called.
  * The screen is torn down when a photo opens, so [restoreTo] says which tile to come back to, scrolled
  * there and focused in place of the first; one no longer there falls back to the first.
@@ -73,6 +74,7 @@ fun PhotoGrid(
     jumpTo: YearMonth? = null,
     onJumped: () -> Unit = {},
     restoreTo: PhotoId? = null,
+    onHold: ((Photo) -> Unit)? = null,
 ) {
     val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = restoreTo?.let { gridIndexOfPhoto(sections, it) } ?: 0)
     val restoreFocus = remember { FocusRequester() }
@@ -118,7 +120,7 @@ fun PhotoGrid(
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
         sections.forEachIndexed { index, section ->
-            monthSection(section, isFirst = index == 0, requesterOf(section.month), restoreTo, restoreFocus, { lastFocused = it }, onNeedMonth, onRetryMonth, onOpen, onMonthFocused)
+            monthSection(section, isFirst = index == 0, requesterOf(section.month), restoreTo, restoreFocus, { lastFocused = it }, onNeedMonth, onRetryMonth, onOpen, onMonthFocused, onHold)
         }
     }
 }
@@ -136,6 +138,7 @@ private fun LazyGridScope.monthSection(
     onRetryMonth: (YearMonth) -> Unit,
     onOpen: (Photo) -> Unit,
     onMonthFocused: (YearMonth) -> Unit,
+    onHold: ((Photo) -> Unit)?,
 ) {
     val key = section.month.toString()
     item(key = "h-$key", span = { GridItemSpan(maxLineSpan) }, contentType = "heading") {
@@ -165,6 +168,7 @@ private fun LazyGridScope.monthSection(
             isVideo = photo?.isVideo == true,
             focusable = true,
             onClick = { if (photo != null) onOpen(photo) },
+            onLongClick = onHold?.let { hold -> { if (photo != null) hold(photo) } },
             modifier = Modifier
                 .aspectRatio(1f)
                 .then(if (index == 0) Modifier.focusRequester(firstOfMonth) else Modifier)

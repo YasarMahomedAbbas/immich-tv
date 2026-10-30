@@ -1,5 +1,6 @@
 package io.github.yasarmahomedabbas.immichtv.ui.slideshow
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -84,6 +85,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+/** What a show plays, for the words that name it. */
+enum class SlideshowSource(@StringRes val back: Int, @StringRes val emptyHint: Int, @StringRes val emptyAction: Int) {
+    Album(R.string.slideshow_back, R.string.slideshow_empty_hint, R.string.slideshow_empty_action),
+    Library(R.string.slideshow_back_photos, R.string.slideshow_empty_hint_library, R.string.slideshow_empty_action_library),
+}
+
 private const val FADE_MS = 1_500
 private const val PROGRESS_MS = 600
 private const val BACKDROP_DARKENING = 0.42f
@@ -99,16 +106,23 @@ private val FocusWidth = 4.dp
 /**
  * The full-screen slideshow: the album's photos crossfading, each moving slowly, with the date and
  * place, a thin progress bar and controls that show on a key press. The remote works the show
- * directly, so the controls are indicators and nothing in them takes focus.
+ * directly, so the controls are indicators and nothing in them takes focus. [source] is what Back returns
+ * to, which its words name.
  */
 @Composable
-fun SlideshowScreen(viewModel: SlideshowViewModel, settings: SlideshowSettings, onBack: () -> Unit) {
+fun SlideshowScreen(
+    viewModel: SlideshowViewModel,
+    settings: SlideshowSettings,
+    onBack: () -> Unit,
+    source: SlideshowSource = SlideshowSource.Album,
+) {
     val state by viewModel.state.collectAsState()
     RunWhileStarted(viewModel)
     KeepScreenOn(state.load == SlideshowLoad.Playing && !state.paused)
     SlideshowContent(
         state = state,
         settings = settings,
+        source = source,
         onBack = onBack,
         onRetry = viewModel::retry,
         onAction = { action ->
@@ -159,6 +173,7 @@ private fun KeepScreenOn(awake: Boolean) {
 private fun SlideshowContent(
     state: SlideshowState,
     settings: SlideshowSettings,
+    source: SlideshowSource,
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onAction: (SlideshowAction) -> Unit,
@@ -194,12 +209,12 @@ private fun SlideshowContent(
             )
             SlideshowLoad.Empty -> EmptyState(
                 title = stringResource(R.string.slideshow_empty_title),
-                hint = stringResource(R.string.slideshow_empty_hint),
-                actionLabel = stringResource(R.string.slideshow_empty_action),
+                hint = stringResource(source.emptyHint),
+                actionLabel = stringResource(source.emptyAction),
                 onAction = onBack,
             )
             is SlideshowLoad.Failed -> FailedState(load.problem, onRetry)
-            SlideshowLoad.Playing -> Playing(state, settings, onImageReady, onImageFailed)
+            SlideshowLoad.Playing -> Playing(state, settings, source, onImageReady, onImageFailed)
         }
     }
 }
@@ -208,6 +223,7 @@ private fun SlideshowContent(
 private fun Playing(
     state: SlideshowState,
     settings: SlideshowSettings,
+    source: SlideshowSource,
     onImageReady: (PhotoId) -> Unit,
     onImageFailed: (PhotoId) -> Unit,
 ) {
@@ -231,7 +247,7 @@ private fun Playing(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = OverlayEdge),
-        ) { Controls(state) }
+        ) { Controls(state, source) }
     }
 }
 
@@ -379,7 +395,7 @@ private fun DateAndPlace(slide: Slide, modifier: Modifier) {
 
 /** Shows what the remote does; the keys work whether this is showing or not. */
 @Composable
-private fun Controls(state: SlideshowState) {
+private fun Controls(state: SlideshowState, source: SlideshowSource) {
     val colors = MaterialTheme.colorScheme
     OverPhotoPanel(OverPhotoStyle.Controls) {
         Row(
@@ -387,7 +403,7 @@ private fun Controls(state: SlideshowState) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(28.dp),
         ) {
-            Text(stringResource(R.string.slideshow_back), color = colors.onSurfaceVariant, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(source.back), color = colors.onSurfaceVariant, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
             Icon(painterResource(R.drawable.ic_previous), stringResource(R.string.slideshow_previous), tint = colors.onSurface, modifier = Modifier.size(44.dp))
             Box(
                 Modifier
@@ -421,7 +437,7 @@ private val previewSlides = List(214) { previewSlide(it) }
 
 @Composable
 private fun SlideshowPreview(state: SlideshowState, settings: SlideshowSettings = SlideshowSettings()) {
-    ImmichTvTheme { SlideshowContent(state, settings, {}, {}, {}, {}, {}) }
+    ImmichTvTheme { SlideshowContent(state, settings, SlideshowSource.Album, {}, {}, {}, {}, {}) }
 }
 
 @Preview(device = Devices.TV_1080p)

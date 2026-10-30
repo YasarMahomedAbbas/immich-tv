@@ -1,6 +1,7 @@
 package io.github.yasarmahomedabbas.immichtv.ui.photos
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Devices
@@ -26,6 +28,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.ui.Tab
 import io.github.yasarmahomedabbas.immichtv.ui.components.EmptyState
 import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
+import io.github.yasarmahomedabbas.immichtv.ui.components.KeyHint
 import io.github.yasarmahomedabbas.immichtv.ui.components.RefreshOnStart
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
@@ -36,7 +39,7 @@ private val RailGap = 48.dp
 
 /** The Photos tab's content, under the top menu: the whole library by month, a rail beside the grid. */
 @Composable
-fun PhotosScreen(viewModel: PhotoGridViewModel, onOpenPhoto: () -> Unit) {
+fun PhotosScreen(viewModel: PhotoGridViewModel, onOpenPhoto: () -> Unit, onStartSlideshow: (PhotoId) -> Unit) {
     val state by viewModel.state.collectAsState()
     RefreshOnStart(viewModel::refresh)
     PhotosContent(
@@ -50,6 +53,11 @@ fun PhotosScreen(viewModel: PhotoGridViewModel, onOpenPhoto: () -> Unit) {
             viewModel.open(photo)
             onOpenPhoto()
         },
+        onHold = { photo ->
+            // The show doesn't move this, so focus comes back to the tile it started on.
+            viewModel.open(photo)
+            onStartSlideshow(photo.id)
+        },
     )
 }
 
@@ -62,6 +70,7 @@ private fun PhotosContent(
     onRefresh: () -> Unit,
     onMonthFocused: (YearMonth) -> Unit,
     onOpen: (Photo) -> Unit,
+    onHold: (Photo) -> Unit,
 ) {
     when (val load = state.load) {
         // Focus stays on the menu pill, which MainScreen gave it, until the first tiles are there.
@@ -77,20 +86,30 @@ private fun PhotosContent(
             modifier = Modifier.padding(bottom = 48.dp),
         )
         is GridLoad.Failed -> FailedState(load.problem, onRetry, Modifier.padding(bottom = 48.dp))
-        GridLoad.Loaded -> Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(RailGap)) {
-            // Left from the grid's first column reaches the rail by focus search, and up from its first row the menu.
-            var jumpTo by remember { mutableStateOf<YearMonth?>(null) }
-            MonthRail(railEntries(state.sections), state.selectedMonth, onChoose = { jumpTo = it })
-            PhotoGrid(
-                sections = state.sections,
-                onNeedMonth = onNeedMonth,
-                onRetryMonth = onRetryMonth,
-                modifier = Modifier.weight(1f),
-                onOpen = onOpen,
-                onMonthFocused = onMonthFocused,
-                jumpTo = jumpTo,
-                onJumped = { jumpTo = null },
-                restoreTo = state.viewing?.id,
+        GridLoad.Loaded -> Box(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(RailGap)) {
+                // Left from the grid's first column reaches the rail by focus search, and up from its first row the menu.
+                var jumpTo by remember { mutableStateOf<YearMonth?>(null) }
+                MonthRail(railEntries(state.sections), state.selectedMonth, onChoose = { jumpTo = it })
+                PhotoGrid(
+                    sections = state.sections,
+                    onNeedMonth = onNeedMonth,
+                    onRetryMonth = onRetryMonth,
+                    modifier = Modifier.weight(1f),
+                    onOpen = onOpen,
+                    onMonthFocused = onMonthFocused,
+                    jumpTo = jumpTo,
+                    onJumped = { jumpTo = null },
+                    restoreTo = state.viewing?.id,
+                    onHold = onHold,
+                )
+            }
+            KeyHint(
+                hints = listOf(
+                    stringResource(R.string.hint_ok) to stringResource(R.string.hint_open),
+                    stringResource(R.string.hint_hold_ok) to stringResource(R.string.hint_slideshow_from_here),
+                ),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 32.dp),
             )
         }
     }
@@ -114,7 +133,7 @@ private val previewSections = listOf(
 @Composable
 private fun PhotosPreview(state: PhotoGridState) {
     ImmichTvTheme {
-        MainScreen(Tab.Photos, {}, {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}, {}, {}) })
+        MainScreen(Tab.Photos, {}, {}, albums = {}, photos = { PhotosContent(state, {}, {}, {}, {}, {}, {}, {}) })
     }
 }
 

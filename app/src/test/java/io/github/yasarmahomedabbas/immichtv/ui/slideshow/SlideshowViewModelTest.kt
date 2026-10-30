@@ -6,7 +6,9 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.FakeAlbumRepository
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.album
+import io.github.yasarmahomedabbas.immichtv.domain.map
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Dispatchers
@@ -45,10 +47,14 @@ class SlideshowViewModelTest {
 
     private val SlideshowViewModel.shown get() = state.value.current?.photo?.id?.value
 
+    private fun albumShow(settings: SlideshowSettings) = SlideshowViewModel(settings) {
+        LoadSlideshow(repository)(album(), settings.order).map { Playlist(it) }
+    }
+
     /** A slideshow of [ids] at 5 s a photo, loaded, with every photo's image ready if [allReady]. */
     private fun TestScope.loaded(vararg ids: String, allReady: Boolean = true): SlideshowViewModel {
         repository.slides = ServerResult.Ok(ids.map(::slide))
-        val vm = SlideshowViewModel(album(), SlideshowSettings(secondsPerPhoto = 5), LoadSlideshow(repository))
+        val vm = albumShow(SlideshowSettings(secondsPerPhoto = 5))
         advanceUntilIdle()
         if (allReady) ids.forEach { vm.imageReady(photo(it)) }
         return vm
@@ -65,13 +71,37 @@ class SlideshowViewModelTest {
     @Test
     fun `it loads, then plays from the first photo`() = runTest(dispatcher) {
         repository.slides = ServerResult.Ok(listOf(slide("a"), slide("b")))
-        val vm = SlideshowViewModel(album(), SlideshowSettings(), LoadSlideshow(repository))
+        val vm = albumShow(SlideshowSettings())
         assertEquals(SlideshowLoad.Loading, vm.state.value.load)
         advanceUntilIdle()
 
         assertEquals(SlideshowLoad.Playing, vm.state.value.load)
         assertEquals("a", vm.shown)
         assertEquals(1, vm.state.value.position)
+    }
+
+    @Test
+    fun `a playlist with a start plays from there, and moves on and back from there`() = runTest(dispatcher) {
+        val slides = listOf(slide("a"), slide("b"), slide("c"))
+        val vm = SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(Playlist(slides, start = 2)) }
+        advanceUntilIdle()
+
+        assertEquals("c", vm.shown)
+        assertEquals(3, vm.state.value.position)
+        vm.skipForward()
+        assertEquals("a", vm.shown)
+    }
+
+    @Test
+    fun `retry goes back to the playlist's start`() = runTest(dispatcher) {
+        var result: ServerResult<Playlist> = ServerResult.Failed(Problem.Unreachable)
+        val vm = SlideshowViewModel(SlideshowSettings()) { result }
+        advanceUntilIdle()
+
+        result = ServerResult.Ok(Playlist(listOf(slide("a"), slide("b")), start = 1))
+        vm.retry()
+        advanceUntilIdle()
+        assertEquals("b", vm.shown)
     }
 
     @Test
@@ -82,7 +112,7 @@ class SlideshowViewModelTest {
     @Test
     fun `a failed load says why, and retry plays`() = runTest(dispatcher) {
         repository.slides = ServerResult.Failed(Problem.KeyRejected)
-        val vm = SlideshowViewModel(album(), SlideshowSettings(), LoadSlideshow(repository))
+        val vm = albumShow(SlideshowSettings())
         advanceUntilIdle()
         assertEquals(SlideshowLoad.Failed(Problem.KeyRejected), vm.state.value.load)
 
@@ -96,7 +126,7 @@ class SlideshowViewModelTest {
     @Test
     fun `retry is ignored while loading`() = runTest(dispatcher) {
         repository.slides = ServerResult.Ok(listOf(slide("a")))
-        val vm = SlideshowViewModel(album(), SlideshowSettings(), LoadSlideshow(repository))
+        val vm = albumShow(SlideshowSettings())
         vm.retry()
         advanceUntilIdle()
         assertEquals(1, repository.slidesCalls)

@@ -203,7 +203,7 @@ Rest of the screen: `MainScreen` asks for the pill's focus on entry and the grid
 
 Goal: holding OK on a tile plays the library from that photo onward.
 
-### [ ] 5.1 — Domain
+### [x] 5.1 — Domain
 
 File: `…/domain/slideshow/Slideshow.kt`
 
@@ -214,15 +214,17 @@ File: `…/AppContainer.kt`: `val loadLibrarySlideshow = LoadLibrarySlideshow(li
 
 Test: `test/…/domain/slideshow/LoadLibrarySlideshowTest.kt`.
 
-### [ ] 5.2 — The show
+### [x] 5.2 — The show
 
 File: `…/ui/slideshow/SlideshowViewModel.kt`: constructor becomes `(settings: SlideshowSettings, loadPlaylist: suspend () -> ServerResult<Playlist>)`; `load()` sets `index = playlist.start`. Factories: `factory(container, album, settings)` wraps `loadSlideshow(album, settings.order)` in a `Playlist`; new `fromTimeline(container, from: PhotoId)`. `val TimelineSettings = SlideshowSettings(order = SlideshowOrder.NewestFirst)`: the defaults, 8 s with date and place on. Update `SlideshowViewModelTest`'s constructions through a helper; add a start index test. Progress shows the position in the library, so a show from the middle starts mid-bar.
 
 File: `…/ui/AppViewModel.kt`: `data class TimelineSlideshow(val from: PhotoId) : AppScreen`; `fun openTimelineSlideshow(from: PhotoId)`; `back()` → `Main(Tab.Photos)`. Coming back, `viewing` wasn't moved by the show, so focus returns to the tile it started on; set it on hold with `open`.
 
-File: `…/MainActivity.kt`: `is AppScreen.TimelineSlideshow -> SlideshowScreen(viewModel(key = "slideshow-$connection-${System.identityHashCode(current)}", factory = SlideshowViewModel.fromTimeline(container, current.from)), settings = TimelineSettings, onBack = { app.back() })`.
+File: `…/MainActivity.kt`: `is AppScreen.TimelineSlideshow -> SlideshowScreen(viewModel(key = "slideshow-$connection-${System.identityHashCode(current)}", factory = SlideshowViewModel.fromTimeline(container, current.from)), settings = TimelineSettings, onBack = { app.back() }, source = SlideshowSource.Library)`.
 
-### [ ] 5.3 — Hold OK and its hint
+File: `…/ui/slideshow/SlideshowScreen.kt`: `source: SlideshowSource = Album`, so a library show says "‹ Photos" and "Back to photos" and its empty hint names the library, not an album. New strings `slideshow_back_photos`, `slideshow_empty_hint_library`, `slideshow_empty_action_library`.
+
+### [x] 5.3 — Hold OK and its hint
 
 File: `…/ui/components/PhotoTile.kt`: `onLongClick: (() -> Unit)? = null`, passed to tv `Surface`.
 
@@ -232,7 +234,7 @@ The key repeats of the hold reach the slideshow, which ignores repeats of OK (`S
 
 File: `…/ui/components/KeyHint.kt` (new): `@Composable fun KeyHint(hints: List<Pair<String, String>>, modifier)`: the canvas's pill: `surface`, fully round, 20sp 600 text, each key a small `fg` chip with `on-fg` 800 text. Shown bottom-right on Photos only while the grid is loaded, new strings `hint_ok` "OK", `hint_open` "open", `hint_hold_ok` "hold OK", `hint_slideshow_from_here` "slideshow from here". Not focusable.
 
-### [ ] 5.4 — The manual
+### [x] 5.4 — The manual
 
 File: `docs/design/README.md`: Screens: the Photos row (rail 200dp, years not focusable, OK jumps) and a new row "Photo": full screen with no safe area, the whole photo fitted on `bg`, no overlays, left/right move, a video is a still with the badge, stops at the ends. Components: `MonthRail`, `KeyHint`. Remove "built for Photos to reuse in #7" from the Album photos row if no longer apt; the album grid's OK waiting on its ticket goes under Open decisions.
 

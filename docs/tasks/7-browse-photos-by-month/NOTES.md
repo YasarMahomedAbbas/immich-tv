@@ -22,3 +22,10 @@ Branch: `feat/7-browse-photos-by-month`
   - open-risk: focusing a tile far off-screen after a jump in a lazy grid has been fragile before, and is only provable on the TV. Compose focus code has no automated tests.
   - open-risk: the TV check depends on the window in the issue's comment (until about 12:20 CET on 2026-10-30) and on the shared lock; outside the window it is skipped and recorded.
   - open-risk: the wait before a show's first photo on a very large library can't be measured here, as this library has 10 months.
+
+## Implementation
+
+- Shipped: the library from Immich (`ImmichLibraryRepository.kt`, with the shared `ImmichApi.kt` and `ImmichTimelineDtos.kt`); the Photos tab, rail and grid in step (`PhotosScreen.kt`, `MonthRail.kt`, `PhotoGrid.kt`, `PhotoGridViewModel.kt` `gridIndexOfMonth`); the full-screen photo (`PhotoViewerScreen.kt`, `PhotoGridViewModel.kt` `viewerMove`); the slideshow from a photo (`Slideshow.kt` `LoadLibrarySlideshow`, `SlideshowViewModel.kt` `fromTimeline`, hold OK in `PhotoTile.kt`, `KeyHint.kt`); the manual (`docs/design/README.md`).
+- Tests: 298 passed / 0 failed, with `koverVerifyDebug`, `lintDebug` (0 errors, 23 warnings) and `assembleDebug` green.
+- Outstanding: nothing unticked. Nothing here has run on the TV or against the real server: focus entering the rail on the selected month, focusing a far tile after a jump and on return, and hold OK are only provable on the TV (self-verification). The follow-up ticket for OK on the album grid (Q7.1) is still to be raised.
+- Contradicted the plan: `inline` in an internal class needed `internal` members, not `@PublishedApi` (it refused `decode` reading `immichJson`); checklist corrected. A library show would have said "‹ Album" and "Back to album", so `SlideshowScreen` gained `source: SlideshowSource`, with three strings; checklist corrected. `refresh()` rebuilt the state from scratch, which would have lost the focused month and the viewed photo, so it now copies. `KeyHint`'s 32dp bottom margin was not in the checklist.

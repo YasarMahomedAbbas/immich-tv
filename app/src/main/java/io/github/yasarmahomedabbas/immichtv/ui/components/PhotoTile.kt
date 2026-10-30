@@ -40,7 +40,7 @@ enum class TileStyle(val corner: Dp) {
 /**
  * A photo's preview, cropped to fill. A `surface` block while it loads or when there is no
  * [photo]. A video gets a small play badge. A [focusable] tile shows the house focus and calls
- * [onClick] on OK.
+ * [onClick] on OK, and [onLongClick] when OK is held.
  */
 @Composable
 fun PhotoTile(
@@ -50,12 +50,14 @@ fun PhotoTile(
     isVideo: Boolean = false,
     focusable: Boolean = false,
     onClick: () -> Unit = {},
+    onLongClick: (() -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(style.corner)
     val surface = MaterialTheme.colorScheme.surface
     if (focusable) {
         Surface(
             onClick = onClick,
+            onLongClick = onLongClick,
             modifier = modifier,
             shape = ClickableSurfaceDefaults.shape(shape),
             colors = ClickableSurfaceDefaults.colors(
