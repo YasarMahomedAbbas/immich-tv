@@ -53,3 +53,31 @@ Branch: `feat/9-the-home-screen`
 - Skipped: CLAUDE.md: nothing cross-cutting is new; its one-line app summary isn't false without Home.
 - Not a doc matter, for self-verification: the album screen's back link always says "‹ Albums" (`album_back`), though from Home's row Back goes to Home. The manual's "It does what Back does" holds; the label misleads.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: the full command ran once, before the fixes below: 386 tests passed, line coverage 87.3%, lint clean, APK built. After the See all fix only `HomeViewModelTest` (16) and `AlbumBackLabelTest` (2) ran, green, and the debug APK built. The full command is left to `raise-pr` because of the user's speed note on the issue.
+- Server: Immich 3.3.5. Spec for that tag read; `GET /api/memories`, `/api/timeline/buckets`, `/api/timeline/bucket` made as the code builds them.
+- TV: installed on the Chromecast, then driven with the D-pad; reinstalled after the fix and the changed paths driven again. No crash in logcat. The TV was left on its launcher.
+- Verified:
+  - `GET /api/memories?for=<today>&type=on_this_day`: 200 and `[]`. `GET /api/timeline/buckets` (10 months) and `/api/timeline/bucket`: 200, and the columns the code reads are there.
+  - Skeleton while loading, with focus on the Home pill, then focus moves to the hero's Play slideshow (4.4).
+  - Both buttons fit the 620dp panel, with the outline clear of its edge.
+  - Page scrolling: moving down brings a block in whole, moving up returns to the hero; rows scroll with focus.
+  - View photos opens the album's grid; Back returns to Home on View photos.
+  - Album card opens the album, its link says "‹ Home"; Back returns to Home on that card.
+  - Play slideshow advances, says "‹ Home", 2 / 233 after a skip; Back returns to Play.
+  - Recently added tile opens the viewer, Right moves on; Back returns to Home on the tile opened.
+  - See all goes to the Albums tab; Back returns to Home on See all.
+- Fixed here (both are this ticket's, each with a test that fails without it):
+  - The album's back link always said "‹ Albums", though from Home's row Back goes to Home. It now names where Back goes (`albumBackLabel`, `album_back_home`); the manual says so. An album's own Back is unchanged.
+  - See all could only be reached through the Settings gear: Up from any card went to the hero, as See all sits at the far right, and Right from the last card left the row for the gear. Now Up from a card goes to See all, Up from See all goes to View photos, and Right stops at a row's last item (`upFrom`, `endsRow`). Getting from the row to the hero now takes two presses. Seen on the TV from the first and the last card. `focusProperties` itself has no unit test: the project has no Compose UI harness, so the wiring rests on the TV run.
+- Failed: none
+- Not self-verifiable:
+  - The memory hero: the real server has no memories, so it, its title, its show and its grid are proven by tests only, not on the TV. Check by hand on a day with a memory.
+  - The failed state: not driven, since taking the shared TV off the network wasn't practical. Tests only, and the screen itself was never seen. Check with the server stopped.
+  - The empty state and the no-hero page: the real library can't produce them.
+  - A real v1.133 server: date-only `for` still rests on its spec and source.
+

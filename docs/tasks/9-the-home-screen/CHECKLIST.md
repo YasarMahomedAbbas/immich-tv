@@ -160,9 +160,9 @@ Files: `SlideshowScreen.kt` (`SlideshowSource.Home`, "‹ Home", with its own em
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 Pass `home` to `MainScreen`, with `viewModel(key = "home-$connection", factory = HomeViewModel.factory(container))`. Hero memory: `MemorySlideshow`; `MemoryPhotos` through `AlbumPhotosScreen(title, PhotoGridViewModel.factory(memory.timeline()))`. Hero album: `Slideshow` and `AlbumPhotos` with `HomeHero`, its show saying "‹ Home" since that is where Back goes. Row: `Album` with `HomeRow`, its onward screens carrying it. Recent tile: on the `photos-$connection` ViewModel call `open(photo)`, then show `PhotoViewer(fromHome = true)`. See all: `selectTab(Tab.Albums)`.
 
-### [ ] 4.4 — Opening focus and Back onto Home
+### [x] 4.4 — Opening focus and Back onto Home
 
-File: `ui/main/MainScreen.kt` if needed (it wasn't: Home waits a frame before its request, as the Albums grid does): Home's focus request must win over `menuFocus`, as the Albums grid's does. Coming Back recreates the screen, and `HomeState.focused` restores focus. Left unticked: only the TV can show it, so it is for self-verification.
+File: `ui/main/MainScreen.kt` if needed (it wasn't: Home waits a frame before its request, as the Albums grid does): Home's focus request must win over `menuFocus`, as the Albums grid's does. Coming Back recreates the screen, and `HomeState.focused` restores focus. Seen on the TV in self-verification: focus opens on Play slideshow and comes Back to where it was.
 
 ### [x] 4.5 — Tests
 
