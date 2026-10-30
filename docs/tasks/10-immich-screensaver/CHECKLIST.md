@@ -182,7 +182,7 @@ Test: `app/src/test/java/.../ui/settings/SettingsViewModelTest.kt`.
 
 Files: `.../ui/settings/SettingsScreen.kt`, `.../ui/settings/ScreensaverPickerScreen.kt`, `.../ui/components/PickerRow.kt`, `app/src/main/res/values/strings.xml`, `.../MainActivity.kt`
 
-- **Settings**: `BackLink` (which says where Back goes), title, two `SettingButton`s: Server (the address) and Screensaver (the current source). Focus enters on Server, or on Screensaver when `focusScreensaver`. Rule 1: no primary button here, since nothing is the one action.
+- **Settings**: `BackLink` (which says where Back goes), title, two `SettingButton`s: Server (the address) and Screensaver (the current source). Focus enters on Server, or on Screensaver when `focusScreensaver`. Rule 4 allows one primary button, but none here, since nothing is the one action.
 - **Screensaver picker**: `BackLink`, title, a column that scrolls with focus: `Random from my library`, then each album. `PickerRow`: `surface`, 16dp corners, the name 23sp 700 and `Selected` 18sp `mfg` at the right, house focus. OK saves and returns to Settings. Focus enters on the selected row, or the first if it's gone.
 - **States (rule 8)**: skeleton rows while loading; the Random row stays usable throughout, with `FailedState` and Try again under it on failure, and a hint that there are no albums when empty.
 - `MainActivity`: wire both, with one `SettingsViewModel` under key `settings-$connection`, reloaded on entering the picker.
