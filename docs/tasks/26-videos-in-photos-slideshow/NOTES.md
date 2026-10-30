@@ -27,3 +27,9 @@ Branch: `feat/26-videos-in-photos-slideshow`
 - Raised: none
 - API: no call added or changed. A library show now reaches `GET /api/timeline/bucket` columns `id` and `isImage` and `GET /api/assets/{id}/video/playback` from the timeline — both match the v3.3.5 spec (live server version); the key stays in the header, through the existing player.
 - Layers: clean
+
+## Doc drift
+
+- No drift found. The branch's implementation commit already corrected `README.md` (Slideshow, Photos) and `docs/design/README.md` (Slideshow row); checked against the code: the library show keeps videos in place and starts at the held item (`LoadLibrarySlideshow`), muted by the `VideoMode.PlayMuted` default in `TimelineSettings`, hold OK has no photo-only guard (`PhotosScreen`), memory and search shows stay photos only (`LoadHome`, `SearchScreen`). `CLAUDE.md` makes no claim the branch touches, and no doc names `LoadLibrarySlideshow` or `TimelineSettings`.
+- Skipped: a library show's videos being muted because of the settings default: the KDoc on `TimelineSettings` says it and the manual states the behaviour, so a future session wouldn't get it wrong.
+- Stale, fixed separately: none
