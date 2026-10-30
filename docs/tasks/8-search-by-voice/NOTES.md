@@ -26,3 +26,10 @@ Branch: `feat/8-search-by-voice`
   - api: the top-level `personIds` on `/search/metadata` is deprecated since v3.2.0. It works on 3.3.5 and exists in 1.133, so one shape covers the range; a future major may remove it. The nested `filter.personIds` is not an array, and 3.3.5 refuses one.
   - ux: smart search returned results even for nonsense text, so "no results" will be rare and weak matches will appear as results.
   - The real server has 2 named people out of 12, so the row is short there, and the search results checked have no city or country, so place is proven only in tests.
+
+## Implementation
+
+- Shipped: search, people and a person's photos in domain terms (`domain/search/Search.kt:17`), from Immich in both API shapes (`data/immich/ImmichSearchRepository.kt:32`), faces through the image loader (`data/immich/PreviewInterceptor.kt`); a slideshow of any list (`ui/slideshow/SlideshowViewModel.kt`, `AppScreen.ResultsSlideshow` in `ui/AppViewModel.kt`); the Search tab (`ui/search/SearchScreen.kt`, `ui/search/SearchViewModel.kt`), voice (`ui/search/VoiceInput.kt`, the key in `ui/main/MainScreen.kt`), `VoiceButton` (`ui/components/Buttons.kt`).
+- Tests: 304 passed / 0 failed; full CI command (testDebugUnitTest koverVerifyDebug lintDebug assembleDebug) green.
+- Outstanding: nothing unticked in the checklist. The test plan's real-server and on-the-TV checks are self-verification's, including the physical mic button (still unproven) and whether moving focus to the field opens the keyboard (on Back from results, and when a load takes away what the remote was on).
+- Contradicted the plan: none. Added beyond its text, each edited into the checklist: `decode()` made internal alongside `place()`; a `backLabel` on `SlideshowScreen` ("‹ Search"), as the controls' "‹ Album" is wrong for results; `resultCount` returns a `ResultCount` so the wording is tested without resources; focus moves to the field when a load removes what the remote was on; `VoiceButton` is a shared component.

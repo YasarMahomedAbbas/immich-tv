@@ -121,7 +121,7 @@ fun SearchScreen(viewModel: SearchViewModel, onVoice: () -> Unit, onPlay: (List<
         onSubmit = viewModel::submit,
         onSuggestion = viewModel::submit,
         onVoice = onVoice,
-        onPerson = {},
+        onPerson = viewModel::choose,
         onPlay = onPlay,
         onRetry = viewModel::retry,
         onClear = viewModel::clear,
@@ -271,7 +271,7 @@ private fun FieldRow(
     onEdit: (String) -> Unit,
     onSubmit: () -> Unit,
     onVoice: () -> Unit,
-    tracking: Modifier,
+    modifier: Modifier,
     fieldModifier: Modifier,
 ) {
     Row(
@@ -279,8 +279,8 @@ private fun FieldRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        SearchField(text, onEdit, onSubmit, tracking.then(fieldModifier))
-        VoiceButton(stringResource(R.string.search_voice), onVoice, tracking)
+        SearchField(text, onEdit, onSubmit, modifier.then(fieldModifier))
+        VoiceButton(stringResource(R.string.search_voice), onVoice, modifier)
         Text(
             stringResource(R.string.search_voice_hint),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -341,7 +341,7 @@ private fun SearchField(text: String, onEdit: (String) -> Unit, onSubmit: () -> 
 }
 
 @Composable
-private fun Suggestions(subject: SearchSubject?, onSuggestion: (String) -> Unit, tracking: Modifier) {
+private fun Suggestions(subject: SearchSubject?, onSuggestion: (String) -> Unit, modifier: Modifier) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(stringResource(R.string.search_try), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 20.sp)
         for (suggestion in SUGGESTIONS) {
@@ -349,14 +349,14 @@ private fun Suggestions(subject: SearchSubject?, onSuggestion: (String) -> Unit,
                 text = suggestion,
                 selected = subject == SearchSubject.Description(suggestion),
                 onClick = { onSuggestion(suggestion) },
-                modifier = tracking,
+                modifier = modifier,
             )
         }
     }
 }
 
 @Composable
-private fun PeopleRow(people: List<Person>, onPerson: (Person) -> Unit, tracking: Modifier) {
+private fun PeopleRow(people: List<Person>, onPerson: (Person) -> Unit, modifier: Modifier) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.search_people), color = MaterialTheme.colorScheme.onSurface, fontSize = 26.sp, fontWeight = FontWeight.Bold)
         LazyRow(
@@ -364,7 +364,7 @@ private fun PeopleRow(people: List<Person>, onPerson: (Person) -> Unit, tracking
             horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             items(people, key = { it.id.value }) { person ->
-                PersonCircle(person, onClick = { onPerson(person) }, tracking)
+                PersonCircle(person, onClick = { onPerson(person) }, modifier)
             }
         }
     }
@@ -409,7 +409,7 @@ private fun PersonCircle(person: Person, onClick: () -> Unit, modifier: Modifier
 }
 
 @Composable
-private fun ResultsHeading(subject: SearchSubject, load: SearchLoad, onPlay: (List<Slide>) -> Unit, playModifier: Modifier) {
+private fun ResultsHeading(subject: SearchSubject, load: SearchLoad, onPlay: (List<Slide>) -> Unit, modifier: Modifier) {
     val colors = MaterialTheme.colorScheme
     val slides = (load as? SearchLoad.Loaded)?.slides.orEmpty()
     val playable = slides.playable()
@@ -439,7 +439,7 @@ private fun ResultsHeading(subject: SearchSubject, load: SearchLoad, onPlay: (Li
             PrimaryButton(
                 text = stringResource(R.string.search_play),
                 onClick = { onPlay(playable) },
-                modifier = playModifier,
+                modifier = modifier,
                 icon = painterResource(R.drawable.ic_play),
             )
         }

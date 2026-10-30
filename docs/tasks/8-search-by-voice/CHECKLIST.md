@@ -169,7 +169,7 @@ Previews: idle, loaded, skeleton, empty, failed.
 
 Goal: choosing a person fills the results area, and Play as slideshow goes there and back.
 
-### [ ] 4.1 — Wire it up
+### [x] 4.1 — Wire it up
 
 File: `ui/search/SearchScreen.kt`: OK on a `PersonCircle` calls `choose(person)`.
 File: `MainActivity.kt`: `onPlay = app::openResultsSlideshow`, `focusResults = current.focusResults`.

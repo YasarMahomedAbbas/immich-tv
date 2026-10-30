@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                             onSelectTab = app::selectTab,
                             onOpenSettings = app::openSettings,
                             onVoiceKey = voice,
-                            search = { SearchScreen(search, onVoice = voice, onPlay = {}, focusResults = current.focusResults) },
+                            search = { SearchScreen(search, onVoice = voice, onPlay = app::openResultsSlideshow, focusResults = current.focusResults) },
                         ) {
                             // Scoped to the activity, so the list and the focused album survive opening one.
                             AlbumsScreen(
