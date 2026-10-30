@@ -78,7 +78,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.search.PersonFace
 import io.github.yasarmahomedabbas.immichtv.domain.search.PersonId
 import io.github.yasarmahomedabbas.immichtv.domain.search.SearchPhotos
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
-import io.github.yasarmahomedabbas.immichtv.domain.slideshow.playable
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.withoutVideos
 import io.github.yasarmahomedabbas.immichtv.ui.components.Chip
 import io.github.yasarmahomedabbas.immichtv.ui.components.EmptyState
 import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
@@ -243,7 +243,7 @@ private fun SearchContent(
                 key = { index, _ -> tileKey(index) },
                 contentType = { _, _ -> "tile" },
             ) { index, slide ->
-                // OK does nothing until the photo viewer (#7), as in PhotoGrid.
+                // OK does nothing: the photo viewer walks the Photos timeline, not a list of results.
                 PhotoTile(
                     photo = slide.photo.id,
                     isVideo = slide.photo.isVideo,
@@ -441,7 +441,7 @@ private fun PersonCircle(person: Person, onClick: () -> Unit, modifier: Modifier
 private fun ResultsHeading(subject: SearchSubject, load: SearchLoad, onPlay: (List<Slide>) -> Unit, modifier: Modifier) {
     val colors = MaterialTheme.colorScheme
     val slides = (load as? SearchLoad.Loaded)?.slides.orEmpty()
-    val playable = slides.playable()
+    val playable = slides.withoutVideos()
     val title = when (subject) {
         is SearchSubject.Description -> stringResource(R.string.search_heading, subject.text)
         is SearchSubject.OfPerson -> subject.person.name

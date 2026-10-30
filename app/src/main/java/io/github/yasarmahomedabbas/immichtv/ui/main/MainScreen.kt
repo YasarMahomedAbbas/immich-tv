@@ -39,6 +39,7 @@ fun MainScreen(
     onVoiceKey: () -> Unit,
     search: @Composable () -> Unit,
     albums: @Composable () -> Unit,
+    photos: @Composable () -> Unit,
 ) {
     val menuFocus = remember { FocusRequester() }
     LaunchedEffect(tab) { runCatching { menuFocus.requestFocus() } }
@@ -60,6 +61,7 @@ fun MainScreen(
             when (tab) {
                 Tab.Albums -> albums()
                 Tab.Search -> search()
+                Tab.Photos -> photos()
                 else -> PlaceholderTab(stringResource(tab.label))
             }
         }
@@ -69,11 +71,5 @@ fun MainScreen(
 @Preview(device = Devices.TV_1080p)
 @Composable
 private fun MainHomePreview() {
-    ImmichTvTheme { MainScreen(Tab.Home, {}, {}, {}, {}) {} }
-}
-
-@Preview(device = Devices.TV_1080p)
-@Composable
-private fun MainPhotosPreview() {
-    ImmichTvTheme { MainScreen(Tab.Photos, {}, {}, {}, {}) {} }
+    ImmichTvTheme { MainScreen(Tab.Home, {}, {}, onVoiceKey = {}, search = {}, albums = {}, photos = {}) }
 }

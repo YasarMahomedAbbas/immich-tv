@@ -13,28 +13,20 @@ import io.github.yasarmahomedabbas.immichtv.domain.photos.Timeline
 import io.github.yasarmahomedabbas.immichtv.domain.photos.TimelineMonth
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
 import io.github.yasarmahomedabbas.immichtv.domain.server.SessionStore
-import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Place
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.YearMonth
 import java.time.format.DateTimeParseException
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.math.roundToLong
 
 /**
  * Albums from Immich v1.133+: `GET /api/albums`, `/api/albums/{id}` and `/api/users/me` (who
@@ -44,36 +36,38 @@ import kotlin.math.roundToLong
  * slideshow costs no call per photo.
  */
 internal class ImmichAlbumRepository(
-    private val client: OkHttpClient,
-    private val sessions: SessionStore,
+    client: OkHttpClient,
+    sessions: SessionStore,
 ) : AlbumRepository {
+
+    private val api = ImmichApi(client, sessions)
 
     /** The signed-in user's id, for the session it was read with. */
     @Volatile private var me: Pair<Session, String>? = null
 
-    override suspend fun albums(): ServerResult<List<Album>> = signedIn { session ->
+    override suspend fun albums(): ServerResult<List<Album>> = api.signedIn { session ->
         val myId = when (val id = myId(session)) {
             is ServerResult.Ok -> id.value
             is ServerResult.Failed -> return@signedIn id
         }
-        when (val albums = get<List<AlbumDto>>(session, "albums")) {
+        when (val albums = api.get<List<AlbumDto>>(session, "albums")) {
             is ServerResult.Ok -> mapAll(albums.value) { it.toAlbum(myId) }
             is ServerResult.Failed -> albums
         }
     }
 
-    override suspend fun album(id: AlbumId): ServerResult<Album> = signedIn { session ->
+    override suspend fun album(id: AlbumId): ServerResult<Album> = api.signedIn { session ->
         val myId = when (val me = myId(session)) {
             is ServerResult.Ok -> me.value
             is ServerResult.Failed -> return@signedIn me
         }
-        when (val album = get<AlbumDto>(session, "albums/${id.value}")) {
+        when (val album = api.get<AlbumDto>(session, "albums/${id.value}")) {
             is ServerResult.Ok -> mapAll(listOf(album.value)) { it.toAlbum(myId) }.map { it.single() }
             is ServerResult.Failed -> album
         }
     }
 
-    override suspend fun contents(album: Album, limit: Int): ServerResult<AlbumContents> = signedIn { session ->
+    override suspend fun contents(album: Album, limit: Int): ServerResult<AlbumContents> = api.signedIn { session ->
         val buckets = when (val result = buckets(session, album)) {
             is ServerResult.Ok -> result.value
             is ServerResult.Failed -> return@signedIn result
@@ -102,7 +96,7 @@ internal class ImmichAlbumRepository(
 
     override fun timeline(album: Album): Timeline = AlbumTimeline(album)
 
-    override suspend fun slides(album: Album): ServerResult<List<Slide>> = signedIn { session ->
+    override suspend fun slides(album: Album): ServerResult<List<Slide>> = api.signedIn { session ->
         val buckets = when (val result = buckets(session, album, OLDEST_FIRST)) {
             is ServerResult.Ok -> result.value
             is ServerResult.Failed -> return@signedIn result
@@ -131,25 +125,15 @@ internal class ImmichAlbumRepository(
     private inner class AlbumTimeline(private val album: Album) : Timeline {
         private val bucketOf = ConcurrentHashMap<YearMonth, String>()
 
-        override suspend fun months(): ServerResult<List<TimelineMonth>> = signedIn { session ->
+        override suspend fun months(): ServerResult<List<TimelineMonth>> = api.signedIn { session ->
             val buckets = when (val result = buckets(session, album)) {
                 is ServerResult.Ok -> result.value
                 is ServerResult.Failed -> return@signedIn result
             }
-            try {
-                ServerResult.Ok(
-                    buckets.map { bucket ->
-                        val month = YearMonth.from(LocalDate.parse(bucket.timeBucket.take(10)))
-                        bucketOf[month] = bucket.timeBucket
-                        TimelineMonth(month, bucket.count)
-                    },
-                )
-            } catch (_: DateTimeParseException) {
-                ServerResult.Failed(Problem.Unreachable)
-            }
+            buckets.toMonths { month, bucket -> bucketOf[month] = bucket }
         }
 
-        override suspend fun photos(month: YearMonth): ServerResult<List<Photo>> = signedIn { session ->
+        override suspend fun photos(month: YearMonth): ServerResult<List<Photo>> = api.signedIn { session ->
             bucket(session, album, bucketOf[month] ?: "$month-01T00:00:00.000Z")
         }
     }
@@ -159,7 +143,7 @@ internal class ImmichAlbumRepository(
         album: Album,
         order: String = album.order,
     ): ServerResult<List<BucketDto>> =
-        get(session, "timeline/buckets", listOf("albumId" to album.id.value, "order" to order))
+        api.get(session, "timeline/buckets", listOf("albumId" to album.id.value, "order" to order))
 
     private suspend fun bucket(session: Session, album: Album, timeBucket: String): ServerResult<List<Photo>> =
         columns(session, album, timeBucket, album.order).map { it.toPhotos() }
@@ -169,7 +153,7 @@ internal class ImmichAlbumRepository(
         album: Album,
         timeBucket: String,
         order: String,
-    ): ServerResult<BucketAssetsDto> = get(
+    ): ServerResult<BucketAssetsDto> = api.get(
         session,
         "timeline/bucket",
         listOf("albumId" to album.id.value, "timeBucket" to timeBucket, "order" to order),
@@ -177,46 +161,12 @@ internal class ImmichAlbumRepository(
 
     private suspend fun myId(session: Session): ServerResult<String> {
         me?.let { (cachedFor, id) -> if (cachedFor == session) return ServerResult.Ok(id) }
-        return when (val result = get<MeDto>(session, "users/me")) {
+        return when (val result = api.get<MeDto>(session, "users/me")) {
             is ServerResult.Ok -> {
                 me = session to result.value.id
                 ServerResult.Ok(result.value.id)
             }
             is ServerResult.Failed -> result
-        }
-    }
-
-    private suspend fun <T> signedIn(block: suspend (Session) -> ServerResult<T>): ServerResult<T> {
-        val session = sessions.load() ?: return ServerResult.Failed(Problem.NotSignedIn)
-        return block(session)
-    }
-
-    /** One `GET` with the key header, read as [T]; every failure becomes a [Problem]. */
-    private suspend inline fun <reified T> get(
-        session: Session,
-        path: String,
-        query: List<Pair<String, String>> = emptyList(),
-    ): ServerResult<T> = withContext(Dispatchers.IO) {
-        try {
-            val url = apiUrl(session.server, path).newBuilder()
-                .apply { for ((name, value) in query) addQueryParameter(name, value) }
-                .build()
-            val request = Request.Builder().url(url).header(API_KEY_HEADER, session.apiKey.value).get().build()
-            client.newCall(request).execute().use { response ->
-                when (response.code) {
-                    200 -> decode<T>(response.body?.string())
-                        ?.let { ServerResult.Ok(it) }
-                        ?: ServerResult.Failed(Problem.Unreachable)
-                    401 -> ServerResult.Failed(Problem.KeyRejected)
-                    403 -> ServerResult.Failed(Problem.KeyLacksPermission)
-                    else -> ServerResult.Failed(Problem.Unreachable)
-                }
-            }
-        } catch (_: IOException) {
-            ServerResult.Failed(Problem.Unreachable)
-        } catch (_: IllegalArgumentException) {
-            // The address passed the domain's checks but OkHttp can't build a URL from it.
-            ServerResult.Failed(Problem.Unreachable)
         }
     }
 
@@ -228,14 +178,6 @@ internal class ImmichAlbumRepository(
 }
 
 private val Album.order get() = if (newestFirst) "desc" else "asc"
-
-internal inline fun <reified T> decode(body: String?): T? = try {
-    body?.let { immichJson.decodeFromString<T>(it) }
-} catch (_: SerializationException) {
-    null
-} catch (_: IllegalArgumentException) {
-    null
-}
 
 /** Maps every item, or fails as [Problem.Unreachable] if one can't be read (a bad date). */
 private inline fun <A, B> mapAll(items: List<A>, transform: (A) -> B): ServerResult<List<B>> = try {
@@ -296,60 +238,3 @@ private data class AlbumUserDto(val user: UserDto)
 
 @Serializable
 private data class UserDto(val id: String)
-
-/** `TimeBucketsResponseDto`: a month (`timeBucket`, its first day) and how many items it has. */
-@Serializable
-private data class BucketDto(val timeBucket: String, val count: Int)
-
-/**
- * The columns of the columnar `TimeBucketAssetResponseDto` the app reads. Beyond `id` and `isImage`,
- * a column that is absent, or an item in it that is null, reads as unknown for that item: it costs a
- * slide its date or place, and can't fail the months the album screen reads with this too.
- */
-@Serializable
-private data class BucketAssetsDto(
-    val id: List<String>,
-    val isImage: List<Boolean>,
-    val ratio: List<Double?> = emptyList(),
-    val city: List<String?> = emptyList(),
-    val country: List<String?> = emptyList(),
-    val fileCreatedAt: List<String?> = emptyList(),
-    val localOffsetHours: List<Double?> = emptyList(),
-    val localDateTime: List<String?> = emptyList(),
-) {
-    fun toPhotos(): List<Photo> = id.zip(isImage) { id, image -> Photo(PhotoId(id), isVideo = !image) }
-
-    fun toSlides(): List<Slide> = toPhotos().mapIndexed { i, photo ->
-        Slide(
-            photo = photo,
-            portrait = ratio.getOrNull(i)?.let { it < 1 } ?: false,
-            takenOn = takenOn(localDateTime.getOrNull(i), fileCreatedAt.getOrNull(i), localOffsetHours.getOrNull(i)),
-            place = place(city.getOrNull(i), country.getOrNull(i)),
-        )
-    }
-}
-
-/**
- * The calendar day where the photo was taken. v1.133 and v1.134 send it as `localDateTime`; from
- * v1.135 that column is gone, and it is `fileCreatedAt` (UTC, with or without a `Z`) moved by
- * `localOffsetHours`, which may be fractional. One that can't be read is unknown, never a failed show.
- */
-private fun takenOn(localDateTime: String?, fileCreatedAt: String?, offsetHours: Double?): LocalDate? = try {
-    when {
-        localDateTime != null -> LocalDate.parse(localDateTime.take(10))
-        fileCreatedAt != null -> LocalDateTime.parse(fileCreatedAt.removeSuffix("Z"))
-            .plusSeconds(((offsetHours ?: 0.0) * SECONDS_PER_HOUR).roundToLong())
-            .toLocalDate()
-        else -> null
-    }
-} catch (_: DateTimeParseException) {
-    null
-}
-
-private const val SECONDS_PER_HOUR = 3600
-
-internal fun place(city: String?, country: String?): Place? {
-    val knownCity = city?.takeIf { it.isNotBlank() }
-    val knownCountry = country?.takeIf { it.isNotBlank() }
-    return if (knownCity == null && knownCountry == null) null else Place(knownCity, knownCountry)
-}

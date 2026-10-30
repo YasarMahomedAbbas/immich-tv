@@ -18,11 +18,11 @@ class LoadSlideshowTest {
         slides = ServerResult.Ok(listOf(slide("a"), slide("v", isVideo = true), slide("b"), slide("c"), slide("d")))
     }
 
-    private suspend fun ids(order: SlideshowOrder, seed: Int = 1): List<String> =
-        (LoadSlideshow(repository, Random(seed))(album(), order) as ServerResult.Ok).value.map { it.photo.id.value }
+    private suspend fun ids(order: SlideshowOrder, videos: VideoMode = VideoMode.Skip, seed: Int = 1): List<String> =
+        (LoadSlideshow(repository, Random(seed))(album(), order, videos) as ServerResult.Ok).value.map { it.photo.id.value }
 
     @Test
-    fun `oldest first keeps the order the repository gives, without the videos`() = runTest {
+    fun `oldest first keeps the order the repository gives`() = runTest {
         assertEquals(listOf("a", "b", "c", "d"), ids(SlideshowOrder.OldestFirst))
     }
 
@@ -39,9 +39,40 @@ class LoadSlideshowTest {
     }
 
     @Test
-    fun `playable leaves out videos and keeps the order`() {
+    fun `withoutVideos leaves out videos and keeps the order`() {
         val list = listOf(slide("b"), slide("v", isVideo = true), slide("a"))
-        assertEquals(listOf(slide("b"), slide("a")), list.playable())
+        assertEquals(listOf(slide("b"), slide("a")), list.withoutVideos())
+    }
+
+    @Test
+    fun `skip leaves the videos out in each order`() = runTest {
+        for (order in SlideshowOrder.entries) {
+            assertEquals(false, "v" in ids(order, VideoMode.Skip))
+        }
+    }
+
+    @Test
+    fun `muted and with sound keep the videos where they are, oldest first`() = runTest {
+        for (mode in listOf(VideoMode.PlayMuted, VideoMode.PlayWithSound)) {
+            assertEquals(listOf("a", "v", "b", "c", "d"), ids(SlideshowOrder.OldestFirst, mode))
+        }
+    }
+
+    @Test
+    fun `muted and with sound keep the videos newest first`() = runTest {
+        for (mode in listOf(VideoMode.PlayMuted, VideoMode.PlayWithSound)) {
+            assertEquals(listOf("d", "c", "b", "v", "a"), ids(SlideshowOrder.NewestFirst, mode))
+        }
+    }
+
+    @Test
+    fun `muted and with sound keep the videos in a shuffle`() = runTest {
+        for (mode in listOf(VideoMode.PlayMuted, VideoMode.PlayWithSound)) {
+            assertEquals(
+                listOf("a", "v", "b", "c", "d").shuffled(Random(7)),
+                ids(SlideshowOrder.Shuffle, mode, seed = 7),
+            )
+        }
     }
 
     @Test
@@ -49,7 +80,7 @@ class LoadSlideshowTest {
         repository.slides = ServerResult.Failed(Problem.KeyLacksPermission)
         assertEquals(
             ServerResult.Failed(Problem.KeyLacksPermission),
-            LoadSlideshow(repository)(album(), SlideshowOrder.OldestFirst),
+            LoadSlideshow(repository)(album(), SlideshowOrder.OldestFirst, VideoMode.PlayMuted),
         )
     }
 }

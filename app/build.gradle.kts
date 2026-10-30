@@ -77,6 +77,10 @@ kover {
                     // Coil's interceptor and image loader need an Android context; the URL and
                     // cache key they use are pure functions in ImmichImages, tested there.
                     "*.PreviewInterceptor*",
+                    // The player and its media source need an Android context; the address and
+                    // header they use are pure, in ImmichVideo, tested there.
+                    "*.ImmichVideoPlayer*",
+                    "*.VideoSourceFactory*",
                 )
             }
         }
@@ -103,6 +107,8 @@ dependencies {
     implementation(libs.serialization.json)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.datasource.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)

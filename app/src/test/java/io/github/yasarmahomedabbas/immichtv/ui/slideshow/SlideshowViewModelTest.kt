@@ -6,7 +6,9 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.FakeAlbumRepository
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.album
+import io.github.yasarmahomedabbas.immichtv.domain.map
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Dispatchers
@@ -39,23 +41,33 @@ class SlideshowViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun albumShow(settings: SlideshowSettings = SlideshowSettings()) =
-        SlideshowViewModel(settings) { LoadSlideshow(repository)(album(), settings.order) }
-
     private fun slide(id: String) = Slide(Photo(PhotoId(id), false), false, null, null)
+
+    private fun video(id: String) = Slide(Photo(PhotoId(id), true), false, null, null)
 
     private fun photo(id: String) = PhotoId(id)
 
     private val SlideshowViewModel.shown get() = state.value.current?.photo?.id?.value
 
+    private fun albumShow(settings: SlideshowSettings) = SlideshowViewModel(settings) {
+        LoadSlideshow(repository)(album(), settings.order, settings.videos).map { Playlist(it) }
+    }
+
     /** A slideshow of [ids] at 5 s a photo, loaded, with every photo's image ready if [allReady]. */
     private fun TestScope.loaded(vararg ids: String, allReady: Boolean = true): SlideshowViewModel {
-        repository.slides = ServerResult.Ok(ids.map(::slide))
+        return show(ids.map(::slide), allReady)
+    }
+
+    private fun TestScope.show(slides: List<Slide>, allReady: Boolean = true): SlideshowViewModel {
+        repository.slides = ServerResult.Ok(slides)
         val vm = albumShow(SlideshowSettings(secondsPerPhoto = 5))
         advanceUntilIdle()
-        if (allReady) ids.forEach { vm.imageReady(photo(it)) }
+        if (allReady) slides.forEach { vm.imageReady(it.photo.id) }
         return vm
     }
+
+    private fun SlideshowViewModel.failCurrent(serverFailure: Boolean) =
+        videoFailed(state.value.current!!.photo.id, serverFailure)
 
     private fun TestScope.playing(vm: SlideshowViewModel) = backgroundScope.launch { vm.play() }
 
@@ -68,7 +80,7 @@ class SlideshowViewModelTest {
     @Test
     fun `it loads, then plays from the first photo`() = runTest(dispatcher) {
         repository.slides = ServerResult.Ok(listOf(slide("a"), slide("b")))
-        val vm = albumShow()
+        val vm = albumShow(SlideshowSettings())
         assertEquals(SlideshowLoad.Loading, vm.state.value.load)
         advanceUntilIdle()
 
@@ -83,7 +95,7 @@ class SlideshowViewModelTest {
         val slides = listOf(slide("c"), slide("a"), slide("b"))
         val vm = SlideshowViewModel(SlideshowSettings()) {
             calls++
-            ServerResult.Ok(slides)
+            ServerResult.Ok(Playlist(slides))
         }
         advanceUntilIdle()
 
@@ -94,9 +106,33 @@ class SlideshowViewModelTest {
 
     @Test
     fun `an empty list has nothing to play`() = runTest(dispatcher) {
-        val vm = SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(emptyList()) }
+        val vm = SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(Playlist(emptyList())) }
         advanceUntilIdle()
         assertEquals(SlideshowLoad.Empty, vm.state.value.load)
+    }
+
+    @Test
+    fun `a playlist with a start plays from there, and moves on and back from there`() = runTest(dispatcher) {
+        val slides = listOf(slide("a"), slide("b"), slide("c"))
+        val vm = SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(Playlist(slides, start = 2)) }
+        advanceUntilIdle()
+
+        assertEquals("c", vm.shown)
+        assertEquals(3, vm.state.value.position)
+        vm.skipForward()
+        assertEquals("a", vm.shown)
+    }
+
+    @Test
+    fun `retry goes back to the playlist's start`() = runTest(dispatcher) {
+        var result: ServerResult<Playlist> = ServerResult.Failed(Problem.Unreachable)
+        val vm = SlideshowViewModel(SlideshowSettings()) { result }
+        advanceUntilIdle()
+
+        result = ServerResult.Ok(Playlist(listOf(slide("a"), slide("b")), start = 1))
+        vm.retry()
+        advanceUntilIdle()
+        assertEquals("b", vm.shown)
     }
 
     @Test
@@ -107,7 +143,7 @@ class SlideshowViewModelTest {
     @Test
     fun `a failed load says why, and retry plays`() = runTest(dispatcher) {
         repository.slides = ServerResult.Failed(Problem.KeyRejected)
-        val vm = albumShow()
+        val vm = albumShow(SlideshowSettings())
         advanceUntilIdle()
         assertEquals(SlideshowLoad.Failed(Problem.KeyRejected), vm.state.value.load)
 
@@ -121,7 +157,7 @@ class SlideshowViewModelTest {
     @Test
     fun `retry is ignored while loading`() = runTest(dispatcher) {
         repository.slides = ServerResult.Ok(listOf(slide("a")))
-        val vm = albumShow()
+        val vm = albumShow(SlideshowSettings())
         vm.retry()
         advanceUntilIdle()
         assertEquals(1, repository.slidesCalls)
@@ -371,5 +407,237 @@ class SlideshowViewModelTest {
         assertEquals("a", vm.shown)
         pass(100)
         assertEquals("b", vm.shown)
+    }
+
+    @Test
+    fun `a video ignores the time per photo`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), slide("a")))
+        vm.videoPlaying(photo("v"))
+        playing(vm)
+        pass(120_000)
+        assertEquals("v", vm.shown)
+    }
+
+    @Test
+    fun `a video's end moves the show on`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), slide("a")))
+        vm.videoPlaying(photo("v"))
+        playing(vm)
+        pass(1_000)
+        vm.videoEnded(photo("v"))
+        pass(100)
+        assertEquals("a", vm.shown)
+    }
+
+    @Test
+    fun `a photo after a video gets its full time`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), slide("a"), slide("b")))
+        playing(vm)
+        vm.videoEnded(photo("v"))
+        pass(100)
+        assertEquals("a", vm.shown)
+        pass(4_900)
+        assertEquals("a", vm.shown)
+        pass(100)
+        assertEquals("b", vm.shown)
+    }
+
+    @Test
+    fun `a video's end waits if the next isn't ready`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), slide("a")), allReady = false)
+        vm.imageReady(photo("v"))
+        vm.videoPlaying(photo("v"))
+        vm.videoEnded(photo("v"))
+        playing(vm)
+        // Well past the stall time: an ended video isn't stalled.
+        pass(60_000)
+        assertEquals("v", vm.shown)
+
+        vm.imageReady(photo("a"))
+        pass(100)
+        assertEquals("a", vm.shown)
+    }
+
+    @Test
+    fun `a sole video plays again at its end`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v")))
+        vm.videoPlaying(photo("v"))
+        playing(vm)
+        assertEquals(0, vm.state.value.run)
+        vm.videoEnded(photo("v"))
+        pass(100)
+        assertEquals("v", vm.shown)
+        assertEquals(1, vm.state.value.run)
+
+        // Once only, until it ends again.
+        pass(5_000)
+        assertEquals(1, vm.state.value.run)
+    }
+
+    @Test
+    fun `every move raises the run`() = runTest(dispatcher) {
+        val vm = loaded("a", "b")
+        vm.skipForward()
+        vm.skipBack()
+        assertEquals(2, vm.state.value.run)
+    }
+
+    @Test
+    fun `thirty seconds without playing fails a video, and the show goes on`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), slide("a")))
+        playing(vm)
+        pass(SlideshowViewModel.VIDEO_STALL_MS - 100)
+        assertEquals("v", vm.shown)
+        pass(100)
+        assertEquals("a", vm.shown)
+        assertEquals(1, vm.state.value.slides.size)
+    }
+
+    @Test
+    fun `a video that stops moving half way fails after thirty seconds too`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), slide("a")))
+        vm.videoPlaying(photo("v"))
+        playing(vm)
+        pass(60_000)
+        assertEquals("v", vm.shown)
+
+        vm.videoWaiting(photo("v"))
+        pass(SlideshowViewModel.VIDEO_STALL_MS - 100)
+        assertEquals("v", vm.shown)
+        pass(100)
+        assertEquals("a", vm.shown)
+    }
+
+    @Test
+    fun `playing restarts the stall clock`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), slide("a")))
+        playing(vm)
+        pass(20_000)
+        vm.videoPlaying(photo("v"))
+        vm.videoWaiting(photo("v"))
+        pass(SlideshowViewModel.VIDEO_STALL_MS - 100)
+        assertEquals("v", vm.shown)
+    }
+
+    @Test
+    fun `a pause holds the stall clock`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), slide("a")))
+        playing(vm)
+        pass(20_000)
+        vm.togglePause()
+        pass(60_000)
+        assertEquals("v", vm.shown)
+
+        vm.togglePause()
+        pass(9_900)
+        assertEquals("v", vm.shown)
+        pass(200)
+        assertEquals("a", vm.shown)
+    }
+
+    @Test
+    fun `a skip resets the stall clock`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), video("w")))
+        playing(vm)
+        pass(20_000)
+        vm.skipForward()
+        pass(20_000)
+        assertEquals("w", vm.shown)
+        vm.skipBack()
+        pass(SlideshowViewModel.VIDEO_STALL_MS - 100)
+        assertEquals("v", vm.shown)
+        assertEquals(2, vm.state.value.slides.size)
+    }
+
+    @Test
+    fun `a video whose preview isn't up doesn't stall`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), slide("a")), allReady = false)
+        playing(vm)
+        pass(120_000)
+        assertEquals("v", vm.shown)
+    }
+
+    @Test
+    fun `a dropped video's end doesn't carry over to the next`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), video("w"), slide("a")))
+        vm.videoEnded(photo("v"))
+        vm.failCurrent(serverFailure = false)
+        playing(vm)
+        pass(1_000)
+        assertEquals("w", vm.shown)
+    }
+
+    @Test
+    fun `late reports about another slide change nothing`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v"), video("w"), slide("a")))
+        vm.videoEnded(photo("w"))
+        vm.videoFailed(photo("w"), serverFailure = true)
+        vm.videoPlaying(photo("w"))
+        playing(vm)
+        pass(1_000)
+        assertEquals("v", vm.shown)
+        assertEquals(3, vm.state.value.slides.size)
+
+        // Its playing didn't count for this one: the stall clock is still running.
+        pass(SlideshowViewModel.VIDEO_STALL_MS - 1_000)
+        assertEquals("w", vm.shown)
+    }
+
+    @Test
+    fun `a video this TV can't decode doesn't count towards failing the show`() = runTest(dispatcher) {
+        val vm = show(List(7) { video("v$it") })
+        repeat(6) { vm.failCurrent(serverFailure = false) }
+        assertEquals(SlideshowLoad.Playing, vm.state.value.load)
+        assertEquals(1, vm.state.value.slides.size)
+    }
+
+    @Test
+    fun `when an undecodable video was the last item the show is empty`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v")))
+        vm.failCurrent(serverFailure = false)
+        assertEquals(SlideshowLoad.Empty, vm.state.value.load)
+    }
+
+    @Test
+    fun `five server failures fail the show`() = runTest(dispatcher) {
+        val vm = show(List(6) { video("v$it") })
+        repeat(SlideshowViewModel.MAX_FAILURES - 1) { vm.failCurrent(serverFailure = true) }
+        assertEquals(SlideshowLoad.Playing, vm.state.value.load)
+        vm.failCurrent(serverFailure = true)
+        assertEquals(SlideshowLoad.Failed(Problem.Unreachable), vm.state.value.load)
+    }
+
+    @Test
+    fun `when a server failure was the last item the show has failed`() = runTest(dispatcher) {
+        val vm = show(listOf(video("v")))
+        vm.failCurrent(serverFailure = true)
+        assertEquals(SlideshowLoad.Failed(Problem.Unreachable), vm.state.value.load)
+    }
+
+    @Test
+    fun `a video's preview doesn't start the count again, a cached one would hide a dead server`() = runTest(dispatcher) {
+        val vm = show(List(6) { video("v$it") })
+        repeat(4) { vm.failCurrent(serverFailure = true) }
+        vm.imageReady(vm.state.value.current!!.photo.id)
+        vm.failCurrent(serverFailure = true)
+        assertEquals(SlideshowLoad.Failed(Problem.Unreachable), vm.state.value.load)
+    }
+
+    @Test
+    fun `a video's first frame starts the count again`() = runTest(dispatcher) {
+        val vm = show(List(7) { video("v$it") })
+        repeat(4) { vm.failCurrent(serverFailure = true) }
+        vm.videoPlaying(vm.state.value.current!!.photo.id)
+        repeat(2) { vm.failCurrent(serverFailure = true) }
+        assertEquals(SlideshowLoad.Playing, vm.state.value.load)
+    }
+
+    @Test
+    fun `an image no longer in the show starts the count again`() = runTest(dispatcher) {
+        val vm = show(List(7) { video("v$it") })
+        repeat(4) { vm.failCurrent(serverFailure = true) }
+        vm.imageReady(photo("gone"))
+        repeat(2) { vm.failCurrent(serverFailure = true) }
+        assertEquals(SlideshowLoad.Playing, vm.state.value.load)
     }
 }

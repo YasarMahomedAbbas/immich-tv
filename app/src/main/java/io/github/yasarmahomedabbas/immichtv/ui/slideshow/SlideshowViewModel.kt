@@ -10,7 +10,10 @@ import io.github.yasarmahomedabbas.immichtv.domain.Problem
 import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Album
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
+import io.github.yasarmahomedabbas.immichtv.domain.map
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowOrder
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,13 +34,18 @@ sealed interface SlideshowLoad {
     data object Playing : SlideshowLoad
 }
 
-/** The slideshow. [next] and [previous] wrap, so one photo is its own neighbour. */
+/**
+ * The slideshow. [next] and [previous] wrap, so one photo is its own neighbour.
+ *
+ * @property run goes up on every move, so a sole video, its own next, plays again.
+ */
 data class SlideshowState(
     val load: SlideshowLoad = SlideshowLoad.Loading,
     val slides: List<Slide> = emptyList(),
     val index: Int = 0,
     val paused: Boolean = false,
     val controlsVisible: Boolean = false,
+    val run: Int = 0,
 ) {
     val current: Slide? get() = slides.getOrNull(index)
     val next: Slide? get() = if (slides.isEmpty()) null else slides[(index + 1) % slides.size]
@@ -49,11 +57,12 @@ data class SlideshowState(
 
 /**
  * What the slideshow does over time. It knows nothing of Android: the screen runs [play] while it
- * is started, and reports each image the loader got ([imageReady]) or couldn't ([imageFailed]).
+ * is started, and reports each image the loader got ([imageReady]) or couldn't ([imageFailed]), and
+ * what the current video's player does ([videoPlaying], [videoWaiting], [videoEnded], [videoFailed]).
  */
 class SlideshowViewModel(
     private val settings: SlideshowSettings,
-    private val loadSlides: suspend () -> ServerResult<List<Slide>>,
+    private val loadPlaylist: suspend () -> ServerResult<Playlist>,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SlideshowState())
     val state: StateFlow<SlideshowState> = _state.asStateFlow()
@@ -62,6 +71,9 @@ class SlideshowViewModel(
     private var failuresInARow = 0
     private val ready = LinkedHashSet<PhotoId>()
     private var hideControls: Job? = null
+    private var videoEnded = false
+    private var videoMoving = false
+    private var videoWaitMs = 0L
 
     init {
         load()
@@ -70,6 +82,7 @@ class SlideshowViewModel(
     /**
      * The timer: runs until cancelled, so the show stops with the screen and when the app is left.
      * A photo's time starts once it can be seen, and at the end of it the show waits for the next.
+     * A video has no time of its own: it goes when it ends, or fails after [VIDEO_STALL_MS] standing still.
      */
     suspend fun play() {
         val photoMs = settings.secondsPerPhoto * MS_PER_SECOND
@@ -77,6 +90,10 @@ class SlideshowViewModel(
             delay(TICK_MS)
             val state = _state.value
             if (state.load != SlideshowLoad.Playing || state.paused) continue
+            if (state.current?.photo?.isVideo == true) {
+                videoTick(state)
+                continue
+            }
             if (state.current?.photo?.id !in ready) continue
             if (elapsedMs < photoMs) elapsedMs += TICK_MS
             if (elapsedMs >= photoMs && state.next?.photo?.id in ready) {
@@ -106,25 +123,79 @@ class SlideshowViewModel(
         }
     }
 
+    /** A video's preview says nothing of its stream, so only a photo's image shows the server is there. */
     fun imageReady(photo: PhotoId) {
-        failuresInARow = 0
+        val isVideo = _state.value.slides.firstOrNull { it.photo.id == photo }?.photo?.isVideo == true
+        if (!isVideo) failuresInARow = 0
         ready -= photo
         ready += photo
         if (ready.size > READY_KEPT) ready -= ready.first()
     }
 
-    /** Takes the photo out of the show, keeping [SlideshowState.index] on the same slide. */
-    fun imageFailed(photo: PhotoId) {
+    fun imageFailed(photo: PhotoId) = drop(photo, counts = true)
+
+    /** The video's frames are moving, so the server is there. */
+    fun videoPlaying(photo: PhotoId) {
+        if (!isCurrent(photo)) return
+        videoMoving = true
+        videoWaitMs = 0
+        failuresInARow = 0
+    }
+
+    fun videoWaiting(photo: PhotoId) {
+        if (isCurrent(photo)) videoMoving = false
+    }
+
+    fun videoEnded(photo: PhotoId) {
+        if (!isCurrent(photo)) return
+        videoEnded = true
+        videoMoving = false
+    }
+
+    /** Only a failure to reach the server counts towards [MAX_FAILURES]: this TV not decoding a video says nothing of it. */
+    fun videoFailed(photo: PhotoId, serverFailure: Boolean) {
+        if (isCurrent(photo)) drop(photo, counts = serverFailure)
+    }
+
+    fun retry() {
+        if (_state.value.load == SlideshowLoad.Loading) return
+        load()
+    }
+
+    private fun isCurrent(photo: PhotoId) = _state.value.current?.photo?.id == photo
+
+    private fun videoTick(state: SlideshowState) {
+        val id = state.current?.photo?.id ?: return
+        when {
+            // The preview isn't up, so the video hasn't started.
+            id !in ready -> Unit
+            videoEnded -> if (state.next?.photo?.id in ready) moveBy(1)
+            !videoMoving -> {
+                videoWaitMs += TICK_MS
+                if (videoWaitMs >= VIDEO_STALL_MS) videoFailed(id, serverFailure = true)
+            }
+        }
+    }
+
+    /** Takes the item out of the show, keeping [SlideshowState.index] on the same slide. */
+    private fun drop(photo: PhotoId, counts: Boolean) {
         val state = _state.value
         val at = state.slides.indexOfFirst { it.photo.id == photo }
         if (at < 0) return
-        failuresInARow++
+        if (counts) failuresInARow++
         val slides = state.slides - state.slides[at]
+        if (slides.isEmpty() && !counts) {
+            _state.update { it.copy(load = SlideshowLoad.Empty, controlsVisible = false) }
+            return
+        }
         if (slides.isEmpty() || failuresInARow >= MAX_FAILURES) {
             _state.update { it.copy(load = SlideshowLoad.Failed(Problem.Unreachable), controlsVisible = false) }
             return
         }
-        if (at == state.index) elapsedMs = 0
+        if (at == state.index) {
+            elapsedMs = 0
+            resetVideo()
+        }
         val index = when {
             at < state.index -> state.index - 1
             state.index >= slides.size -> 0
@@ -133,9 +204,10 @@ class SlideshowViewModel(
         _state.update { it.copy(slides = slides, index = index) }
     }
 
-    fun retry() {
-        if (_state.value.load == SlideshowLoad.Loading) return
-        load()
+    private fun resetVideo() {
+        videoEnded = false
+        videoMoving = false
+        videoWaitMs = 0
     }
 
     private fun skip(by: Int) {
@@ -146,20 +218,23 @@ class SlideshowViewModel(
 
     private fun moveBy(by: Int) {
         elapsedMs = 0
-        _state.update { it.copy(index = (it.index + by + it.slides.size) % it.slides.size) }
+        resetVideo()
+        _state.update { it.copy(index = (it.index + by + it.slides.size) % it.slides.size, run = it.run + 1) }
     }
 
     private fun load() {
         hideControls?.cancel()
         elapsedMs = 0
+        resetVideo()
         failuresInARow = 0
         ready.clear()
         _state.value = SlideshowState()
         viewModelScope.launch {
-            _state.value = when (val result = loadSlides()) {
+            _state.value = when (val result = loadPlaylist()) {
                 is ServerResult.Ok -> SlideshowState(
-                    load = if (result.value.isEmpty()) SlideshowLoad.Empty else SlideshowLoad.Playing,
-                    slides = result.value,
+                    load = if (result.value.slides.isEmpty()) SlideshowLoad.Empty else SlideshowLoad.Playing,
+                    slides = result.value.slides,
+                    index = result.value.start,
                 )
                 is ServerResult.Failed -> SlideshowState(load = SlideshowLoad.Failed(result.problem))
             }
@@ -169,6 +244,9 @@ class SlideshowViewModel(
     companion object {
         const val CONTROLS_MS = 4_000L
         const val MAX_FAILURES = 5
+
+        /** How long a video may stand still, before its first frame or mid-way, before it counts as failed. */
+        const val VIDEO_STALL_MS = 30_000L
         private const val TICK_MS = 100L
         private const val MS_PER_SECOND = 1_000L
 
@@ -176,15 +254,27 @@ class SlideshowViewModel(
         private const val READY_KEPT = 8
 
         fun factory(container: AppContainer, album: Album, settings: SlideshowSettings) = viewModelFactory {
-            initializer { SlideshowViewModel(settings) { container.loadSlideshow(album, settings.order) } }
+            initializer {
+                SlideshowViewModel(settings) { container.loadSlideshow(album, settings.order, settings.videos).map { Playlist(it) } }
+            }
+        }
+
+        /** The whole library from the photo [from] onward, with [TimelineSettings]. */
+        fun fromTimeline(container: AppContainer, from: PhotoId) = viewModelFactory {
+            initializer {
+                SlideshowViewModel(TimelineSettings) { container.loadLibrarySlideshow(from) }
+            }
         }
 
         /** [slides] in the order given, at the default timing. */
         fun factory(slides: List<Slide>) = viewModelFactory {
-            initializer { SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(slides) } }
+            initializer { SlideshowViewModel(SlideshowSettings()) { ServerResult.Ok(Playlist(slides)) } }
         }
     }
 }
+
+/** A library show can't be set up: the defaults (8 s, date and place on), newest to oldest. */
+val TimelineSettings = SlideshowSettings(order = SlideshowOrder.NewestFirst)
 
 /** The date ("23 August 2025") and place ("Lisbon, Portugal") to show, each null when unknown. */
 internal fun dateAndPlace(slide: Slide, locale: Locale = Locale.getDefault()): Pair<String?, String?> {
@@ -232,7 +322,13 @@ internal data class StageLayers(val shown: Slide? = null, val lastLoaded: Slide?
     private fun Slide.sameAs(other: Slide) = photo.id == other.photo.id
 }
 
-/** [whenHeld]: whether a held key's repeats count. A held OK would otherwise flip the pause on and off. */
+/** Whether a player's error means the server couldn't be reached: Media3's `ERROR_CODE_IO_*` range. */
+internal fun isServerFailure(errorCode: Int): Boolean = errorCode in 2000..2999
+
+/**
+ * [whenHeld]: whether a held key's repeats count. A held OK would otherwise flip the pause on and off,
+ * and holding OK on a tile is what starts a library show: the rest of that hold's repeats arrive here.
+ */
 internal enum class SlideshowAction(val whenHeld: Boolean = true) { Back, Forward, TogglePause(whenHeld = false), ShowControls }
 
 /** What a key on the remote does while the slideshow plays; null leaves it alone (Back, for one). */

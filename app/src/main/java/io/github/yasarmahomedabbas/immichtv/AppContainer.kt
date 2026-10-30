@@ -1,12 +1,15 @@
 package io.github.yasarmahomedabbas.immichtv
 
 import android.content.Context
+import androidx.media3.exoplayer.ExoPlayer
 import coil3.ImageLoader
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichAlbumRepository
+import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichLibraryRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichSearchRepository
 import io.github.yasarmahomedabbas.immichtv.data.immich.ImmichServerConnector
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichHttpClient
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichImageLoader
+import io.github.yasarmahomedabbas.immichtv.data.immich.immichVideoPlayer
 import io.github.yasarmahomedabbas.immichtv.data.settings.KeystoreCipher
 import io.github.yasarmahomedabbas.immichtv.data.settings.SharedPreferencesStorage
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSessionRepository
@@ -14,12 +17,14 @@ import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSlideshowSetting
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbums
+import io.github.yasarmahomedabbas.immichtv.domain.photos.LibraryTimeline
 import io.github.yasarmahomedabbas.immichtv.domain.search.LoadPeople
 import io.github.yasarmahomedabbas.immichtv.domain.search.LoadPhotosOf
 import io.github.yasarmahomedabbas.immichtv.domain.search.SearchPhotos
 import io.github.yasarmahomedabbas.immichtv.domain.server.ConnectToServer
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadLibrarySlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveSlideshowSettings
 
@@ -43,6 +48,10 @@ class AppContainer(context: Context) {
     val albumTimeline = AlbumTimeline(albums)
     val loadSlideshow = LoadSlideshow(albums)
 
+    private val library = ImmichLibraryRepository(http, sessions)
+    val libraryTimeline = LibraryTimeline(library)
+    val loadLibrarySlideshow = LoadLibrarySlideshow(library)
+
     private val search = ImmichSearchRepository(http, sessions)
     val searchPhotos = SearchPhotos(search)
     val loadPeople = LoadPeople(search)
@@ -53,6 +62,9 @@ class AppContainer(context: Context) {
     )
     /** Loads a domain `Preview` with the key header; the app's one Coil image loader. */
     fun imageLoader(context: Context): ImageLoader = immichImageLoader(context, http, sessions)
+
+    /** Plays a domain `Video` with the key header; one per video layer on screen. */
+    fun videoPlayer(context: Context): ExoPlayer = immichVideoPlayer(context, http, sessions)
 
     val getSlideshowSettings = GetSlideshowSettings(slideshowSettings)
     val saveSlideshowSettings = SaveSlideshowSettings(slideshowSettings)

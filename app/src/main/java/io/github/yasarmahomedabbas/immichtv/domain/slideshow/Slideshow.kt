@@ -4,12 +4,14 @@ import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Album
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumRepository
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
+import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.map
+import io.github.yasarmahomedabbas.immichtv.domain.photos.LibraryRepository
 import java.time.LocalDate
 import kotlin.random.Random
 
 /**
- * One photo or video, as a slideshow needs it.
+ * One item of an album, the library or search results, as a slideshow needs it.
  *
  * @property portrait taller than wide, so it sits on a backdrop of itself; false when unknown.
  * @property takenOn the calendar day where it was taken, when known.
@@ -19,19 +21,36 @@ data class Slide(val photo: Photo, val portrait: Boolean, val takenOn: LocalDate
 /** Where a photo was taken: never both null. */
 data class Place(val city: String?, val country: String?)
 
-/** What of these a slideshow can play: videos are left out until it can play them. */
-fun List<Slide>.playable(): List<Slide> = filterNot { it.photo.isVideo }
+/** These without their videos: a Skip show, and a show of search results, which plays photos only. */
+fun List<Slide>.withoutVideos(): List<Slide> = filterNot { it.photo.isVideo }
 
-/** What a slideshow of an album plays: its photos, in the order the settings ask for. */
+/** What a slideshow plays, and the slide it begins on. */
+data class Playlist(val slides: List<Slide>, val start: Int = 0)
+
+/** What a slideshow of an album plays: its items, as the Videos setting keeps them, in the order the settings ask for. */
 class LoadSlideshow(private val repository: AlbumRepository, private val random: Random = Random.Default) {
-    suspend operator fun invoke(album: Album, order: SlideshowOrder): ServerResult<List<Slide>> =
+    suspend operator fun invoke(album: Album, order: SlideshowOrder, videos: VideoMode): ServerResult<List<Slide>> =
         repository.slides(album).map { all ->
-            // Whatever the Videos setting says.
-            val photos = all.playable()
+            val slides = if (videos == VideoMode.Skip) all.withoutVideos() else all
             when (order) {
-                SlideshowOrder.OldestFirst -> photos
-                SlideshowOrder.NewestFirst -> photos.reversed()
-                SlideshowOrder.Shuffle -> photos.shuffled(random)
+                SlideshowOrder.OldestFirst -> slides
+                SlideshowOrder.NewestFirst -> slides.reversed()
+                SlideshowOrder.Shuffle -> slides.shuffled(random)
             }
+        }
+}
+
+/**
+ * What a slideshow of the whole library plays, newest to oldest, beginning at [invoke]'s photo: the
+ * first photo at or after it, since a library show leaves videos out. A video with no photo after
+ * it, or a photo no longer there, begins at the newest.
+ */
+class LoadLibrarySlideshow(private val repository: LibraryRepository) {
+    suspend operator fun invoke(from: PhotoId): ServerResult<Playlist> =
+        repository.slides().map { all ->
+            val photos = all.filterNot { it.photo.isVideo }
+            val at = all.indexOfFirst { it.photo.id == from }
+            val first = if (at < 0) null else all.drop(at).firstOrNull { !it.photo.isVideo }
+            Playlist(photos, start = first?.let(photos::indexOf) ?: 0)
         }
 }

@@ -120,3 +120,11 @@ Reported by the user on the issue, tested on the TV on 2026-10-30, 12:26 to 12:3
 - UP from the first tile goes to the People row above it, not to Play, as Play sits to the right. It is not a trap: UP from a tile under Play reaches Play. A small thing to try by hand.
 - RIGHT from the last person jumps up to a chip ("sunset"), as nothing lies further right. Focus stays visible and it is not a trap, but it may surprise; left as it is.
 - The TV was sent Home at the end of each hold; the launcher was read on top after the first. The TV keeps this branch's debug build, which does not include what merged to main since (#6, #7); `raise-pr` merges those in, and that combination has not been on the TV.
+
+## Raise PR
+
+- Merged origin/main (#6, #7) with 14 files in conflict. CI on the merge: 380 tests passed, 0 failed, 0 skipped; line coverage 87.8% (minimum 80%); `koverVerifyDebug`, `lintDebug` and `assembleDebug` pass. This merge has not been on the TV.
+- Taken from main: the slideshow's `Playlist`, `newPlayer` and `SlideshowSource`. `backLabel` went: results pass `SlideshowSource.Search`, with its own empty wording. `decode()` and `place()` moved in main; `place()` is internal again for the search repository. `MainScreen` takes all four slots; the Photos preview it had was dropped, as only Home is a placeholder now.
+- Decided (raise-pr; flag: ux, scope): a slideshow of search results stays photos only, though #6 has landed and the plan's reason was "as in albums". That is what was verified, and playing them would be new behaviour after verification and without the TV. Same call as #7's library show. `playable()` is now `withoutVideos()`, as videos are playable. Needs a decision or a follow-up ticket.
+- Decided (raise-pr; flag: ux, scope): OK on a result tile still does nothing, though #7 brought a viewer. The viewer walks the Photos timeline, not a list of results, so opening from search is new work. Needs a follow-up ticket.
+- README: the "until #6" line was false and is gone; the Slideshow bullet now says what albums do with videos, and that library shows and search results leave them out.

@@ -126,6 +126,28 @@ class AppViewModelTest {
     }
 
     @Test
+    fun `opening a photo shows the viewer, and back returns to the photos tab`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.selectTab(Tab.Photos)
+        vm.openPhotoViewer()
+        assertEquals(AppScreen.PhotoViewer, vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Main(Tab.Photos), vm.screen.value)
+    }
+
+    @Test
+    fun `a slideshow from a photo plays, and back returns to the photos tab`() = runTest(dispatcher) {
+        val vm = signedIn()
+        vm.selectTab(Tab.Photos)
+        vm.openTimelineSlideshow(PhotoId("p1"))
+        assertEquals(AppScreen.TimelineSlideshow(PhotoId("p1")), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Main(Tab.Photos), vm.screen.value)
+    }
+
+    @Test
     fun `back from any other tab goes home, and back on home is left to the system`() = runTest(dispatcher) {
         val vm = signedIn()
         for (tab in listOf(Tab.Albums, Tab.Photos, Tab.Search)) {

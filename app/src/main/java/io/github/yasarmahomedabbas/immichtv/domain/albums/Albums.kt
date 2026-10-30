@@ -15,6 +15,9 @@ data class Photo(val id: PhotoId, val isVideo: Boolean)
 /** A preview-size image of [photo]: what a screen hands the image loader. */
 data class Preview(val photo: PhotoId)
 
+/** A video to play: what a screen hands the player. */
+data class Video(val photo: PhotoId)
+
 /**
  * An album the user can see.
  *
