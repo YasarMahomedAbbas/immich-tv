@@ -85,8 +85,10 @@ fun PhotoGrid(
     }
     val firstReady = (sections.firstOrNull()?.photos as? MonthPhotos.Loaded)?.photos?.isNotEmpty() == true
     var focusedOnce by rememberSaveable { mutableStateOf(false) }
+    var lastFocused by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(firstReady) {
-        if (focusedOnce) return@LaunchedEffect
+        // The remote may already be on a tile of a month still loading: its arrival doesn't move it.
+        if (focusedOnce || lastFocused != null) return@LaunchedEffect
         val restoring = restoreTo?.let { gridIndexOfPhoto(sections, it) } != null
         if (restoring || firstReady) {
             withFrameNanos { }
@@ -94,7 +96,6 @@ fun PhotoGrid(
         }
     }
     // A refresh can take away the tile the remote is on; focus then starts again from the top.
-    var lastFocused by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(sections) {
         val present = sections.flatMap { section -> section.tiles().indices.map { tileKey(section.month, it) } }
         if (lostFocus(lastFocused, present)) {

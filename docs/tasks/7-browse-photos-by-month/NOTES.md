@@ -29,3 +29,10 @@ Branch: `feat/7-browse-photos-by-month`
 - Tests: 298 passed / 0 failed, with `koverVerifyDebug`, `lintDebug` (0 errors, 23 warnings) and `assembleDebug` green.
 - Outstanding: nothing unticked. Nothing here has run on the TV or against the real server: focus entering the rail on the selected month, focusing a far tile after a jump and on return, and hold OK are only provable on the TV (self-verification). The follow-up ticket for OK on the album grid (Q7.1) is still to be raised.
 - Contradicted the plan: `inline` in an internal class needed `internal` members, not `@PublishedApi` (it refused `decode` reading `immichJson`); checklist corrected. A library show would have said "‹ Album" and "Back to album", so `SlideshowScreen` gained `source: SlideshowSource`, with three strings; checklist corrected. `refresh()` rebuilt the state from scratch, which would have lost the focused month and the viewed photo, so it now copies. `KeyHint`'s 32dp bottom margin was not in the checklist.
+
+## Review
+
+- Fixed: a press waiting for a month survived leaving the viewer: at a month's last photo, right then Back before the month arrived moved `viewing`, so the grid's place changed behind the remote (`PhotoGridViewModel.viewerClosed`, tested). The first month arriving pulled focus back to the first tile when the remote had already moved onto a tile of it (`PhotoGrid.kt`, the first-focus guard; Compose focus code has no automated tests, so this one has none and goes to the TV check). The same arrival can still pull focus from the rail if Left is pressed within that first load: rare, left as is.
+- Raised: https://github.com/YasarMahomedAbbas/immich-tv/issues/22 (finished slideshows stay in memory); https://github.com/YasarMahomedAbbas/immich-tv/issues/23 (OK on an album's grid, Q7.1).
+- API: `GET /api/timeline/buckets` and `GET /api/timeline/bucket` with `visibility=timeline`, `withStacked=true`, `order=desc`: match docs and schema in the specs at v1.133.0 and v3.3.5, and the live v3.3.5 server (every column as long as `id`; the extra `stack` column is ignored). `timeBucket` sent back as received. Header on every call, tested.
+- Layers: clean

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,6 +52,7 @@ private val BadgeEdge = 54.dp
 @Composable
 fun PhotoViewerScreen(viewModel: PhotoGridViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
+    DisposableEffect(viewModel) { onDispose(viewModel::viewerClosed) }
     val photo = state.viewing
     if (photo == null) {
         LaunchedEffect(Unit) { onBack() }

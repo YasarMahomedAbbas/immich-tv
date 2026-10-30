@@ -157,6 +157,11 @@ class PhotoGridViewModel(private val timeline: Timeline) : ViewModel() {
         _state.update { it.copy(viewing = photo) }
     }
 
+    /** The viewer has gone: a press still waiting for a month is dropped, so the grid's place stays put. */
+    fun viewerClosed() {
+        pendingMove = null
+    }
+
     /**
      * Moves the open photo through the timeline ([by] is 1 or -1), with no wrap at either end. A month
      * not here yet is fetched, and the move finishes when it arrives; a later press replaces it. A

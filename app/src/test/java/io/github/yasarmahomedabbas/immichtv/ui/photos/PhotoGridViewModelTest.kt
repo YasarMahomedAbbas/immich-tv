@@ -433,6 +433,18 @@ class PhotoGridViewModelTest {
     }
 
     @Test
+    fun `closing the viewer drops the press waiting for a month`() = runTest(dispatcher) {
+        val vm = viewer(augustPhotos[1])
+
+        vm.viewerMove(1)
+        vm.viewerClosed()
+
+        advanceUntilIdle()
+        assertEquals("v1", vm.viewed)
+        assertEquals(MonthPhotos.Loaded(julyPhotos), vm.section(july).photos)
+    }
+
+    @Test
     fun `a later press replaces the one waiting for a month`() = runTest(dispatcher) {
         val vm = viewer(augustPhotos[1])
 
