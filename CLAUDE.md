@@ -12,7 +12,7 @@ Immich TV: an Android TV app (Kotlin, Compose for TV) for a Chromecast with Goog
 ## How tickets get built
 Tickets are GitHub issues; a `Needs: #a, #b` line names what must be closed first. The skills in `.claude/skills/` carry them from issue to release with nobody watching:
 
-- **`pipeline #<n>`** runs one ticket in its own worktree (`../worktrees/immich-tv/issue-<n>`) and tmux session (`immich-<n>`): `start-ticket` → `implement-plan` → `self-review` → `doc-drift` → `self-verification` → `raise-pr` → `merge-release`. The ticket folder `docs/tasks/<n>-<slug>/` (`CHECKLIST.md`, `NOTES.md`) is its stage log.
+- **`pipeline #<n>`** runs one ticket in its own worktree (`../worktrees/immich-tv/issue-<n>`) and herd (key `immich-tv:<n>`, a tab named `#<n> …`; `herd go immich-tv:<n>`): `start-ticket` → `implement-plan` → `self-review` → `doc-drift` → `self-verification` → `raise-pr` → `merge-release`. The ticket folder `docs/tasks/<n>-<slug>/` (`CHECKLIST.md`, `NOTES.md`) is its stage log.
 - **`autopilot`** starts a pipeline for every open ticket whose needs are closed (three at a time) and restarts ones a reboot stopped. A finished pipeline wakes it.
 - **The user has authorised merging and releasing without them.** `merge-release` squash-merges once CI is green and verification passed, then tags the next version when app code changed. Reviews happen inside the pipeline; nothing waits for a person.
 - **At a judgment call the pipeline parks** instead of guessing: a research note on the issue, the `parked` label, a push notification. Removing the label hands it back.
