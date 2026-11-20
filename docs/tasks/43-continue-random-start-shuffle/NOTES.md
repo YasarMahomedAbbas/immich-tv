@@ -55,3 +55,23 @@ Branch: `feat/43-continue-random-start-shuffle`
 - Skipped: the NonCancellable save outliving the show store's clearing — the code and `SlideshowViewModelTest` carry it; README's `AppViewModel.shows` paragraph ("each show loads anew") is still true.
 - Skipped: README architecture block ("data/ … stored settings") and CLAUDE.md — still accurate; no new layer, command, permission or Immich call.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: full CI command in Docker green: 549 tests passed / 0 failed / 0 skipped, line coverage 89.6% (bound 80%), lint clean, debug APK built.
+- Server: Immich 3.3.6
+- TV: not run (the Chromecast is a shared household TV and the standing rule is not to install or launch on it without the user saying it is free; the pipeline's earlier TV window, 2026-10-30 until 15:30 CET, has ended).
+- Verified:
+  - No Immich call changed (`data/immich` untouched; the only `data/` change is `StoredResumePoints`, local storage, covered by `StoredResumePointsTest`).
+  - Read-only against the real server, built as the code builds them: `GET /api/server/version`; `GET /api/albums` (15 albums, the fields `AlbumDto` reads present); `GET /api/albums/{id}` on a 1962-item album with videos (order `desc`); `GET /api/timeline/buckets?albumId=…&order=asc` (19 months, counts sum to 1962) and `GET /api/timeline/bucket?albumId=…&timeBucket=…&order=asc` for every month: `id` and `isImage` columns match each month's count, 1511 images and 451 videos. The slides `LoadSlideshow` orders, shuffles and resumes over come back in the shape `BucketAssetsDto` reads, so no shape change.
+- Failed: none
+- Not self-verifiable (check on the TV by hand):
+  - Open an album with no spot: no Continue, the screen as before.
+  - Start slideshow, skip three, Back: Continue focused (amber outline), Start over beside it; Continue resumes on that photo.
+  - Continue + Start over + Browse photos fit one line in the 760dp info column (estimated about 746dp, the plan's open risk); if not, that is a re-plan.
+  - The settings heading row with Random start and Shuffle keeps the strip and its focus outline on screen (vertical fit estimated, not measured).
+  - Shuffle, skip, Back, Continue: the same shuffled sequence; the Order setting keeps its old value.
+  - Random start lands away from the first photo (twice); Start over begins at the first photo.
+  - A hold-OK grid show and a Home hero play leave the spot unchanged; no crash in logcat.
