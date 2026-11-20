@@ -25,3 +25,4 @@ Branch: `feat/43-continue-random-start-shuffle`
 - Open risks:
   - Continue + Start over + Browse photos come to about 746 of 760dp in the info column, so very tight. Self-verification checks it on the TV; if it doesn't fit, that's a re-plan, not a guess.
   - The info column's vertical fit with the heading row is estimated, not measured. Check on the TV that the strip and its focus outline stay on screen.
+- Plan approved: by the pipeline on the user's behalf, including the choices above; the user has not reviewed it.
