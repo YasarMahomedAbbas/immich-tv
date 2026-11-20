@@ -38,3 +38,10 @@ Branch: `feat/43-continue-random-start-shuffle`
 - Tests: full CI command green: 549 passed / 0 failed / 0 skipped; koverVerifyDebug, lintDebug and assembleDebug passed. New or changed: `StoredResumePointsTest` (6), `LoadSlideshowTest` (26), `SlideshowViewModelTest` (+5 onSlide), `AppViewModelTest` (+1), `AlbumViewModelTest` (+4).
 - Outstanding: none of the checklist's tasks. Still for self-verification on the TV: the test plan's device steps, including whether Continue + Start over + Browse photos fit one line in the 760dp column, and whether the heading row keeps the strip on screen. The factory's save path is covered only through its parts (it needs an `AppContainer`): `onSlide` is unit-tested, `remember` is a one-line flag in `MainActivity`.
 - Contradicted the plan: none.
+
+## Review
+
+- Fixed: none. Checked and kept as built: the album factory sets the show's seed before the first Playing state, so the first save carries it. The NonCancellable save finishes after the show store is cleared. Only the hero passes `CameFrom.HomeHero`, so every album-screen show remembers. The spot is re-read through `RefreshOnStart` before `refresh()`'s early returns. The primary slot keeps `startFocus` whichever label it shows. A dropped (failed) slide shifts the saved index, but the index is only the fallback for a photo gone from the album, so the photo id still decides.
+- Raised: none
+- API: no Immich call touched (`AlbumRepository.slides` reused unchanged; nothing in `data/immich` changed)
+- Layers: clean (`ShowStart`, `ResumePoint`, `ResumePointStore` in domain words; the `index|seed|photoId` encoding stays in `data/settings`)
