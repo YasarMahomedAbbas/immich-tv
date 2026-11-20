@@ -67,7 +67,7 @@ On the album screen, the first button slot stays the one `PrimaryButton` with th
 
 Goal: an album's spot can be stored and read back, tested, with no Android.
 
-### [ ] 1.1 — The domain
+### [x] 1.1 — The domain
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/ResumePoint.kt` (new)
 
@@ -80,7 +80,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/R
 
 Fake: add `FakeResumePointStore` (a map, recording saves) to `app/src/test/java/.../domain/slideshow/Fakes.kt`.
 
-### [ ] 1.2 — The stored spot
+### [x] 1.2 — The stored spot
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/settings/StoredResumePoints.kt` (new), mirroring `StoredSlideshowSettings`.
 
@@ -90,7 +90,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/data/settings/Stor
 
 Test: `app/src/test/java/.../data/settings/StoredResumePointsTest.kt`, with `MemoryStorage`.
 
-### [ ] 1.3 — Wiring
+### [x] 1.3 — Wiring
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/AppContainer.kt`
 `private val resumePoints = StoredResumePoints(slideshowStorage)`; `val getResumePoint = GetResumePoint(resumePoints)`; `val saveResumePoint = SaveResumePoint(resumePoints)`.
