@@ -17,6 +17,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.server.ServerAddress
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.FakeSlideshowSettingsStore
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ShowStart
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Dispatchers
@@ -123,6 +124,21 @@ class AppViewModelTest {
 
         assertTrue(vm.back())
         assertEquals(AppScreen.Album(summer.id, focusBrowse = false), vm.screen.value)
+    }
+
+    @Test
+    fun `each way to start an album's show is carried in the screen, and back returns to the album`() = runTest(dispatcher) {
+        val vm = signedIn()
+        val summer = album(id = "a1")
+        val settings = SlideshowSettings()
+        for (start in ShowStart.entries) {
+            vm.openAlbum(summer.id)
+            vm.openSlideshow(summer, settings, CameFrom.AlbumsTab, start)
+            assertEquals(start.name, AppScreen.Slideshow(summer, settings, CameFrom.AlbumsTab, start), vm.screen.value)
+
+            assertTrue(vm.back())
+            assertEquals(start.name, AppScreen.Album(summer.id), vm.screen.value)
+        }
     }
 
     @Test

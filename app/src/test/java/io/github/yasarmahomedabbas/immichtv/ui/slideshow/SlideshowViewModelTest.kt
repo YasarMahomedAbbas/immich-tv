@@ -717,4 +717,56 @@ class SlideshowViewModelTest {
         assertEquals(calls, repository.slidesCalls)
         assertEquals(SlideshowLoad.Playing, vm.state.value.load)
     }
+
+    /** A show of [slides] from [start], recording what it reports as each slide is landed on. */
+    private fun TestScope.reporting(slides: List<Slide>, start: Int = 0, result: () -> ServerResult<Playlist> = { ServerResult.Ok(Playlist(slides, start)) }):
+        Pair<SlideshowViewModel, MutableList<Pair<Int, String>>> {
+        val heard = mutableListOf<Pair<Int, String>>()
+        val vm = SlideshowViewModel(SlideshowSettings(secondsPerPhoto = 5), onSlide = { i, slide -> heard += i to slide.photo.id.value }) { result() }
+        advanceUntilIdle()
+        slides.forEach { vm.imageReady(it.photo.id) }
+        return vm to heard
+    }
+
+    @Test
+    fun `the show reports the slide it begins on`() = runTest(dispatcher) {
+        val (_, heard) = reporting(listOf(slide("a"), slide("b"), slide("c")), start = 1)
+        assertEquals(listOf(1 to "b"), heard)
+    }
+
+    @Test
+    fun `the show reports each skip`() = runTest(dispatcher) {
+        val (vm, heard) = reporting(listOf(slide("a"), slide("b"), slide("c")))
+        vm.skipForward()
+        advanceUntilIdle()
+        vm.skipBack()
+        advanceUntilIdle()
+        vm.skipBack()
+        advanceUntilIdle()
+        assertEquals(listOf(0 to "a", 1 to "b", 0 to "a", 2 to "c"), heard)
+    }
+
+    @Test
+    fun `the show reports each timed move`() = runTest(dispatcher) {
+        val (vm, heard) = reporting(listOf(slide("a"), slide("b")))
+        playing(vm)
+        pass(10_000)
+        assertEquals(listOf(0 to "a", 1 to "b", 0 to "a"), heard)
+    }
+
+    @Test
+    fun `the show reports the slide that takes a dropped one's place`() = runTest(dispatcher) {
+        val (vm, heard) = reporting(listOf(slide("a"), slide("b"), slide("c")))
+        vm.imageFailed(photo("a"))
+        advanceUntilIdle()
+        assertEquals(listOf(0 to "a", 0 to "b"), heard)
+    }
+
+    @Test
+    fun `a failed or empty show reports nothing`() = runTest(dispatcher) {
+        val (_, failed) = reporting(emptyList()) { ServerResult.Failed(Problem.Unreachable) }
+        assertEquals(emptyList<Pair<Int, String>>(), failed)
+        val (_, empty) = reporting(emptyList())
+        assertEquals(emptyList<Pair<Int, String>>(), empty)
+    }
 }

@@ -175,7 +175,14 @@ class MainActivity : ComponentActivity() {
                         // In the show store, emptied on leaving: a show starts fresh and its slides don't stay.
                         viewModel = viewModel(
                             viewModelStoreOwner = app.shows,
-                            factory = SlideshowViewModel.factory(container, current.album, current.settings),
+                            factory = SlideshowViewModel.factory(
+                                container,
+                                current.album,
+                                current.settings,
+                                current.start,
+                                // Only the album screen offers Continue, so only its shows keep the spot.
+                                remember = current.cameFrom != CameFrom.HomeHero,
+                            ),
                         ),
                         settings = current.settings,
                         newPlayer = container::videoPlayer,

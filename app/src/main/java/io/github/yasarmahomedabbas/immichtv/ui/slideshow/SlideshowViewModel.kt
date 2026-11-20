@@ -13,19 +13,26 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
 import io.github.yasarmahomedabbas.immichtv.domain.home.playlistFrom
 import io.github.yasarmahomedabbas.immichtv.domain.map
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.AlbumShow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ResumePoint
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ScreensaverShow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ShowStart
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowOrder
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -63,9 +70,13 @@ data class SlideshowState(
  * What the slideshow does over time. It knows nothing of Android: the screen runs [play] while it
  * is started, and reports each image the loader got ([imageReady]) or couldn't ([imageFailed]), and
  * what the current video's player does ([videoPlaying], [videoWaiting], [videoEnded], [videoFailed]).
+ *
+ * [onSlide] hears of each slide the playing show lands on, its first included, with its index; it
+ * runs to the end even when the show is cleared mid-way, so a save under way isn't cut short.
  */
 class SlideshowViewModel(
     private val settings: SlideshowSettings,
+    private val onSlide: suspend (index: Int, slide: Slide) -> Unit = { _, _ -> },
     private val loadPlaylist: suspend () -> ServerResult<Playlist>,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SlideshowState())
@@ -81,6 +92,13 @@ class SlideshowViewModel(
 
     init {
         load()
+        viewModelScope.launch {
+            _state
+                .filter { it.load == SlideshowLoad.Playing }
+                .mapNotNull { state -> state.current?.let { state.index to it } }
+                .distinctUntilChanged { a, b -> a.first == b.first && a.second.photo.id == b.second.photo.id }
+                .collect { (index, slide) -> withContext(NonCancellable) { onSlide(index, slide) } }
+        }
     }
 
     /**
@@ -257,11 +275,27 @@ class SlideshowViewModel(
         /** Previous, current and next, with room for skipping back and forth over them. */
         private const val READY_KEPT = 8
 
-        fun factory(container: AppContainer, album: Album, settings: SlideshowSettings) = viewModelFactory {
-            initializer {
-                SlideshowViewModel(settings) { container.loadSlideshow(album, settings.order, settings.videos, ShowStart.Beginning).map { it.playlist } }
+        /**
+         * An album's show from the album screen, beginning where [start] says. When [remember], each slide
+         * it lands on becomes the album's remembered spot, with the show's shuffle seed.
+         */
+        fun factory(container: AppContainer, album: Album, settings: SlideshowSettings, start: ShowStart, remember: Boolean) =
+            viewModelFactory {
+                initializer {
+                    var show: AlbumShow? = null
+                    SlideshowViewModel(
+                        settings,
+                        onSlide = { index, slide ->
+                            if (remember) container.saveResumePoint(album.id, ResumePoint(slide.photo.id, index, show?.shuffleSeed))
+                        },
+                    ) {
+                        container.loadSlideshow(album, settings.order, settings.videos, start).map {
+                            show = it
+                            it.playlist
+                        }
+                    }
+                }
             }
-        }
 
         /** Home's memory, in the server's order, with [TimelineSettings]. */
         fun fromMemory(memory: Memory) = viewModelFactory {

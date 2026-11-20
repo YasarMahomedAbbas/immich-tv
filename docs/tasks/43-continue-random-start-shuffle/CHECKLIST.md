@@ -146,7 +146,7 @@ Test: `app/src/test/java/.../domain/slideshow/LoadSlideshowTest.kt`. Update the 
 
 Goal: an album-screen show saves the slide on screen, other shows don't, and the start mode reaches the show.
 
-### [ ] 3.1 — `SlideshowViewModel.onSlide`
+### [x] 3.1 — `SlideshowViewModel.onSlide`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/slideshow/SlideshowViewModel.kt`
 
@@ -154,7 +154,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/slideshow/Slide
 - In `init`, collect `state` filtered to `load == Playing` and mapped to `index to current`, with `distinctUntilChanged()` on the photo id plus the index. For each, call `onSlide`, wrapped as `withContext(NonCancellable)`, so a save under way finishes when the show store is cleared.
 - Tests in `SlideshowViewModelTest`: the cases in the test plan's `SlideshowViewModel` item.
 
-### [ ] 3.2 — The album show remembers
+### [x] 3.2 — The album show remembers
 
 - `ui/slideshow/SlideshowViewModel.kt`: `factory(container: AppContainer, album: Album, settings: SlideshowSettings, start: ShowStart, remember: Boolean)`.
   - The loader calls `container.loadSlideshow(album, settings.order, settings.videos, start)`, keeps the `AlbumShow` in a local `var`, and returns `it.playlist`.
