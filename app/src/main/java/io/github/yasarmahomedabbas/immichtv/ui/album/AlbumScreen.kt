@@ -47,6 +47,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumPage
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ShowStart
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowOrder
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.VideoMode
@@ -110,7 +111,8 @@ internal fun albumBackLabel(cameFrom: CameFrom): Int = when (cameFrom) {
 
 /**
  * One album: the cover mosaic, its title and counts, Start slideshow (focused when it opens),
- * Browse photos, the slideshow settings and a strip of its first items.
+ * Browse photos, the slideshow settings with Random start and Shuffle, and a strip of its first items.
+ * With a remembered spot, Continue takes Start slideshow's place and focus, and Start over follows it.
  * [focusBrowse] puts focus on Browse photos instead, for coming Back from it.
  */
 @Composable
@@ -118,7 +120,7 @@ fun AlbumScreen(
     viewModel: AlbumViewModel,
     onBack: () -> Unit,
     onBrowsePhotos: (Album) -> Unit,
-    onStartSlideshow: (Album, SlideshowSettings) -> Unit,
+    onStartSlideshow: (Album, SlideshowSettings, ShowStart) -> Unit,
     focusBrowse: Boolean = false,
     cameFrom: CameFrom = CameFrom.AlbumsTab,
 ) {
@@ -145,7 +147,7 @@ private fun AlbumContent(
     focusBrowse: Boolean,
     @StringRes backLabel: Int,
     onBack: () -> Unit,
-    onStartSlideshow: (Album, SlideshowSettings) -> Unit,
+    onStartSlideshow: (Album, SlideshowSettings, ShowStart) -> Unit,
     onBrowsePhotos: (Album) -> Unit,
     onCycleSeconds: () -> Unit,
     onCycleOrder: () -> Unit,
@@ -172,8 +174,9 @@ private fun AlbumContent(
             is AlbumLoad.Loaded -> LoadedAlbum(
                 page = load.page,
                 settings = state.settings,
+                canContinue = state.canContinue,
                 focusBrowse = focusBrowse,
-                onStartSlideshow = { onStartSlideshow(load.page.album, state.settings) },
+                onStartSlideshow = { start -> onStartSlideshow(load.page.album, state.settings, start) },
                 onBrowsePhotos = { onBrowsePhotos(load.page.album) },
                 onCycleSeconds = onCycleSeconds,
                 onCycleOrder = onCycleOrder,
@@ -188,8 +191,9 @@ private fun AlbumContent(
 private fun LoadedAlbum(
     page: AlbumPage,
     settings: SlideshowSettings,
+    canContinue: Boolean,
     focusBrowse: Boolean,
-    onStartSlideshow: () -> Unit,
+    onStartSlideshow: (ShowStart) -> Unit,
     onBrowsePhotos: () -> Unit,
     onCycleSeconds: () -> Unit,
     onCycleOrder: () -> Unit,
@@ -222,25 +226,50 @@ private fun LoadedAlbum(
                 fontSize = 24.sp,
             )
             Row(Modifier.padding(top = 28.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                // One slot that changes its label, so a spot read after the first frame doesn't move focus.
                 PrimaryButton(
-                    text = stringResource(R.string.album_start_slideshow),
-                    onClick = onStartSlideshow,
+                    text = stringResource(if (canContinue) R.string.album_continue else R.string.album_start_slideshow),
+                    onClick = { onStartSlideshow(if (canContinue) ShowStart.Continue else ShowStart.Beginning) },
                     icon = painterResource(R.drawable.ic_play),
                     modifier = Modifier.focusRequester(startFocus),
                 )
+                if (canContinue) {
+                    SecondaryButton(
+                        text = stringResource(R.string.album_start_over),
+                        onClick = { onStartSlideshow(ShowStart.Beginning) },
+                    )
+                }
                 SecondaryButton(
                     text = stringResource(R.string.album_browse_photos),
                     onClick = onBrowsePhotos,
                     modifier = Modifier.focusRequester(browseFocus),
                 )
             }
-            Text(
-                stringResource(R.string.album_settings_heading),
-                modifier = Modifier.padding(top = 28.dp),
-                color = colors.onSurfaceVariant,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-            )
+            // 8dp, not 28, above the heading: the compact buttons beside it are taller than the text,
+            // and the column's 16dp spacing still leaves their focus outline its 8dp.
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(SettingGap),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.album_settings_heading),
+                    modifier = Modifier.weight(1f),
+                    color = colors.onSurfaceVariant,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                SecondaryButton(
+                    text = stringResource(R.string.album_random_start),
+                    onClick = { onStartSlideshow(ShowStart.RandomSlide) },
+                    compact = true,
+                )
+                SecondaryButton(
+                    text = stringResource(R.string.album_shuffle),
+                    onClick = { onStartSlideshow(ShowStart.Shuffled) },
+                    compact = true,
+                )
+            }
             Settings(settings, onCycleSeconds, onCycleOrder, onCycleVideos, onToggleDateAndPlace)
             Text(stringResource(R.string.album_settings_hint), color = colors.onSurfaceVariant, fontSize = 18.sp)
         }
@@ -395,12 +424,16 @@ private val previewPage = AlbumPage(
 
 @Composable
 private fun AlbumPreview(state: AlbumState) {
-    ImmichTvTheme { AlbumContent(state, false, R.string.album_back, {}, { _, _ -> }, {}, {}, {}, {}, {}, {}) }
+    ImmichTvTheme { AlbumContent(state, false, R.string.album_back, {}, { _, _, _ -> }, {}, {}, {}, {}, {}, {}) }
 }
 
 @Preview(device = Devices.TV_1080p)
 @Composable
 private fun AlbumLoadedPreview() = AlbumPreview(AlbumState(AlbumLoad.Loaded(previewPage)))
+
+@Preview(device = Devices.TV_1080p)
+@Composable
+private fun AlbumCanContinuePreview() = AlbumPreview(AlbumState(AlbumLoad.Loaded(previewPage), canContinue = true))
 
 @Preview(device = Devices.TV_1080p)
 @Composable

@@ -139,7 +139,7 @@ class MainActivity : ComponentActivity() {
                         ),
                         onBack = { app.back() },
                         onBrowsePhotos = { app.openAlbumPhotos(it, current.cameFrom) },
-                        onStartSlideshow = { album, settings -> app.openSlideshow(album, settings, current.cameFrom) },
+                        onStartSlideshow = { album, settings, start -> app.openSlideshow(album, settings, current.cameFrom, start) },
                         focusBrowse = current.focusBrowse,
                         cameFrom = current.cameFrom,
                     )

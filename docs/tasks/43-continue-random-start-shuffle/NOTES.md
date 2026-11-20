@@ -26,3 +26,15 @@ Branch: `feat/43-continue-random-start-shuffle`
   - Continue + Start over + Browse photos come to about 746 of 760dp in the info column, so very tight. Self-verification checks it on the TV; if it doesn't fit, that's a re-plan, not a guess.
   - The info column's vertical fit with the heading row is estimated, not measured. Check on the TV that the strip and its focus outline stay on screen.
 - Plan approved: by the pipeline on the user's behalf, including the choices above; the user has not reviewed it.
+
+## Implementation
+
+- Shipped:
+  - The remembered spot: `ShowStart`, `ResumePoint`, `ResumePointStore` and its use cases (`domain/slideshow/ResumePoint.kt`), stored as `resume.<id>` = `index|seed|photoId` by `StoredResumePoints` (`data/settings/StoredResumePoints.kt:15`), wired in `AppContainer`.
+  - `AlbumShow` with `resumePointAt` (`domain/slideshow/Slideshow.kt:35`) and `LoadSlideshow` taking a `ShowStart` (`Slideshow.kt:50`): a seeded shuffle over the whole album before the Videos filter, Continue via `playlistFrom`, the gone-photo fallback to the stored index or 0.
+  - `SlideshowViewModel` reports every slide a playing show lands on through `onSlide`, NonCancellable (`ui/slideshow/SlideshowViewModel.kt:99`); the album factory saves it when `remember` (`SlideshowViewModel.kt:282`), and `MainActivity.kt:184` passes `remember = false` for a Home hero show. `AppScreen.Slideshow` carries `start` (`ui/AppViewModel.kt:83`).
+  - `AlbumState.canContinue`, read at init and on every `refresh()` before its early returns (`ui/album/AlbumViewModel.kt:59`, `:86`).
+  - Album screen: the primary slot switches between Continue and Start slideshow, Start over follows it when there is a spot, Random start and Shuffle are compact buttons on the settings heading row with its top padding cut from 28dp to 8dp (`ui/album/AlbumScreen.kt:231`, `:263`); a "can continue" preview; four strings; the manual's Album row updated.
+- Tests: full CI command green: 549 passed / 0 failed / 0 skipped; koverVerifyDebug, lintDebug and assembleDebug passed. New or changed: `StoredResumePointsTest` (6), `LoadSlideshowTest` (26), `SlideshowViewModelTest` (+5 onSlide), `AppViewModelTest` (+1), `AlbumViewModelTest` (+4).
+- Outstanding: none of the checklist's tasks. Still for self-verification on the TV: the test plan's device steps, including whether Continue + Start over + Browse photos fit one line in the 760dp column, and whether the heading row keeps the strip on screen. The factory's save path is covered only through its parts (it needs an `AppContainer`): `onSlide` is unit-tested, `remember` is a one-line flag in `MainActivity`.
+- Contradicted the plan: none.

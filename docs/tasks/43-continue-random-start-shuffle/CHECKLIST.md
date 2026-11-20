@@ -173,7 +173,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/slideshow/Slide
 
 Goal: the four ways to start are on the album screen, reachable with the D-pad, and the manual describes them.
 
-### [ ] 4.1 — `AlbumViewModel`
+### [x] 4.1 — `AlbumViewModel`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumViewModel.kt`
 
@@ -183,7 +183,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumView
 - `refresh()` also launches a re-read of the spot, before its early returns, so returning from a show updates Continue even while the album load is busy.
 - Tests in `AlbumViewModelTest`: the cases in the test plan's `AlbumViewModel` item.
 
-### [ ] 4.2 — `AlbumScreen`
+### [x] 4.2 — `AlbumScreen`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumScreen.kt`. Use `design-recipe`.
 
@@ -199,7 +199,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumScre
 - Previews: add a "can continue" preview.
 - `AlbumLayoutTest` stays green.
 
-### [ ] 4.3 — The manual
+### [x] 4.3 — The manual
 
 File: `docs/design/README.md`, Album row: "Start slideshow (Continue and Start over when the album has a remembered spot, Continue focused), Browse photos, slideshow settings with Random start and Shuffle as compact buttons on their heading line, in two rows of two".
 
