@@ -45,3 +45,13 @@ Branch: `feat/43-continue-random-start-shuffle`
 - Raised: none
 - API: no Immich call touched (`AlbumRepository.slides` reused unchanged; nothing in `data/immich` changed)
 - Layers: clean (`ShowStart`, `ResumePoint`, `ResumePointStore` in domain words; the `index|seed|photoId` encoding stays in `data/settings`)
+
+## Doc drift
+
+- Applied: README.md:Albums feature bullet — the album screen's start choices (beginning, random photo, one-off shuffle, Continue from the remembered spot on this device); rung 3, a user-facing feature the feature list would otherwise omit.
+- Applied (during implementation): docs/design/README.md:Album row — Continue/Start over and the compact Random start/Shuffle buttons; checked against `AlbumScreen.kt`, still accurate.
+- Skipped: the `resume.<id>` key and `index|seed|photoId` encoding — documented in `StoredResumePoints`' KDoc, stays in `data/`, one `rg` finds it.
+- Skipped: Home hero shows don't remember a spot — the comment at the `remember =` line in `MainActivity` says so; the design Album row already names Continue as album-screen only.
+- Skipped: the NonCancellable save outliving the show store's clearing — the code and `SlideshowViewModelTest` carry it; README's `AppViewModel.shows` paragraph ("each show loads anew") is still true.
+- Skipped: README architecture block ("data/ … stored settings") and CLAUDE.md — still accurate; no new layer, command, permission or Immich call.
+- Stale, fixed separately: none
