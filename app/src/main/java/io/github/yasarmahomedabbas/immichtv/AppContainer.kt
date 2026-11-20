@@ -56,7 +56,6 @@ class AppContainer(context: Context) {
     val loadAlbums = LoadAlbums(albums)
     val loadAlbum = LoadAlbum(albums)
     val albumTimeline = AlbumTimeline(albums)
-    val loadSlideshow = LoadSlideshow(albums)
     val loadSlideshowFromPhoto = LoadSlideshowFromPhoto(albums)
 
     private val library = ImmichLibraryRepository(http, sessions)
@@ -74,6 +73,7 @@ class AppContainer(context: Context) {
     private val slideshowSettings = StoredSlideshowSettings(slideshowStorage)
     private val screensaverSettings = StoredScreensaverSettings(slideshowStorage)
     private val resumePoints = StoredResumePoints(slideshowStorage)
+    val loadSlideshow = LoadSlideshow(albums, resumePoints)
 
     /** Loads a domain `Preview` with the key header; the app's one Coil image loader. */
     fun imageLoader(context: Context): ImageLoader = immichImageLoader(context, http, sessions)

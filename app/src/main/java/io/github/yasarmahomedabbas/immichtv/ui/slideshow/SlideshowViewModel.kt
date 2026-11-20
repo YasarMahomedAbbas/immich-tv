@@ -15,6 +15,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.home.playlistFrom
 import io.github.yasarmahomedabbas.immichtv.domain.map
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ScreensaverShow
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ShowStart
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowOrder
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
@@ -258,7 +259,7 @@ class SlideshowViewModel(
 
         fun factory(container: AppContainer, album: Album, settings: SlideshowSettings) = viewModelFactory {
             initializer {
-                SlideshowViewModel(settings) { container.loadSlideshow(album, settings.order, settings.videos).map { Playlist(it) } }
+                SlideshowViewModel(settings) { container.loadSlideshow(album, settings.order, settings.videos, ShowStart.Beginning).map { it.playlist } }
             }
         }
 

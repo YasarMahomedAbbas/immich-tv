@@ -7,6 +7,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.album
 import io.github.yasarmahomedabbas.immichtv.domain.map
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.FakeResumePointStore
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Playlist
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
@@ -51,7 +52,7 @@ class SlideshowViewModelTest {
     private val SlideshowViewModel.shown get() = state.value.current?.photo?.id?.value
 
     private fun albumShow(settings: SlideshowSettings) = SlideshowViewModel(settings) {
-        LoadSlideshow(repository)(album(), settings.order, settings.videos).map { Playlist(it) }
+        LoadSlideshow(repository, FakeResumePointStore())(album(), settings.order, settings.videos).map { it.playlist }
     }
 
     /** A slideshow of [ids] at 5 s a photo, loaded, with every photo's image ready if [allReady]. */

@@ -105,7 +105,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/AppContainer.kt`
 
 Goal: `LoadSlideshow` builds the show for each `ShowStart`, tested with seeded `Random`s.
 
-### [ ] 2.1 — `AlbumShow` and the new `LoadSlideshow`
+### [x] 2.1 — `AlbumShow` and the new `LoadSlideshow`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/Slideshow.kt`
 
@@ -129,7 +129,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/domain/slideshow/S
     - Continue with the photo gone: `spot.index` if it is in `kept.indices`, else 0.
 - Keep `playlistFrom` as is.
 
-### [ ] 2.2 — Callers
+### [x] 2.2 — Callers
 
 - `AppContainer`: `LoadSlideshow(albums, resumePoints)`.
 - `SlideshowViewModel.factory(container, album, settings)`: for now, call with `ShowStart.Beginning` and map to `it.playlist`, so it compiles. Checkpoint 3 replaces this.
