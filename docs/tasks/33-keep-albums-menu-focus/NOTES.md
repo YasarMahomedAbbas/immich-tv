@@ -22,3 +22,11 @@ Branch: `fix/33-keep-albums-menu-focus`
 
 - With `mayTakeFirstFocus()` replaced by `true` in `AlbumGrid`'s first-focus effect: `AlbumGridFocusTest` 8 run, 3 failed (Right during the skeleton, Left during the skeleton, the chip case). Check put back: 8/8 green, `PhotoGridFocusTest` 6/6 green.
 - The chip case's first route was wrong: Down from the pill skips the toolbar and lands on the empty state's Show all albums; Up from there reaches Shared with me. The test now asserts that route, and the checklist says so.
+
+## Implementation
+
+- Shipped: `MainScreen` hands `mayTakeFocus` to the Albums tab as well as Photos (`ui/main/MainScreen.kt:52`, `:72`), `MainActivity` passes it to `AlbumsScreen` (`MainActivity.kt:122`), and `AlbumGrid` asks it after its first frame unless restoring a remembered album (`ui/albums/AlbumsScreen.kt:152-156`); `AlbumsContent` is now `internal` for the test. New `AlbumGridFocusTest` (8 cases). Manual Top menu line and README testing line name the Albums grid too.
+- Tests: `AlbumGridFocusTest` 8 passed / 0 failed, `PhotoGridFocusTest` 6 passed / 0 failed. Without the check, 3 of 8 fail (see Red proof).
+- Full CI command: not run in this stage, per the user's speed note (it runs once locally in `raise-pr`).
+- Outstanding: none.
+- Contradicted the plan: the chip case's route. Down from the pill lands on the empty state's Show all albums, not a chip; the test goes Up to Shared with me from there, and task 1.3 now says so.
