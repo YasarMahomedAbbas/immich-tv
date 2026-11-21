@@ -30,3 +30,11 @@ Branch: `feat/46-down-into-album-photos`
 - Raised: none
 - API: none touched (navigation in `ui/` only)
 - Layers: clean
+
+## Doc drift
+
+- Applied: README.md:Development — the list of Robolectric focus tests named three classes; the branch added `AlbumFocusTest` and `AlbumPhotosFocusTest`, now listed with what they drive (rung 3).
+- Skipped: `docs/design/README.md` Album and Album photos rows — already updated by the branch; checked against `AlbumScreen.kt` (Down from a row tile, return to `focusTile` or Start slideshow fallback) and `PhotoGrid.onUpFromTop` / `AlbumPhotosScreen` (Up from the first month's top row does Back), accurate.
+- Skipped: `MovePace` reads `SystemClock`, so a Robolectric focus test pressing Up/Down twice must advance `ShadowSystemClock` — the dropped press fails the test visibly and `AlbumPhotosFocusTest` shows the pattern; one `rg MovePace` finds it.
+- Skipped: `fromTile` / `focusTile` on `AppScreen` — navigation state the code and `AppViewModelTest` describe; no cross-cutting rule for CLAUDE.md.
+- Stale, fixed separately: none
