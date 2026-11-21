@@ -35,7 +35,7 @@ Speed note from the user for this run (issue comment, 2026-10-30): while impleme
 
 Goal: a remote moved during the first load stays where it is, with the test that proves it.
 
-### [ ] 1.1 — Hand the question to the Albums tab
+### [x] 1.1 — Hand the question to the Albums tab
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/main/MainScreen.kt`
 Change the slot to `albums: @Composable (mayTakeFocus: () -> Boolean) -> Unit`. Hold the answer once, `val mayTakeFocus = { pillHoldsFocus || !screenHoldsFocus }`, and pass it in both branches: `Tab.Albums -> albums(mayTakeFocus)`, `Tab.Photos -> photos(mayTakeFocus)`. Reword the KDoc so it names both the Albums and Photos tabs as asking first; Home still moves focus without asking. The existing `albums = {}` callers compile unchanged.
@@ -43,7 +43,7 @@ Change the slot to `albums: @Composable (mayTakeFocus: () -> Boolean) -> Unit`. 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 `albums = { mayTakeFocus -> AlbumsScreen(..., mayTakeFirstFocus = mayTakeFocus) }`.
 
-### [ ] 1.2 — Gate first focus in the grid
+### [x] 1.2 — Gate first focus in the grid
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/albums/AlbumsScreen.kt`
 - `AlbumsScreen` gains `mayTakeFirstFocus: () -> Boolean` and passes it on.
@@ -51,10 +51,10 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/albums/AlbumsSc
 - `AlbumGrid` gains the same parameter. Its first `LaunchedEffect(Unit)` becomes: `withFrameNanos { }`, then `if (albums.any { it.id == focused } || mayTakeFirstFocus()) runCatching { targetFocus.requestFocus() }`, with a one-line comment that it asks after the frame so the answer is current, and that coming back to an album doesn't ask.
 - Add to the KDoc that a remote already gone elsewhere stays there. Leave the refresh effect below as it is.
 
-### [ ] 1.3 — The test
+### [x] 1.3 — The test
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/albums/AlbumGridFocusTest.kt`
-Mirror `PhotoGridFocusTest`: the same runner, `@GraphicsMode`, `@Config`, hand-stepped clock and `settle()`/`press()` helpers (the skeleton's pulse never lets the clock go idle). `open(initial)` puts `AlbumsContent` in `MainScreen(Tab.Albums, ...)`, passing `mayTakeFocus`, with `onFocused` recording into a list and `onRetry` setting `AlbumsLoad.Loading`. The cases are those in the Test plan. Use the pill and chip labels as they are in `strings.xml`; assert focus with `assertIsFocused()` on the label for menu items and chips, and with the recorded `onFocused` list for cards. For the tab-switch case, hold `tab` in test state. For the chip case, route from the pill into the toolbar with keys and assert each stop rather than assume it, with `onFilter` updating the state.
+Mirror `PhotoGridFocusTest`: the same runner, `@GraphicsMode`, `@Config`, hand-stepped clock and `settle()`/`press()` helpers (the skeleton's pulse never lets the clock go idle). `open(initial)` puts `AlbumsContent` in `MainScreen(Tab.Albums, ...)`, passing `mayTakeFocus`, with `onFocused` recording into a list and `onRetry` setting `AlbumsLoad.Loading`. The cases are those in the Test plan. Use the pill and chip labels as they are in `strings.xml`; assert focus with `assertIsFocused()` on the label for menu items and chips, and with the recorded `onFocused` list for cards. For the tab-switch case, hold `tab` in test state. For the chip case, route from the pill into the toolbar with keys and assert each stop rather than assume it, with `onFilter` updating the state. The route as it runs: Down from the pill lands on Show all albums (the empty state's button, below the toolbar), Up on Shared with me, Left twice on All albums, then OK.
 
 Prove it red: with the `mayTakeFirstFocus()` check taken out, the Right and Left cases must fail. Record that in NOTES, then put the check back.
 

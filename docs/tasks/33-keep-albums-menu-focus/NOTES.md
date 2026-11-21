@@ -17,3 +17,8 @@ Branch: `fix/33-keep-albums-menu-focus`
 - Decided (the pipeline's revision): the docs checkpoint also confirms `MainScreen`'s KDoc, reworded in 1.1, no longer names only the Photos tab.
 - Speed note: the user's note for today's run is in the checklist's Context.
 - Open risks: (1) The TV window ends about 15:30 CET on 2026-10-30; the on-TV check is skipped and recorded as skipped if it is reached later. (2) The Home screen takes focus on arrival the same way, unasked. It is out of scope here, and no ticket for it was checked for. (3) The albums' first load is short on the real server, so the on-TV Right during the skeleton may be hard to land; the unit test is the proof either way.
+
+## Red proof (checkpoint 1)
+
+- With `mayTakeFirstFocus()` replaced by `true` in `AlbumGrid`'s first-focus effect: `AlbumGridFocusTest` 8 run, 3 failed (Right during the skeleton, Left during the skeleton, the chip case). Check put back: 8/8 green, `PhotoGridFocusTest` 6/6 green.
+- The chip case's first route was wrong: Down from the pill skips the toolbar and lands on the empty state's Show all albums; Up from there reaches Shared with me. The test now asserts that route, and the checklist says so.

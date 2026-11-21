@@ -114,11 +114,12 @@ class MainActivity : ComponentActivity() {
                                 )
                             },
                             search = { SearchScreen(search, onVoice = voice, onPlay = app::openResultsSlideshow, focusResults = current.focusResults) },
-                            albums = {
+                            albums = { mayTakeFocus ->
                                 // Scoped to the activity, so the list and the focused album survive opening one.
                                 AlbumsScreen(
                                     viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
                                     onOpenAlbum = { app.openAlbum(it) },
+                                    mayTakeFirstFocus = mayTakeFocus,
                                 )
                             },
                             photos = { mayTakeFocus ->
