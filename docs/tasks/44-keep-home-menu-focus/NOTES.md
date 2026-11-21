@@ -28,3 +28,10 @@ Branch: `fix/44-keep-home-menu-focus`
 - Raised: none (the `scrollToItem` hang on a page without an albums row, noted under Implementation, is pre-existing and outside this ticket).
 - API: no endpoint touched.
 - Layers: clean (changes are `ui/` and `MainActivity` only; no new focusable items).
+
+## Doc drift
+
+- No drift found. Implementation already updated `docs/design/README.md` (Top menu: Home now asks before taking focus) and `README.md` (testing line names `HomeFocusTest`); both checked against `MainScreen.kt`, `HomeScreen.kt` and `fd FocusTest`.
+- Skipped: the manual's Home row ("Focus enters on Play slideshow") — still true; the asking rule is stated once on the Top menu line, which a session working on Home reads.
+- Skipped: the `mayTakeFocus` contract for any future tab — `MainScreen`'s KDoc says it and `HomeFocusTest`/`AlbumGridFocusTest`/`PhotoGridFocusTest` enforce it; no CLAUDE.md line needed.
+- Stale, fixed separately: none
