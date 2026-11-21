@@ -38,3 +38,14 @@ Branch: `feat/46-down-into-album-photos`
 - Skipped: `MovePace` reads `SystemClock`, so a Robolectric focus test pressing Up/Down twice must advance `ShadowSystemClock` — the dropped press fails the test visibly and `AlbumPhotosFocusTest` shows the pattern; one `rg MovePace` finds it.
 - Skipped: `fromTile` / `focusTile` on `AppScreen` — navigation state the code and `AppViewModelTest` describe; no cross-cutting rule for CLAUDE.md.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: `testDebugUnitTest koverVerifyDebug lintDebug assembleDebug` green: 548 tests passed / 0 failed / 0 skipped, line coverage 91.4% (koverVerify passed), lint clean, debug APK built.
+- Server: not applicable (no `data/` change, no Immich call touched).
+- TV: not run (the Chromecast is a shared household TV; the user's standing rule is not to install or launch on it without their say-so that it is free, and today's permission covered #43 and #33 only).
+- Verified: the navigation by the unit and Robolectric focus tests (Down from a row tile opens the grid from that tile; Up from the first month's top row and Back return to that tile, or to Browse photos when entered by its button; Up from a later month's top row and after a refresh stays in the grid; the Photos tab's Up still reaches the menu).
+- Failed: none
+- Not self-verifiable: on the TV, open an album; Down from the third row tile opens Browse photos on the first photo; Up from the top row returns to that tile, scrolled into view; Down then Back does the same; Browse photos by OK then Up returns to Browse photos; Down, Right, OK opens a photo, Back returns to its tile, Up returns to the album's tile; Down twice then Up twice stays in the grid until the top row; Home's hero, View photos, Up from the top row goes to Home. Check the amber focus outline at each step and that nothing crashes.
