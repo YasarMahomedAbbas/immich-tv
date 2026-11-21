@@ -159,7 +159,7 @@ File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/photos/PhotoGri
 
 Goal: the design manual describes the new moves.
 
-### [ ] 4.1 — Album and Album photos rows
+### [x] 4.1 — Album and Album photos rows
 
 File: `docs/design/README.md`
 - Album row: append "Down from a tile of the strip opens Album photos on its first photo; coming back by Up or Back lands on that tile, scrolled into view (on Browse photos when it was opened by Browse photos)."

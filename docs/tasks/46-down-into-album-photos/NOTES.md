@@ -12,3 +12,14 @@ Branch: `feat/46-down-into-album-photos`
 - Decided: if the row tile is gone after a refresh, focus falls back to Start slideshow, as the row already does when it loses its tile. The back link keeps holding focus while loading and can still be reached from the empty and failed states.
 - Decided: the user's canvas choices, recorded in the ticket, are Up from the top row, back to the tile you left, and Down lands on the first photo.
 - Open risks: the album strip's `LazyRow` must scroll to a far tile before it can take focus. Checkpoint 2 tests this with a tile at index 20.
+
+## Implementation
+
+- Shipped:
+  - `fromTile` on `AppScreen.AlbumPhotos`, `AlbumPhotoViewer` and `AlbumPhotoSlideshow`, `focusTile` on `AppScreen.Album`; `back()` turns `fromTile` into `focusTile` (`ui/AppViewModel.kt:60`, `:74`, `:78`, `:89`, `:254`), carried through the grid's photo and show (`MainActivity.kt:153`).
+  - Album screen: Down on a row tile calls `onDownFromRow` (`ui/album/AlbumScreen.kt:375`, wired at `MainActivity.kt:145`); on arrival with `focusTile` the row scrolls to it, then focuses it, falling back to Start slideshow (`ui/album/AlbumScreen.kt:228`). Row tiles carry the photo id as a test tag.
+  - `PhotoGrid.onUpFromTop` (`ui/photos/PhotoGrid.kt:92`, `:141`): tracks whether focus is on the first month's first row or its Try again (`:209`, `:237`), cleared when the grid loses focus. Only `AlbumPhotosScreen` passes it, as its `onBack` (`ui/album/AlbumPhotosScreen.kt:124`). Grid tiles carry `tileKey` as a test tag.
+  - `docs/design/README.md` Album and Album photos rows describe Down and Up.
+- Tests: full CI command green (`testDebugUnitTest koverVerifyDebug lintDebug assembleDebug`): 547 passed / 0 failed / 0 skipped. New: 2 in `AppViewModelTest`, 6 in `AlbumFocusTest`, 5 in `AlbumPhotosFocusTest`, 1 in `PhotoGridFocusTest`. Checked the tests bite: without the row scroll, the far-tile test fails; without `onUpFromTop = onBack`, the top-row and Try again tests fail.
+- Outstanding: the TV check in the test plan is for self-verification.
+- Contradicted the plan: none in the code. Test details adjusted in the checklist: Down from Start slideshow reaches some row tile whose position depends on layout, so the "p2" case enters on `p0` via `focusTile`; Up from the Photos tab's first tile lands on the Albums pill (straight above), so that test asserts "a menu pill, not a tile"; `AlbumPhotosFocusTest` advances Robolectric's system clock because `MovePace` reads `SystemClock`, otherwise a second Up/Down is dropped.
