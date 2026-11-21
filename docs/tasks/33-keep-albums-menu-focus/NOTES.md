@@ -30,3 +30,10 @@ Branch: `fix/33-keep-albums-menu-focus`
 - Full CI command: not run in this stage, per the user's speed note (it runs once locally in `raise-pr`).
 - Outstanding: none.
 - Contradicted the plan: the chip case's route. Down from the pill lands on the empty state's Show all albums, not a chip; the test goes Up to Shared with me from there, and task 1.3 now says so.
+
+## Review
+
+- Fixed: none. Checked: the first-focus check reads `pillHoldsFocus`/`screenHoldsFocus` live after the frame; the remembered-album path skips the question only when that album is in the list (Back from an album, a tab switch back); Try again and Refresh land with nothing focused, so the answer is yes; the refresh refocus branch is untouched. Every Done-when item and ticked task is in the diff, nothing out of scope is. `AlbumGridFocusTest` 8/8 and `PhotoGridFocusTest` 6/6 green on re-run.
+- Raised: https://github.com/YasarMahomedAbbas/immich-tv/issues/44 (Home takes focus on arrival without asking, the same bug on the Home tab; out of scope here).
+- API: no endpoint touched.
+- Layers: clean (`ui/` only; no `data/` import, no Immich names).
