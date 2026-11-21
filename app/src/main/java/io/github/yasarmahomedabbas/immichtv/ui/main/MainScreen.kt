@@ -30,17 +30,17 @@ import io.github.yasarmahomedabbas.immichtv.ui.search.isVoiceKey
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 
 /**
- * The top menu over the selected tab's content. Focus enters on the selected pill; a tab's
- * content may then move it (Home does, once it is laid out). The Albums and Photos tabs are handed
- * `mayTakeFocus` to ask first: yes only while the pill still holds focus or nothing on the screen
- * does, as when a pressed Try again has gone.
+ * The top menu over the selected tab's content. Focus enters on the selected pill. Every tab whose
+ * content takes focus on arrival (Home, Albums, Photos) is handed `mayTakeFocus` to ask first: yes
+ * only while the pill still holds focus or nothing on the screen does, as when a pressed Try again
+ * has gone.
  */
 @Composable
 fun MainScreen(
     tab: Tab,
     onSelectTab: (Tab) -> Unit,
     onOpenSettings: () -> Unit,
-    home: @Composable () -> Unit,
+    home: @Composable (mayTakeFocus: () -> Boolean) -> Unit,
     onVoiceKey: () -> Unit,
     search: @Composable () -> Unit,
     albums: @Composable (mayTakeFocus: () -> Boolean) -> Unit,
@@ -68,7 +68,7 @@ fun MainScreen(
         Spacer(Modifier.height(40.dp))
         Box(Modifier.weight(1f)) {
             when (tab) {
-                Tab.Home -> home()
+                Tab.Home -> home(mayTakeFocus)
                 Tab.Albums -> albums(mayTakeFocus)
                 Tab.Search -> search()
                 Tab.Photos -> photos(mayTakeFocus)

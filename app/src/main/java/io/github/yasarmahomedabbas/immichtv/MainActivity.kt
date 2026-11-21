@@ -92,7 +92,7 @@ class MainActivity : ComponentActivity() {
                             onSelectTab = app::selectTab,
                             onOpenSettings = app::openSettings,
                             onVoiceKey = voice,
-                            home = {
+                            home = { mayTakeFocus ->
                                 // The grid's ViewModel, so the viewer opened from a tile moves through the timeline.
                                 val photos: PhotoGridViewModel =
                                     viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline()))
@@ -111,6 +111,7 @@ class MainActivity : ComponentActivity() {
                                         app.openPhotoViewer(fromHome = true)
                                     },
                                     onSeeAll = { app.selectTab(Tab.Albums) },
+                                    mayTakeFirstFocus = mayTakeFocus,
                                 )
                             },
                             search = { SearchScreen(search, onVoice = voice, onPlay = app::openResultsSlideshow, focusResults = current.focusResults) },

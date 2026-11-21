@@ -22,7 +22,7 @@ Problem: on the Home tab, a remote that has moved along the top menu while Home 
 
 ## Test plan
 
-- Unit: `HomeFocusTest` (Robolectric, real keys through `MainScreen` and `HomeContent`), mirroring `AlbumGridFocusTest`: no key pressed, Play takes focus on arrival; Right during the skeleton, the Albums pill keeps focus; Right then Left back to the Home pill during the skeleton, Play takes focus (the pill holds focus again, so the answer is yes); a page without a hero (the `lost` path on first arrival), Right during the skeleton, the Albums pill keeps focus, and with no key pressed the first recent photo takes focus; Try again on a failed load, Play takes focus on arrival; entering the tab with the page loaded, Play takes focus; switching to Home from the Albums tab with the page loaded, Play takes focus; a remembered recent photo on a loaded page (as on coming Back), that photo takes focus. `AlbumGridFocusTest` and `PhotoGridFocusTest` are re-run because `MainScreen` changes.
+- Unit: `HomeFocusTest` (Robolectric, real keys through `MainScreen` and `HomeContent`), mirroring `AlbumGridFocusTest`: no key pressed, Play takes focus on arrival; Right during the skeleton, the Albums pill keeps focus; Right then Left back to the Home pill during the skeleton, Play takes focus (the pill holds focus again, so the answer is yes); a page without a hero (the `lost` path on first arrival), Right during the skeleton, the Albums pill keeps focus, and with no key pressed its first album card takes focus (the page has an albums row, see 1.3); Try again on a failed load, Play takes focus on arrival; entering the tab with the page loaded, Play takes focus; switching to Home from the Albums tab with the page loaded, Play takes focus; a remembered recent photo on a loaded page (as on coming Back), that photo takes focus. `AlbumGridFocusTest` and `PhotoGridFocusTest` are re-run because `MainScreen` changes.
 - MockWebServer: none; no call changes.
 - Real server: none; no call changes, so there is nothing to check.
 - On the TV: only what this ticket changed, holding the lock (`mkdir /tmp/immich-tv-adb.lock`, a successful mkdir only; `rmdir` when done, on failure too) for 10 minutes at most, and releasing it before fixing anything. Drive: cold open on Home with no key pressed (Play takes focus); cold open with Right straight after launch, during the skeleton (focus stays on the Albums pill when the page arrives); open an album from the Home row and press Back (focus returns to that card); go to Albums and select Home again (the remembered item takes focus).
@@ -33,7 +33,7 @@ Problem: on the Home tab, a remote that has moved along the top menu while Home 
 
 Goal: a remote moved during Home's first load stays where it is, with the test that proves it.
 
-### [ ] 1.1 — Hand the question to the Home tab
+### [x] 1.1 — Hand the question to the Home tab
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/main/MainScreen.kt`
 Change the slot to `home: @Composable (mayTakeFocus: () -> Boolean) -> Unit` and call `Tab.Home -> home(mayTakeFocus)`. Reword the KDoc: focus enters on the selected pill, and every tab whose content takes focus on arrival (Home, Albums, Photos) is handed `mayTakeFocus` to ask first; drop "(Home does, once it is laid out)". The existing `home = {}` callers (previews, `AlbumGridFocusTest`, `PhotoGridFocusTest`) compile unchanged.
@@ -41,7 +41,7 @@ Change the slot to `home: @Composable (mayTakeFocus: () -> Boolean) -> Unit` and
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 `home = { mayTakeFocus -> ... HomeScreen(..., mayTakeFirstFocus = mayTakeFocus) }`.
 
-### [ ] 1.2 — Gate first focus on the page
+### [x] 1.2 — Gate first focus on the page
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/home/HomeScreen.kt`
 - `HomeScreen` gains `mayTakeFirstFocus: () -> Boolean` and passes it to `HomeContent`.
@@ -50,10 +50,10 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/home/HomeScreen
 - The `LaunchedEffect(lost)` returns early also when `!arrived`: `if (!lost || !arrived) return@LaunchedEffect`, with a one-line comment that the first arrival is the effect above's to decide. Nothing else in it changes.
 - Rewrite the KDoc: focus goes to [target] once the page is laid out, as the Albums and Photos grids' does, only while the top menu's pill still holds focus or nothing does; again, without asking, if a later refresh takes away what the remote was on. Keep the sentence on blocks being brought into view.
 
-### [ ] 1.3 — The test
+### [x] 1.3 — The test
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/home/HomeFocusTest.kt`
-Mirror `AlbumGridFocusTest`: the same runner, `@GraphicsMode`, `@Config`, hand-stepped clock and `settle()`/`press()` helpers (the skeleton's pulse never lets the clock go idle). `open(initial: HomeState, startTab: Tab = Tab.Home)` puts `HomeContent` in `MainScreen(tab, ...)`, passing `mayTakeFocus`, with `onFocused` recording each `HomeFocus` into a list, `onRetry` setting `HomeLoad.Loading`, and `HomeActions` of no-ops; the `albums` slot is `{}` and the tab is held in test state. Pages: `heroPage = HomePage(HomeHero.FromMemory(memory, yearsAgo = 1), albums = emptyList(), recent = listOf(r0, r1))` and `noHeroPage = HomePage(null, emptyList(), listOf(r0, r1))`. Keep the albums row empty in every page: its "Albums" title would collide with the Albums pill's label. Assert menu focus with `assertIsFocused()` on the pill label (`Home`, `Albums`) and Home focus with the recorded list (`HomeFocus.Play`, `HomeFocus.Recent(r0.id)`). The cases are those in the Test plan; for the remembered photo, `open(HomeState(Loaded(heroPage), focused = HomeFocus.Recent(r1.id)))` and expect `[Recent(r1.id)]`; for the switch, start on `Tab.Albums`, Left to Home, OK.
+Mirror `AlbumGridFocusTest`: the same runner, `@GraphicsMode`, `@Config`, hand-stepped clock and `settle()`/`press()` helpers (the skeleton's pulse never lets the clock go idle). `open(initial: HomeState, startTab: Tab = Tab.Home)` puts `HomeContent` in `MainScreen(tab, ...)`, passing `mayTakeFocus`, with `onFocused` recording each `HomeFocus` into a list and writing it to `state.focused` as the ViewModel does, `onRetry` setting `HomeLoad.Loading`, and `HomeActions` of no-ops; the `albums` slot is `{}` and the tab is held in test state. Pages: `heroPage = HomePage(HomeHero.FromMemory(memory, yearsAgo = 1), albums = emptyList(), recent = listOf(r0, r1))` and `noHeroPage = HomePage(null, listOf(lisbon), listOf(r0, r1))`. The no-hero page needs an albums row: the `lost` path starts with `albumRow.scrollToItem(0)`, which never returns when no albums row is laid out, so without one that path never reaches focus and the guard goes untested. Assert menu focus with `assertIsFocused()` on `pill(label)` (`hasText(label) and hasClickAction()`, so the pill and not the albums row's "Albums" title) and Home focus with the recorded list (`HomeFocus.Play`, `HomeFocus.AlbumCard(lisbon.id)` for the no-hero page with no key pressed). The cases are those in the Test plan; for the remembered photo, `open(HomeState(Loaded(heroPage), focused = HomeFocus.Recent(r1.id)))` and expect `[Recent(r1.id)]`; for the switch, start on `Tab.Albums`, Left to Home, OK.
 
 Prove it red: with the `mayTakeFirstFocus()` check taken out (and the `!arrived` guard taken out, separately), the Right cases must fail: the hero page's for the first, the no-hero page's for the second. Record both in NOTES, then put them back.
 
