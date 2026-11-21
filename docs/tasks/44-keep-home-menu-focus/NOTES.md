@@ -21,3 +21,10 @@ Branch: `fix/44-keep-home-menu-focus`
 - Outstanding: none in the checklist. The on-TV drive in the test plan is self-verification's.
 - Contradicted the plan: the checklist's test pages all had an empty albums row, but the `lost` path begins with `albumRow.scrollToItem(0)` (`ui/home/HomeScreen.kt:201`), which never returns when no albums row is laid out (its LazyListState is attached to nothing), so on such a page that path never reaches `requestFocus` and removing the `!arrived` guard turned nothing red. Resolved in the test: the no-hero page has one album, the pill is told from the row's "Albums" title by `hasText(...) and hasClickAction()`, and that page's no-key case expects the album card. Checklist 1.3 and the test plan were edited to match.
 - Found, out of scope: as a consequence, the unasked refocus after a later refresh never happens on a page with no albums row (it hangs on the scroll). Pre-existing; this ticket leaves the later-refresh path alone. Worth its own ticket if it matters.
+
+## Review
+
+- Fixed: none. Candidates checked and refuted: coming Back (MainScreen is fresh, its `LaunchedEffect(tab)` focuses the pill before Home's post-frame ask, or nothing holds focus, so the answer is yes; covered by the remembered-photo case); a declined first ask on a page whose target isn't the remembered one (the `lost` effect is keyed on `lost` alone, so flipping `arrived` doesn't re-run it and steal focus later; it clears once the remote enters Home and `focused` updates); a refresh through `Loading` re-composes `HomeLoaded` and asks afresh, which says yes because the focused Home item has gone.
+- Raised: none (the `scrollToItem` hang on a page without an albums row, noted under Implementation, is pre-existing and outside this ticket).
+- API: no endpoint touched.
+- Layers: clean (changes are `ui/` and `MainActivity` only; no new focusable items).
