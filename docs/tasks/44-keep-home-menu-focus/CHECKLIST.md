@@ -68,7 +68,7 @@ Prove it red: with the `mayTakeFirstFocus()` check taken out (and the `!arrived`
 
 Goal: the docs the ticket names match the code.
 
-### [ ] 2.1 — Manual and README
+### [x] 2.1 — Manual and README
 
 File: `docs/design/README.md`
 In the Top menu line, "The Albums and Photos grids take focus from there on arrival only while..." becomes "Home and the Albums and Photos grids take focus from there on arrival only while...".
