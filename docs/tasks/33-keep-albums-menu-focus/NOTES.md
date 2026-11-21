@@ -37,3 +37,11 @@ Branch: `fix/33-keep-albums-menu-focus`
 - Raised: https://github.com/YasarMahomedAbbas/immich-tv/issues/44 (Home takes focus on arrival without asking, the same bug on the Home tab; out of scope here).
 - API: no endpoint touched.
 - Layers: clean (`ui/` only; no `data/` import, no Immich names).
+
+## Doc drift
+
+- Applied: `ui/home/HomeScreen.kt` `HomeLoaded` KDoc — said Home's first focus beats the top menu "as the Albums grid's does"; the Albums grid now asks `mayTakeFocus` first, so it now says Home takes focus unasked, unlike the Albums and Photos grids (rung 1: a session reading it would wrongly assume Home and Albums behave alike; Home's fix is #44).
+- Skipped: `MainScreen` KDoc, the manual's Top menu line (`docs/design/README.md`) and the README testing line — already updated on this branch in implementation and checked true against the code (`MainScreen.kt:52`, `:72`; `AlbumGridFocusTest` exists).
+- Skipped: a CLAUDE.md rule for "a tab's first focus asks `mayTakeFocus`" — the manual's Top menu line states it where a screen builder reads, and the focus tests enforce it for both grids.
+- Skipped: README architecture block and use-case table — no file added or removed under `app/src/main` (only `AlbumGridFocusTest` under `app/src/test`); no commands, server support or release steps touched.
+- Stale, fixed separately: none.
