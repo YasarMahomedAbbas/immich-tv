@@ -62,7 +62,7 @@ private val FocusRoom = 8.dp
 
 /** The Albums tab's content, under the top menu. */
 @Composable
-fun AlbumsScreen(viewModel: AlbumsViewModel, onOpenAlbum: (AlbumId) -> Unit) {
+fun AlbumsScreen(viewModel: AlbumsViewModel, onOpenAlbum: (AlbumId) -> Unit, mayTakeFirstFocus: () -> Boolean) {
     val state by viewModel.state.collectAsState()
     RefreshOnStart(viewModel::refresh)
     AlbumsContent(
@@ -72,17 +72,19 @@ fun AlbumsScreen(viewModel: AlbumsViewModel, onOpenAlbum: (AlbumId) -> Unit) {
         onFocused = viewModel::onFocused,
         onOpen = onOpenAlbum,
         onRetry = viewModel::retry,
+        mayTakeFirstFocus = mayTakeFirstFocus,
     )
 }
 
 @Composable
-private fun AlbumsContent(
+internal fun AlbumsContent(
     state: AlbumsState,
     onFilter: (AlbumFilter) -> Unit,
     onCycleSort: () -> Unit,
     onFocused: (AlbumId) -> Unit,
     onOpen: (AlbumId) -> Unit,
     onRetry: () -> Unit,
+    mayTakeFirstFocus: () -> Boolean,
 ) {
     when (val load = state.load) {
         AlbumsLoad.Loading -> AlbumsSkeleton()
@@ -107,7 +109,7 @@ private fun AlbumsContent(
                         onAction = { onFilter(AlbumFilter.All) },
                     )
                 } else {
-                    AlbumGrid(visible, state.filter to state.sort, state.focused, onFocused, onOpen)
+                    AlbumGrid(visible, state.filter to state.sort, state.focused, onFocused, onOpen, mayTakeFirstFocus)
                 }
             }
         }
@@ -133,6 +135,7 @@ private fun Toolbar(filter: AlbumFilter, sort: AlbumSort, onFilter: (AlbumFilter
 /**
  * The 5-column grid. Focus goes to the album the remote was last on (coming Back from it), or
  * else the first, once the cards are laid out; the grid scrolls to keep the focused card in view.
+ * A remote already gone elsewhere stays there.
  */
 @Composable
 private fun AlbumGrid(
@@ -141,13 +144,15 @@ private fun AlbumGrid(
     focused: AlbumId?,
     onFocused: (AlbumId) -> Unit,
     onOpen: (AlbumId) -> Unit,
+    mayTakeFirstFocus: () -> Boolean,
 ) {
     val target = albums.indexOfFirst { it.id == focused }.coerceAtLeast(0)
     val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = target - target % COLUMNS)
     val targetFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         withFrameNanos { }
-        runCatching { targetFocus.requestFocus() }
+        // Asked after the frame, so the answer is current; coming back to an album doesn't ask.
+        if (albums.any { it.id == focused } || mayTakeFirstFocus()) runCatching { targetFocus.requestFocus() }
     }
     // A lazy grid follows its first item's key, so a new filter or sort would leave it scrolled to
     // wherever that album landed: those start from the top. A refresh that changed the list keeps
@@ -259,7 +264,7 @@ private val previewAlbums = listOf(
 private fun AlbumsPreview(state: AlbumsState) {
     ImmichTvTheme {
         MainScreen(tab = Tab.Albums, onSelectTab = {}, onOpenSettings = {}, onVoiceKey = {}, home = {}, search = {}, albums = {
-            AlbumsContent(state, {}, {}, {}, {}, {})
+            AlbumsContent(state, {}, {}, {}, {}, {}, mayTakeFirstFocus = { true })
         }, photos = {})
     }
 }

@@ -31,9 +31,9 @@ import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 
 /**
  * The top menu over the selected tab's content. Focus enters on the selected pill; a tab's
- * content may then move it (Home and the Albums grid do, once they are laid out). The Photos tab is
- * handed `mayTakeFocus` to ask first: yes only while the pill still holds focus or nothing on the
- * screen does, as when a pressed Try again has gone.
+ * content may then move it (Home does, once it is laid out). The Albums and Photos tabs are handed
+ * `mayTakeFocus` to ask first: yes only while the pill still holds focus or nothing on the screen
+ * does, as when a pressed Try again has gone.
  */
 @Composable
 fun MainScreen(
@@ -43,12 +43,13 @@ fun MainScreen(
     home: @Composable () -> Unit,
     onVoiceKey: () -> Unit,
     search: @Composable () -> Unit,
-    albums: @Composable () -> Unit,
+    albums: @Composable (mayTakeFocus: () -> Boolean) -> Unit,
     photos: @Composable (mayTakeFocus: () -> Boolean) -> Unit,
 ) {
     val menuFocus = remember { FocusRequester() }
     var pillHoldsFocus by remember { mutableStateOf(false) }
     var screenHoldsFocus by remember { mutableStateOf(false) }
+    val mayTakeFocus = { pillHoldsFocus || !screenHoldsFocus }
     LaunchedEffect(tab) { runCatching { menuFocus.requestFocus() } }
     Column(
         Modifier
@@ -68,9 +69,9 @@ fun MainScreen(
         Box(Modifier.weight(1f)) {
             when (tab) {
                 Tab.Home -> home()
-                Tab.Albums -> albums()
+                Tab.Albums -> albums(mayTakeFocus)
                 Tab.Search -> search()
-                Tab.Photos -> photos { pillHoldsFocus || !screenHoldsFocus }
+                Tab.Photos -> photos(mayTakeFocus)
             }
         }
     }
