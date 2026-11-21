@@ -45,3 +45,14 @@ Branch: `fix/33-keep-albums-menu-focus`
 - Skipped: a CLAUDE.md rule for "a tab's first focus asks `mayTakeFocus`" — the manual's Top menu line states it where a screen builder reads, and the focus tests enforce it for both grids.
 - Skipped: README architecture block and use-case table — no file added or removed under `app/src/main` (only `AlbumGridFocusTest` under `app/src/test`); no commands, server support or release steps touched.
 - Stale, fixed separately: none.
+
+## Self verification
+
+Result: partial
+
+- CI build: full command not run here, per the user's speed note (raise-pr runs it once). Ran the unit tests for the changed classes instead: `AlbumGridFocusTest` 8 passed / 0 failed, `PhotoGridFocusTest` 6 passed / 0 failed. `assembleDebug` built the debug APK.
+- Server: not run (UI-only ticket: no Immich call is added or changed, so there is nothing to check against the spec or the server).
+- TV: not run (the Chromecast answered ping on 2026-11-21 but refused adb on port 5555, `Connection refused`, on every try from 10:29 to 10:40 CET; network debugging looks switched off or adbd is not listening). The lock was never taken because nothing was installed.
+- Verified: first focus asks `mayTakeFocus` (Right and Left during the skeleton keep focus on the menu; no key pressed hands the first card focus; Try again, entering and switching to a loaded tab hand the card focus; a remembered album takes focus without asking; a chip with no remembered album keeps focus), all through real keys in `AlbumGridFocusTest`.
+- Failed: none.
+- Not self-verifiable: on the TV, by hand: (1) open the Albums tab cold with no key pressed, and the first card takes focus when the albums arrive; (2) open it cold and press Right straight after OK on the Albums pill, and focus stays on Photos when the cards arrive; (3) open an album and press Back, and focus returns to that album; (4) go to Photos and select Albums again, and a card takes focus.
