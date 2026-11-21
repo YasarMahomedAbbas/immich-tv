@@ -27,8 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -94,7 +96,7 @@ private val RecentGap = 18.dp
 private val FocusRoom = 8.dp
 
 /** The actions on the page, each of them leaving Home. */
-private class HomeActions(
+internal class HomeActions(
     val onPlayMemory: (Memory) -> Unit,
     val onMemoryPhotos: (Memory, String) -> Unit,
     val onPlayAlbum: (Album) -> Unit,
@@ -115,6 +117,7 @@ fun HomeScreen(
     onOpenAlbum: (AlbumId) -> Unit,
     onOpenRecent: (Photo) -> Unit,
     onSeeAll: () -> Unit,
+    mayTakeFirstFocus: () -> Boolean,
 ) {
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
@@ -132,11 +135,18 @@ fun HomeScreen(
             onOpenRecent = onOpenRecent,
             onSeeAll = onSeeAll,
         ),
+        mayTakeFirstFocus = mayTakeFirstFocus,
     )
 }
 
 @Composable
-private fun HomeContent(state: HomeState, onFocused: (HomeFocus) -> Unit, onRetry: () -> Unit, actions: HomeActions) {
+internal fun HomeContent(
+    state: HomeState,
+    onFocused: (HomeFocus) -> Unit,
+    onRetry: () -> Unit,
+    actions: HomeActions,
+    mayTakeFirstFocus: () -> Boolean,
+) {
     when (val load = state.load) {
         HomeLoad.Loading -> HomeSkeleton()
         is HomeLoad.Failed -> FailedState(load.problem, onRetry)
@@ -150,17 +160,17 @@ private fun HomeContent(state: HomeState, onFocused: (HomeFocus) -> Unit, onRetr
                     onAction = onRetry,
                 )
             } else {
-                HomeLoaded(load.page, state.focused, target, onFocused, actions)
+                HomeLoaded(load.page, state.focused, target, onFocused, actions, mayTakeFirstFocus)
             }
         }
     }
 }
 
 /**
- * Focus goes to [target] once the page is laid out, which beats the top menu's request (unlike the
- * Albums and Photos grids, without asking whether the remote has moved since), and again if a
- * refresh takes away what the remote was on. Each block is brought into
- * view whole as focus enters it, so a row's title comes with it and moving up returns to the hero.
+ * Focus goes to [target] once the page is laid out, as the Albums and Photos grids' does, only while
+ * the top menu's pill still holds focus or nothing does; again, without asking, if a later refresh
+ * takes away what the remote was on. Each block is brought into view whole as focus enters it, so a
+ * row's title comes with it and moving up returns to the hero.
  */
 @OptIn(ExperimentalComposeUiApi::class) // FocusRequester.Cancel: how a row's last item stops Right.
 @Composable
@@ -170,19 +180,24 @@ private fun HomeLoaded(
     target: HomeFocus,
     onFocused: (HomeFocus) -> Unit,
     actions: HomeActions,
+    mayTakeFirstFocus: () -> Boolean,
 ) {
     val targetFocus = remember { FocusRequester() }
     val seeAllFocus = remember { FocusRequester() }
     val viewPhotosFocus = remember { FocusRequester() }
     val albumRow = rememberLazyListState(page.albums.indexOfFirst { HomeFocus.AlbumCard(it.id) == target }.coerceAtLeast(0))
     val recentRow = rememberLazyListState(page.recent.indexOfFirst { HomeFocus.Recent(it.id) == target }.coerceAtLeast(0))
+    var arrived by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         withFrameNanos { }
-        runCatching { targetFocus.requestFocus() }
+        // Asked after the frame so the answer is current; coming Back asks too, and the pill holds focus then.
+        if (mayTakeFirstFocus()) runCatching { targetFocus.requestFocus() }
+        arrived = true
     }
     val lost = target != focused
     LaunchedEffect(lost) {
-        if (!lost) return@LaunchedEffect
+        // The first arrival is the effect above's to decide.
+        if (!lost || !arrived) return@LaunchedEffect
         albumRow.scrollToItem(0)
         recentRow.scrollToItem(0)
         withFrameNanos { }
@@ -429,7 +444,7 @@ private fun HomePreview(state: HomeState) {
             onOpenSettings = {},
             onVoiceKey = {},
             search = {},
-            home = { HomeContent(state, {}, {}, HomeActions({}, { _, _ -> }, {}, {}, {}, {}, {})) },
+            home = { HomeContent(state, {}, {}, HomeActions({}, { _, _ -> }, {}, {}, {}, {}, {}), mayTakeFirstFocus = { true }) },
             albums = {},
             photos = {},
         )

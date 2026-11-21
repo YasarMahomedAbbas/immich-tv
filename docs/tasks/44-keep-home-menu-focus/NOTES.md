@@ -1,0 +1,48 @@
+# Notes — bug: Home arriving pulls focus off the top menu
+
+Issue: #44 — bug: Home arriving pulls focus off the top menu (https://github.com/YasarMahomedAbbas/immich-tv/issues/44)
+Branch: `fix/44-keep-home-menu-focus`
+
+## Planning
+
+- Approach: hand `MainScreen`'s `mayTakeFocus` to the Home tab and ask it after the first frame before `HomeLoaded` takes focus, with a real-key focus test modelled on `AlbumGridFocusTest`.
+- Decided: no Immich API call changes, so the plan needs no spec check.
+- Decided while planning, flag if you disagree: Home always asks, coming Back included. It cannot tell a cold first load from a restore (`HomeState.focused` defaults to Play), and on coming Back MainScreen is composed fresh with the pill focused, so the answer is yes. The alternative, a nullable remembered target to exempt restores as `AlbumGrid` does, changes the ViewModel for no visible gain.
+- Decided while planning, flag if you disagree: the `lost` refocus effect also fires on the page's first composition when the remembered target isn't on the page (any page without a hero on a cold start), taking focus unasked. It is kept off the first composition so the first arrival asks too; the issue named this path as separate, but without it Done-when fails for a page without a hero. Later refreshes keep the unasked refocus.
+- Decided: test cases are no key pressed, Right during the skeleton, Right then Left back to the pill, a page without a hero (Right and no key), Try again, entering a loaded tab, switching to Home from Albums, and a remembered photo.
+- Decided (the pipeline, on the user's behalf; flags: scope, ux, open-risk): plan brief approved with option 1 of 3, the plan as written, including the lost-item guard on first arrival and Home always asking. The alternatives were dropping the guard (closer to the issue's wording, but a cold start with no hero would still take focus unasked) and exempting restores via a nullable remembered target (a ViewModel change for no visible gain).
+- Open risks: (1) The issue was found by reading the code and not reproduced on the TV; Home's first load may be too short to land a Right on the real device, so the unit test is the proof either way. (2) The Chromecast refused adb during #33's verification; the on-TV check may be skipped.
+
+## Implementation
+
+- Shipped: `MainScreen` hands `mayTakeFocus` to the Home slot too (`ui/main/MainScreen.kt:43`, `:71`; `MainActivity.kt:114`). `HomeLoaded` asks it one frame after the page is laid out (`ui/home/HomeScreen.kt:194`) and keeps the `lost` refocus off the first arrival with an `arrived` flag (`:190`, `:200`). `HomeContent` and `HomeActions` are `internal` for the test (`:99`, `:143`). Manual's Top menu line and README's testing line name Home.
+- Tests: new `HomeFocusTest`, 9 cases. Checkpoint set (`HomeFocusTest`, `AlbumGridFocusTest`, `PhotoGridFocusTest`, `HomeViewModelTest`): 39 passed / 0 failed. Full CI command: 533 passed / 0 failed, `koverVerifyDebug`, `lintDebug`, `assembleDebug` green.
+- Proved red: with the `mayTakeFirstFocus()` check removed, "right during the skeleton, albums keeps focus" and "right during the skeleton of a page without a hero, albums keeps focus" fail (2 of 9). With only the `!arrived` guard removed, the no-hero Right case fails (1 of 9). Both put back.
+- Outstanding: none in the checklist. The on-TV drive in the test plan is self-verification's.
+- Contradicted the plan: the checklist's test pages all had an empty albums row, but the `lost` path begins with `albumRow.scrollToItem(0)` (`ui/home/HomeScreen.kt:201`), which never returns when no albums row is laid out (its LazyListState is attached to nothing), so on such a page that path never reaches `requestFocus` and removing the `!arrived` guard turned nothing red. Resolved in the test: the no-hero page has one album, the pill is told from the row's "Albums" title by `hasText(...) and hasClickAction()`, and that page's no-key case expects the album card. Checklist 1.3 and the test plan were edited to match.
+- Found, out of scope: as a consequence, the unasked refocus after a later refresh never happens on a page with no albums row (it hangs on the scroll). Pre-existing; this ticket leaves the later-refresh path alone. Worth its own ticket if it matters.
+
+## Review
+
+- Fixed: none. Candidates checked and refuted: coming Back (MainScreen is fresh, its `LaunchedEffect(tab)` focuses the pill before Home's post-frame ask, or nothing holds focus, so the answer is yes; covered by the remembered-photo case); a declined first ask on a page whose target isn't the remembered one (the `lost` effect is keyed on `lost` alone, so flipping `arrived` doesn't re-run it and steal focus later; it clears once the remote enters Home and `focused` updates); a refresh through `Loading` re-composes `HomeLoaded` and asks afresh, which says yes because the focused Home item has gone.
+- Raised: none (the `scrollToItem` hang on a page without an albums row, noted under Implementation, is pre-existing and outside this ticket).
+- API: no endpoint touched.
+- Layers: clean (changes are `ui/` and `MainActivity` only; no new focusable items).
+
+## Doc drift
+
+- No drift found. Implementation already updated `docs/design/README.md` (Top menu: Home now asks before taking focus) and `README.md` (testing line names `HomeFocusTest`); both checked against `MainScreen.kt`, `HomeScreen.kt` and `fd FocusTest`.
+- Skipped: the manual's Home row ("Focus enters on Play slideshow") — still true; the asking rule is stated once on the Top menu line, which a session working on Home reads.
+- Skipped: the `mayTakeFocus` contract for any future tab — `MainScreen`'s KDoc says it and `HomeFocusTest`/`AlbumGridFocusTest`/`PhotoGridFocusTest` enforce it; no CLAUDE.md line needed.
+- Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: full CI command in Docker green; 533 tests passed / 0 failed / 0 skipped, application line coverage 91.2% (`koverVerifyDebug` bound 80%), lint 0 errors (28 warnings, none from this branch's files), debug APK built.
+- Server: not run (no Immich call touched; the diff is `ui/`, `MainActivity` and docs only, so there is nothing to check).
+- TV: not run (TV is shared; not cleared by the user for #44). No adb command was run.
+- Verified: Home's first-focus gate and the `lost` guard, by the 9 `HomeFocusTest` cases (real keys through `MainScreen` and `HomeContent` under Robolectric), proved red without each guard during implementation; `AlbumGridFocusTest` and `PhotoGridFocusTest` still green with the changed `MainScreen`.
+- Failed: none
+- Not self-verifiable: on the Chromecast, with the debug build installed: (1) cold open on Home with no key pressed: Play takes focus when the page arrives; (2) cold open, press Right straight after launch during the skeleton: focus stays on the Albums pill when the page arrives; (3) open an album from Home's row and press Back: focus returns to that card; (4) go to Albums and select Home again: the remembered item takes focus. Check the amber outline is visible in each, and `adb logcat -d -t 300 '*:E' | rg -i 'immichtv|AndroidRuntime'` shows no crash.
