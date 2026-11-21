@@ -150,8 +150,10 @@ class MainActivity : ComponentActivity() {
                         viewModel = albumGrid(container, connection, current.album),
                         onBack = { app.back() },
                         returning = current.returning,
-                        onOpenPhoto = { app.openAlbumPhotoViewer(current.album, current.cameFrom) },
-                        onStartSlideshow = { app.openAlbumPhotoSlideshow(current.album, it, current.cameFrom) },
+                        onOpenPhoto = { app.openAlbumPhotoViewer(current.album, current.cameFrom, current.fromTile) },
+                        onStartSlideshow = {
+                            app.openAlbumPhotoSlideshow(current.album, it, current.cameFrom, current.fromTile)
+                        },
                     )
                     is AppScreen.MemoryPhotos -> AlbumPhotosScreen(
                         albumName = current.title,

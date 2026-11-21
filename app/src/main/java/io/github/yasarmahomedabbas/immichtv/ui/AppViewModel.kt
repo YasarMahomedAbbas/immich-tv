@@ -50,28 +50,43 @@ sealed interface AppScreen {
     /** The top menu with [tab]'s content under it. [focusResults]: coming Back from a slideshow of its results. */
     data class Main(val tab: Tab, val focusResults: Boolean = false) : AppScreen
 
-    /** [focusBrowse]: coming Back from its photos, so focus goes to Browse photos. */
-    data class Album(val id: AlbumId, val focusBrowse: Boolean = false, val cameFrom: CameFrom = CameFrom.AlbumsTab) : AppScreen
+    /**
+     * [focusBrowse]: coming Back from its photos, so focus goes to Browse photos. [focusTile]: coming
+     * back from its photos entered by Down from that row tile, so focus goes to it.
+     */
+    data class Album(
+        val id: AlbumId,
+        val focusBrowse: Boolean = false,
+        val focusTile: PhotoId? = null,
+        val cameFrom: CameFrom = CameFrom.AlbumsTab,
+    ) : AppScreen
 
     /**
      * Browse photos: [album]'s photos by month. [returning]: coming Back from a photo or a show,
-     * so the grid goes to that tile; otherwise it starts at the top.
+     * so the grid goes to that tile; otherwise it starts at the top. [fromTile]: entered by Down
+     * from that tile of the album's row; Back (and Up from the top) returns there instead of to
+     * Browse photos.
      */
     data class AlbumPhotos(
         val album: DomainAlbum,
         val cameFrom: CameFrom = CameFrom.AlbumsTab,
         val returning: Boolean = false,
+        val fromTile: PhotoId? = null,
     ) : AppScreen
 
-    /** One photo of [album] full-screen; which one is its grid's to say. */
-    data class AlbumPhotoViewer(val album: DomainAlbum, val cameFrom: CameFrom) : AppScreen
+    /** One photo of [album] full-screen; which one is its grid's to say. [fromTile]: as for [AlbumPhotos], for the way back. */
+    data class AlbumPhotoViewer(val album: DomainAlbum, val cameFrom: CameFrom, val fromTile: PhotoId? = null) : AppScreen
 
-    /** [album] playing from the photo [from] onward, in its grid's order, with [settings]. */
+    /**
+     * [album] playing from the photo [from] onward, in its grid's order, with [settings].
+     * [fromTile]: as for [AlbumPhotos], for the way back.
+     */
     data class AlbumPhotoSlideshow(
         val album: DomainAlbum,
         val from: PhotoId,
         val settings: SlideshowSettings,
         val cameFrom: CameFrom,
+        val fromTile: PhotoId? = null,
     ) : AppScreen
 
     /** [album] playing with [settings], as the album screen had them when it started. */
@@ -144,8 +159,8 @@ class AppViewModel(
         moveTo(AppScreen.Album(id, cameFrom = cameFrom))
     }
 
-    fun openAlbumPhotos(album: DomainAlbum, cameFrom: CameFrom = CameFrom.AlbumsTab) {
-        moveTo(AppScreen.AlbumPhotos(album, cameFrom))
+    fun openAlbumPhotos(album: DomainAlbum, cameFrom: CameFrom = CameFrom.AlbumsTab, fromTile: PhotoId? = null) {
+        moveTo(AppScreen.AlbumPhotos(album, cameFrom, fromTile = fromTile))
     }
 
     fun openSlideshow(album: DomainAlbum, settings: SlideshowSettings, cameFrom: CameFrom = CameFrom.AlbumsTab) {
@@ -160,16 +175,23 @@ class AppViewModel(
         moveTo(AppScreen.MemoryPhotos(memory, title))
     }
 
-    fun openAlbumPhotoViewer(album: DomainAlbum, cameFrom: CameFrom = CameFrom.AlbumsTab) {
-        _screen.value = AppScreen.AlbumPhotoViewer(album, cameFrom)
+    fun openAlbumPhotoViewer(album: DomainAlbum, cameFrom: CameFrom = CameFrom.AlbumsTab, fromTile: PhotoId? = null) {
+        _screen.value = AppScreen.AlbumPhotoViewer(album, cameFrom, fromTile)
     }
 
     /** With the album's saved settings; if Back left the grid while they loaded, it stays left. */
-    fun openAlbumPhotoSlideshow(album: DomainAlbum, from: PhotoId, cameFrom: CameFrom = CameFrom.AlbumsTab) {
+    fun openAlbumPhotoSlideshow(
+        album: DomainAlbum,
+        from: PhotoId,
+        cameFrom: CameFrom = CameFrom.AlbumsTab,
+        fromTile: PhotoId? = null,
+    ) {
         val grid = _screen.value
         viewModelScope.launch {
             val settings = getSlideshowSettings(album.id)
-            if (_screen.value === grid) _screen.value = AppScreen.AlbumPhotoSlideshow(album, from, settings, cameFrom)
+            if (_screen.value === grid) {
+                _screen.value = AppScreen.AlbumPhotoSlideshow(album, from, settings, cameFrom, fromTile)
+            }
         }
     }
 
@@ -227,10 +249,17 @@ class AppViewModel(
             is AppScreen.AlbumPhotos -> if (current.cameFrom == CameFrom.HomeHero) {
                 HOME
             } else {
-                AppScreen.Album(current.album.id, focusBrowse = true, cameFrom = current.cameFrom)
+                AppScreen.Album(
+                    current.album.id,
+                    focusBrowse = current.fromTile == null,
+                    focusTile = current.fromTile,
+                    cameFrom = current.cameFrom,
+                )
             }
-            is AppScreen.AlbumPhotoViewer -> AppScreen.AlbumPhotos(current.album, current.cameFrom, returning = true)
-            is AppScreen.AlbumPhotoSlideshow -> AppScreen.AlbumPhotos(current.album, current.cameFrom, returning = true)
+            is AppScreen.AlbumPhotoViewer ->
+                AppScreen.AlbumPhotos(current.album, current.cameFrom, returning = true, fromTile = current.fromTile)
+            is AppScreen.AlbumPhotoSlideshow ->
+                AppScreen.AlbumPhotos(current.album, current.cameFrom, returning = true, fromTile = current.fromTile)
             is AppScreen.MemoryPhotoViewer -> AppScreen.MemoryPhotos(current.memory, current.title, returning = true)
             is AppScreen.MemoryPhotoSlideshow -> AppScreen.MemoryPhotos(current.memory, current.title, returning = true)
             is AppScreen.Slideshow -> if (current.cameFrom == CameFrom.HomeHero) {

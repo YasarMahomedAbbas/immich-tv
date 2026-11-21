@@ -43,14 +43,14 @@ Problem: On an album, Down from the "In this album" row does nothing, so the rem
 
 Goal: the app's navigation knows which row tile a grid was entered from, keeps it through a photo or a show from the grid, and sends Back to that tile. It is unit-tested, with no UI change yet.
 
-### [ ] 1.1 — The screen values
+### [x] 1.1 — The screen values
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModel.kt`
 - `AppScreen.Album`: add `val focusTile: PhotoId? = null` after `focusBrowse`. KDoc: "[focusTile]: coming back from its photos entered by Down from that row tile, so focus goes to it."
 - `AppScreen.AlbumPhotos`: add `val fromTile: PhotoId? = null` last. KDoc: "[fromTile]: entered by Down from that tile of the album's row; Back (and Up from the top) returns there instead of to Browse photos."
 - `AppScreen.AlbumPhotoViewer` and `AppScreen.AlbumPhotoSlideshow`: add `val fromTile: PhotoId? = null` last, carried for the way back.
 
-### [ ] 1.2 — Opening and Back
+### [x] 1.2 — Opening and Back
 
 Same file.
 - `openAlbumPhotos(album: DomainAlbum, cameFrom: CameFrom = CameFrom.AlbumsTab, fromTile: PhotoId? = null)` → `AppScreen.AlbumPhotos(album, cameFrom, fromTile = fromTile)`.
@@ -59,12 +59,12 @@ Same file.
   - `AlbumPhotos` (not HomeHero) → `AppScreen.Album(id, focusBrowse = current.fromTile == null, focusTile = current.fromTile, cameFrom = current.cameFrom)`.
   - `AlbumPhotoViewer` / `AlbumPhotoSlideshow` → `AlbumPhotos(album, cameFrom, returning = true, fromTile = current.fromTile)`.
 
-### [ ] 1.3 — Wire the carry in the activity
+### [x] 1.3 — Wire the carry in the activity
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 In the `AppScreen.AlbumPhotos` branch, pass `current.fromTile` to `openAlbumPhotoViewer` and `openAlbumPhotoSlideshow`. (The album screen's Down is wired in checkpoint 2.)
 
-### [ ] 1.4 — Tests
+### [x] 1.4 — Tests
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModelTest.kt`
 - `down from a row tile opens the album's photos, and back returns to that tile`: `openAlbum`, then `openAlbumPhotos(summer, fromTile = PhotoId("p3"))`. Back gives `Album(summer.id, focusBrowse = false, focusTile = PhotoId("p3"))`.
