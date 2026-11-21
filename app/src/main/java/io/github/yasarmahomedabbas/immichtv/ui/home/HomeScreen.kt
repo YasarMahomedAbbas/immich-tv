@@ -157,8 +157,9 @@ private fun HomeContent(state: HomeState, onFocused: (HomeFocus) -> Unit, onRetr
 }
 
 /**
- * Focus goes to [target] once the page is laid out, which beats the top menu's request as the Albums
- * grid's does, and again if a refresh takes away what the remote was on. Each block is brought into
+ * Focus goes to [target] once the page is laid out, which beats the top menu's request (unlike the
+ * Albums and Photos grids, without asking whether the remote has moved since), and again if a
+ * refresh takes away what the remote was on. Each block is brought into
  * view whole as focus enters it, so a row's title comes with it and moving up returns to the hero.
  */
 @OptIn(ExperimentalComposeUiApi::class) // FocusRequester.Cancel: how a row's last item stops Right.
