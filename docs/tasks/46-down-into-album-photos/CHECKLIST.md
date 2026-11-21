@@ -121,23 +121,24 @@ File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumFocu
 
 Goal: on every grid `AlbumPhotosScreen` draws, Up from the first month's first row (or its Try again) calls `onBack`. The back link stays clickable, and the Photos tab's grid is unchanged.
 
-### [ ] 3.1 — The grid knows its top row
+### [x] 3.1 — The grid knows its top row
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/photos/PhotoGrid.kt`
 - Add parameter `onUpFromTop: (() -> Unit)? = null`. KDoc: "Up from the first month's first row (or its Try again) calls [onUpFromTop] instead of leaving the grid, when given."
 - Track `var onTopRow by remember { mutableStateOf(false) }`. `monthSection` gets `isFirst` already: tiles set `onTopRow = isFirst && index < COLUMNS` when they gain focus (via an extra `onTopRowFocused: (Boolean) -> Unit`), and the Try again button sets it to `isFirst`.
 - In the grid's `onPreviewKeyEvent`, before pacing: if `onUpFromTop != null && event.type == KeyDown && event.key == Key.DirectionUp && onTopRow`, call it and return `true`.
 - Clear `onTopRow` when the grid loses focus (`onFocusChanged { if (!it.hasFocus) onTopRow = false }` on the grid).
+- Tiles get their grid key (`tileKey`, now `internal`) as a test tag, so the focus tests can name them.
 
-### [ ] 3.2 — The screen passes its Back
+### [x] 3.2 — The screen passes its Back
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumPhotosScreen.kt`
 - Pass `onUpFromTop = onBack` to `PhotoGrid`. Make `AlbumPhotosContent` `internal` for the test.
 - Update the screen's KDoc: "Up from the grid's top row does what Back does; the back link stays clickable but the D-pad doesn't reach it from the grid."
 
-### [ ] 3.3 — Tests
+### [x] 3.3 — Tests
 
-File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumPhotosFocusTest.kt` (new; harness as in `PhotoGridFocusTest`, rendering `AlbumPhotosContent` with a counting `onBack`).
+File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumPhotosFocusTest.kt` (new; harness as in `PhotoGridFocusTest`, rendering `AlbumPhotosContent` with a counting `onBack`; `settle()` also advances Robolectric's system clock, which `MovePace` reads, or a second Up/Down is dropped).
 - `down from the row lands on the first photo`: with the first month loaded, the first tile is focused on arrival.
 - `up from any tile of the top row goes back`: Right ×k then Up, for k in 0..5. `onBack` was called once each time.
 - `up from the second row of the first month stays in the grid`: 14 photos, Down, Up. `onBack` is not called and the first tile is focused.
@@ -145,7 +146,7 @@ File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumPhot
 - `up from a failed first month's try again goes back`.
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/photos/PhotoGridFocusTest.kt`
-- `on the photos tab, up from the first row still goes to the menu`: with the first month loaded, Up moves focus to the Photos pill (or the rail, whichever is above today). Assert it is not on a tile.
+- `on the photos tab, up from the first row still goes to the menu`: with the first month loaded, Up moves focus to a pill of the menu (Albums, straight above the first tile at the test's size). Asserts it is not on a tile and is on a menu pill.
 
 ### Verify
 

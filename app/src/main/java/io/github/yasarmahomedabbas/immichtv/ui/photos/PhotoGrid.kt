@@ -36,6 +36,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +73,8 @@ private val FocusRoom = 8.dp
  * The screen is torn down when a photo opens, so [restoreTo] says which tile to come back to, scrolled
  * there and focused in place of the first; one no longer there falls back to the first.
  * Up and Down are paced ([MovePace]): a backlog of presses froze the app until Android killed it (ANR).
+ * Up from the first month's first row (or its Try again) calls [onUpFromTop] instead of leaving the
+ * grid, when given.
  */
 @Composable
 fun PhotoGrid(
@@ -86,6 +89,7 @@ fun PhotoGrid(
     restoreTo: PhotoId? = null,
     onHold: ((Photo) -> Unit)? = null,
     mayTakeFirstFocus: () -> Boolean = { true },
+    onUpFromTop: (() -> Unit)? = null,
 ) {
     val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = restoreTo?.let { gridIndexOfPhoto(sections, it) } ?: 0)
     val pace = remember { MovePace() }
@@ -99,6 +103,7 @@ fun PhotoGrid(
     val firstReady = (sections.firstOrNull()?.photos as? MonthPhotos.Loaded)?.photos?.isNotEmpty() == true
     var focusedOnce by rememberSaveable { mutableStateOf(false) }
     var lastFocused by remember { mutableStateOf<String?>(null) }
+    var onTopRow by remember { mutableStateOf(false) }
     LaunchedEffect(firstReady) {
         // The remote may already be on a tile of a month still loading: its arrival doesn't move it.
         if (focusedOnce || lastFocused != null) return@LaunchedEffect
@@ -129,10 +134,14 @@ fun PhotoGrid(
     LazyVerticalGrid(
         columns = GridCells.Fixed(COLUMNS),
         state = gridState,
-        modifier = modifier.fillMaxSize().onPreviewKeyEvent { event ->
+        modifier = modifier.fillMaxSize().onFocusChanged { if (!it.hasFocus) onTopRow = false }.onPreviewKeyEvent { event ->
             val isVerticalMove = event.type == KeyEventType.KeyDown && (event.key == Key.DirectionUp || event.key == Key.DirectionDown)
             when {
                 !isVerticalMove -> false
+                onUpFromTop != null && event.key == Key.DirectionUp && onTopRow -> {
+                    onUpFromTop()
+                    true
+                }
                 pace.accept(SystemClock.uptimeMillis()) -> {
                     scope.launch {
                         withFrameNanos { }
@@ -148,12 +157,26 @@ fun PhotoGrid(
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
         sections.forEachIndexed { index, section ->
-            monthSection(section, isFirst = index == 0, requesterOf(section.month), restoreTo, restoreFocus, { lastFocused = it }, onNeedMonth, onRetryMonth, onOpen, onMonthFocused, onHold)
+            monthSection(
+                section,
+                isFirst = index == 0,
+                requesterOf(section.month),
+                restoreTo,
+                restoreFocus,
+                { lastFocused = it },
+                { onTopRow = it },
+                onNeedMonth,
+                onRetryMonth,
+                onOpen,
+                onMonthFocused,
+                onHold,
+            )
         }
     }
 }
 
-private fun tileKey(month: YearMonth, index: Int) = "t-$month-$index"
+/** A tile's key in the grid, and its test tag. */
+internal fun tileKey(month: YearMonth, index: Int) = "t-$month-$index"
 
 private fun LazyGridScope.monthSection(
     section: MonthSection,
@@ -162,6 +185,7 @@ private fun LazyGridScope.monthSection(
     restoreTo: PhotoId?,
     restoreFocus: FocusRequester,
     onTileFocused: (String) -> Unit,
+    onTopRowFocused: (Boolean) -> Unit,
     onNeedMonth: (YearMonth) -> Unit,
     onRetryMonth: (YearMonth) -> Unit,
     onOpen: (Photo) -> Unit,
@@ -180,7 +204,12 @@ private fun LazyGridScope.monthSection(
                 onRetry = { onRetryMonth(section.month) },
                 buttonModifier = Modifier
                     .focusRequester(firstOfMonth)
-                    .onFocusChanged { if (it.isFocused) onMonthFocused(section.month) },
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            onTopRowFocused(isFirst)
+                            onMonthFocused(section.month)
+                        }
+                    },
             )
         }
         return
@@ -199,11 +228,13 @@ private fun LazyGridScope.monthSection(
             onLongClick = onHold?.let { hold -> { if (photo != null) hold(photo) } },
             modifier = Modifier
                 .aspectRatio(1f)
+                .testTag(tileKey(section.month, index))
                 .then(if (index == 0) Modifier.focusRequester(firstOfMonth) else Modifier)
                 .then(if (photo != null && photo.id == restoreTo) Modifier.focusRequester(restoreFocus) else Modifier)
                 .onFocusChanged {
                     if (it.isFocused) {
                         onTileFocused(tileKey(section.month, index))
+                        onTopRowFocused(isFirst && index < COLUMNS)
                         onMonthFocused(section.month)
                     }
                 },
