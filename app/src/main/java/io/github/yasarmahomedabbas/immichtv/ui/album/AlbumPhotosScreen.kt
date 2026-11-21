@@ -39,7 +39,11 @@ import io.github.yasarmahomedabbas.immichtv.ui.photos.PhotoGridViewModel
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 import java.time.YearMonth
 
-/** Browse photos: "‹ <album>" over the album's photos by month. [returning]: focus goes back to the tile last viewed. */
+/**
+ * Browse photos: "‹ <album>" over the album's photos by month. [returning]: focus goes back to the tile last viewed.
+ * Up from the grid's top row does what Back does; the back link stays clickable but the D-pad
+ * doesn't reach it from the grid.
+ */
 @Composable
 fun AlbumPhotosScreen(
     albumName: String,
@@ -72,7 +76,7 @@ fun AlbumPhotosScreen(
 }
 
 @Composable
-private fun AlbumPhotosContent(
+internal fun AlbumPhotosContent(
     albumName: String,
     state: PhotoGridState,
     onBack: () -> Unit,
@@ -110,7 +114,15 @@ private fun AlbumPhotosContent(
                 // Until the first month's tiles are there, Back holds focus.
                 LaunchedEffect(Unit) { runCatching { backFocus.requestFocus() } }
                 Box(Modifier.fillMaxSize()) {
-                    PhotoGrid(state.sections, onNeedMonth, onRetryMonth, onOpen = onOpen, restoreTo = restoreTo, onHold = onHold)
+                    PhotoGrid(
+                        state.sections,
+                        onNeedMonth,
+                        onRetryMonth,
+                        onOpen = onOpen,
+                        restoreTo = restoreTo,
+                        onHold = onHold,
+                        onUpFromTop = onBack,
+                    )
                     KeyHint(
                         hints = listOf(
                             stringResource(R.string.hint_ok) to stringResource(R.string.hint_open),

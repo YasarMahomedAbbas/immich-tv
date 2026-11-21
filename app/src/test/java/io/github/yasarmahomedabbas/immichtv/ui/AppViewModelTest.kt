@@ -113,6 +113,53 @@ class AppViewModelTest {
     }
 
     @Test
+    fun `down from a row tile opens the album's photos, and back returns to that tile`() = runTest(dispatcher) {
+        val vm = signedIn()
+        val summer = album(id = "a1")
+        val tile = PhotoId("p3")
+        vm.selectTab(Tab.Albums)
+        vm.openAlbum(summer.id)
+        vm.openAlbumPhotos(summer, fromTile = tile)
+        assertEquals(AppScreen.AlbumPhotos(summer, fromTile = tile), vm.screen.value)
+
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Album(summer.id, focusBrowse = false, focusTile = tile), vm.screen.value)
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Main(Tab.Albums), vm.screen.value)
+    }
+
+    @Test
+    fun `a photo or a show from a grid entered from the row still goes back to the row tile, for album-screen origins`() =
+        runTest(dispatcher) {
+            val summer = album(id = "a1")
+            val tile = PhotoId("p3")
+            val saved = SlideshowSettings(secondsPerPhoto = 20)
+            settingsStore.saved[summer.id] = saved
+            for (origin in listOf(CameFrom.AlbumsTab, CameFrom.HomeRow)) {
+                val vm = signedIn()
+                vm.openAlbum(summer.id, origin)
+                vm.openAlbumPhotos(summer, origin, fromTile = tile)
+
+                vm.openAlbumPhotoViewer(summer, origin, fromTile = tile)
+                assertEquals(AppScreen.AlbumPhotoViewer(summer, origin, fromTile = tile), vm.screen.value)
+                assertTrue(vm.back())
+                assertEquals(AppScreen.AlbumPhotos(summer, origin, returning = true, fromTile = tile), vm.screen.value)
+
+                vm.openAlbumPhotoSlideshow(summer, PhotoId("p1"), origin, fromTile = tile)
+                advanceUntilIdle()
+                assertEquals(
+                    AppScreen.AlbumPhotoSlideshow(summer, PhotoId("p1"), saved, origin, fromTile = tile),
+                    vm.screen.value,
+                )
+                assertTrue(vm.back())
+                assertEquals(AppScreen.AlbumPhotos(summer, origin, returning = true, fromTile = tile), vm.screen.value)
+
+                assertTrue(vm.back())
+                assertEquals(AppScreen.Album(summer.id, focusTile = tile, cameFrom = origin), vm.screen.value)
+            }
+        }
+
+    @Test
     fun `start slideshow plays with the settings given, and back returns to the album on start slideshow`() = runTest(dispatcher) {
         val vm = signedIn()
         val summer = album(id = "a1")

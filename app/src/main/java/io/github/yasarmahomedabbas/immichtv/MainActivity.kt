@@ -142,7 +142,9 @@ class MainActivity : ComponentActivity() {
                         onBack = { app.back() },
                         onBrowsePhotos = { app.openAlbumPhotos(it, current.cameFrom) },
                         onStartSlideshow = { album, settings -> app.openSlideshow(album, settings, current.cameFrom) },
+                        onDownFromRow = { album, tile -> app.openAlbumPhotos(album, current.cameFrom, fromTile = tile) },
                         focusBrowse = current.focusBrowse,
+                        focusTile = current.focusTile,
                         cameFrom = current.cameFrom,
                     )
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
@@ -150,8 +152,10 @@ class MainActivity : ComponentActivity() {
                         viewModel = albumGrid(container, connection, current.album),
                         onBack = { app.back() },
                         returning = current.returning,
-                        onOpenPhoto = { app.openAlbumPhotoViewer(current.album, current.cameFrom) },
-                        onStartSlideshow = { app.openAlbumPhotoSlideshow(current.album, it, current.cameFrom) },
+                        onOpenPhoto = { app.openAlbumPhotoViewer(current.album, current.cameFrom, current.fromTile) },
+                        onStartSlideshow = {
+                            app.openAlbumPhotoSlideshow(current.album, it, current.cameFrom, current.fromTile)
+                        },
                     )
                     is AppScreen.MemoryPhotos -> AlbumPhotosScreen(
                         albumName = current.title,
