@@ -23,3 +23,10 @@ Branch: `feat/46-down-into-album-photos`
 - Tests: full CI command green (`testDebugUnitTest koverVerifyDebug lintDebug assembleDebug`): 547 passed / 0 failed / 0 skipped. New: 2 in `AppViewModelTest`, 6 in `AlbumFocusTest`, 5 in `AlbumPhotosFocusTest`, 1 in `PhotoGridFocusTest`. Checked the tests bite: without the row scroll, the far-tile test fails; without `onUpFromTop = onBack`, the top-row and Try again tests fail.
 - Outstanding: the TV check in the test plan is for self-verification.
 - Contradicted the plan: none in the code. Test details adjusted in the checklist: Down from Start slideshow reaches some row tile whose position depends on layout, so the "p2" case enters on `p0` via `focusTile`; Up from the Photos tab's first tile lands on the Albums pill (straight above), so that test asserts "a menu pill, not a tile"; `AlbumPhotosFocusTest` advances Robolectric's system clock because `MovePace` reads `SystemClock`, otherwise a second Up/Down is dropped.
+
+## Review
+
+- Fixed: `PhotoGrid` kept "on the top row" as a flag set when a tile gained focus, so a refresh that put a newer month above (Browse photos refreshes whenever the app comes back to it) left the flag true on the old first month: Up there went Back instead of moving into the new month. It now keeps the focused month and tile and checks them against the current sections on each Up (`ui/photos/PhotoGrid.kt`). New test `after a refresh puts a newer month on top, up from the old first row moves to it` in `AlbumPhotosFocusTest` fails without the fix. Full CI command green.
+- Raised: none
+- API: none touched (navigation in `ui/` only)
+- Layers: clean

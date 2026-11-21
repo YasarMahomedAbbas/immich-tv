@@ -1,6 +1,7 @@
 package io.github.yasarmahomedabbas.immichtv.ui.album
 
 import android.app.Application
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -50,13 +51,16 @@ class AlbumPhotosFocusTest {
     private fun month(month: YearMonth, count: Int) =
         MonthSection(month, count, MonthPhotos.Loaded(List(count) { Photo(PhotoId("$month-$it"), isVideo = false) }))
 
+    private val shown = mutableStateOf(emptyList<MonthSection>())
+
     private fun open(vararg sections: MonthSection) {
+        shown.value = sections.toList()
         rule.mainClock.autoAdvance = false
         rule.setContent {
             ImmichTvTheme {
                 AlbumPhotosContent(
                     albumName = "Summer",
-                    state = PhotoGridState(GridLoad.Loaded, sections.toList()),
+                    state = PhotoGridState(GridLoad.Loaded, shown.value),
                     onBack = { backs++ },
                     onNeedMonth = {},
                     onRetryMonth = {},
@@ -133,5 +137,19 @@ class AlbumPhotosFocusTest {
         rule.onNodeWithText("Try again").assertIsFocused()
         press(listOf(Key.DirectionUp))
         assertEquals(1, backs)
+    }
+
+    @Test
+    fun `after a refresh puts a newer month on top, up from the old first row moves to it`() {
+        val march = YearMonth.of(2025, 3)
+        open(month(february, 14))
+        rule.onNodeWithTag(tileKey(february, 0)).assertIsFocused()
+        shown.value = listOf(month(march, 3), month(february, 14))
+        settle()
+        rule.onNodeWithTag(tileKey(february, 0)).assertIsFocused()
+        press(listOf(Key.DirectionUp))
+        assertEquals(0, backs)
+        val above = focusedTag()
+        assertTrue("not on march: $above", above != null && above.startsWith("t-$march-"))
     }
 }

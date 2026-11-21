@@ -103,7 +103,9 @@ fun PhotoGrid(
     val firstReady = (sections.firstOrNull()?.photos as? MonthPhotos.Loaded)?.photos?.isNotEmpty() == true
     var focusedOnce by rememberSaveable { mutableStateOf(false) }
     var lastFocused by remember { mutableStateOf<String?>(null) }
-    var onTopRow by remember { mutableStateOf(false) }
+    // Where focus is, by month and tile (null for a failed month's Try again); whether that is the top row
+    // is worked out against the current sections, as a refresh can put a newer month above it.
+    var focusedSpot by remember { mutableStateOf<Pair<YearMonth, Int?>?>(null) }
     LaunchedEffect(firstReady) {
         // The remote may already be on a tile of a month still loading: its arrival doesn't move it.
         if (focusedOnce || lastFocused != null) return@LaunchedEffect
@@ -134,11 +136,11 @@ fun PhotoGrid(
     LazyVerticalGrid(
         columns = GridCells.Fixed(COLUMNS),
         state = gridState,
-        modifier = modifier.fillMaxSize().onFocusChanged { if (!it.hasFocus) onTopRow = false }.onPreviewKeyEvent { event ->
+        modifier = modifier.fillMaxSize().onFocusChanged { if (!it.hasFocus) focusedSpot = null }.onPreviewKeyEvent { event ->
             val isVerticalMove = event.type == KeyEventType.KeyDown && (event.key == Key.DirectionUp || event.key == Key.DirectionDown)
             when {
                 !isVerticalMove -> false
-                onUpFromTop != null && event.key == Key.DirectionUp && onTopRow -> {
+                onUpFromTop != null && event.key == Key.DirectionUp && isTopRow(sections, focusedSpot) -> {
                     onUpFromTop()
                     true
                 }
@@ -164,7 +166,7 @@ fun PhotoGrid(
                 restoreTo,
                 restoreFocus,
                 { lastFocused = it },
-                { onTopRow = it },
+                { month, tile -> focusedSpot = month to tile },
                 onNeedMonth,
                 onRetryMonth,
                 onOpen,
@@ -173,6 +175,12 @@ fun PhotoGrid(
             )
         }
     }
+}
+
+/** Whether [spot] (a month and its tile, or null for its Try again) is on the first month's first row. */
+private fun isTopRow(sections: List<MonthSection>, spot: Pair<YearMonth, Int?>?): Boolean {
+    val (month, tile) = spot ?: return false
+    return sections.firstOrNull()?.month == month && (tile == null || tile < COLUMNS)
 }
 
 /** A tile's key in the grid, and its test tag. */
@@ -185,7 +193,7 @@ private fun LazyGridScope.monthSection(
     restoreTo: PhotoId?,
     restoreFocus: FocusRequester,
     onTileFocused: (String) -> Unit,
-    onTopRowFocused: (Boolean) -> Unit,
+    onSpotFocused: (YearMonth, Int?) -> Unit,
     onNeedMonth: (YearMonth) -> Unit,
     onRetryMonth: (YearMonth) -> Unit,
     onOpen: (Photo) -> Unit,
@@ -206,7 +214,7 @@ private fun LazyGridScope.monthSection(
                     .focusRequester(firstOfMonth)
                     .onFocusChanged {
                         if (it.isFocused) {
-                            onTopRowFocused(isFirst)
+                            onSpotFocused(section.month, null)
                             onMonthFocused(section.month)
                         }
                     },
@@ -234,7 +242,7 @@ private fun LazyGridScope.monthSection(
                 .onFocusChanged {
                     if (it.isFocused) {
                         onTileFocused(tileKey(section.month, index))
-                        onTopRowFocused(isFirst && index < COLUMNS)
+                        onSpotFocused(section.month, index)
                         onMonthFocused(section.month)
                     }
                 },
