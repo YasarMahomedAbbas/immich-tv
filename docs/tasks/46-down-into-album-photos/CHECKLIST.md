@@ -81,31 +81,32 @@ File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModelTes
 
 Goal: on the album screen, Down from a row tile opens Browse photos entered from that tile, and the album screen focuses `focusTile` (scrolled into view) when it comes back.
 
-### [ ] 2.1 — The album screen's parameters
+### [x] 2.1 — The album screen's parameters
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumScreen.kt`
 - `AlbumScreen(..., onDownFromRow: (Album, PhotoId) -> Unit, focusTile: PhotoId? = null, ...)`; thread both through `AlbumContent` and `LoadedAlbum`.
 - Make `AlbumContent` `internal` (for the focus test); update the preview call.
 - KDoc: "Down from a tile of the row calls [onDownFromRow]; [focusTile] puts focus on that tile instead, scrolled into view, for coming back from the grid entered there (Start slideshow if it's gone)."
 
-### [ ] 2.2 — Focus on arrival
+### [x] 2.2 — Focus on arrival
 
 Same file, `LoadedAlbum`'s `LaunchedEffect(Unit)`: when `focusTile != null`, ask `Strip` to focus it. Hoist the strip's `LazyListState` (`rememberLazyListState()`) and a `FocusRequester` for the tile whose id is `focusTile`. After `withFrameNanos {}`, if the index of `focusTile` in `contents.firstItems` is found: `listState.scrollToItem(index)`, another `withFrameNanos {}`, then `runCatching { tileFocus.requestFocus() }`. If it isn't found, or the request fails, use `startFocus`. Otherwise keep today's `focusBrowse`/`startFocus` choice.
 
-### [ ] 2.3 — Down on a row tile
+### [x] 2.3 — Down on a row tile
 
 Same file, `Strip`: add `onDown: (PhotoId) -> Unit`, `listState: LazyListState`, `focusTile: PhotoId?`, `tileFocus: FocusRequester`. On each tile's modifier, `onPreviewKeyEvent { it.type == KeyEventType.KeyDown && it.key == Key.DirectionDown && run { onDown(photo.id); true } }`. Attach `Modifier.focusRequester(tileFocus)` to the tile whose id is `focusTile`. Update `Strip`'s KDoc.
 
-### [ ] 2.4 — Wire it
+### [x] 2.4 — Wire it
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 In the `AppScreen.Album` branch: `onDownFromRow = { album, tile -> app.openAlbumPhotos(album, current.cameFrom, fromTile = tile) }` and `focusTile = current.focusTile`.
 
-### [ ] 2.5 — Tests
+### [x] 2.5 — Tests
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumFocusTest.kt` (new; Robolectric setup and `settle()`/`press()` as in `PhotoGridFocusTest`). Render `AlbumContent` with a loaded page of 30 items.
-- `down from a row tile opens the grid from that tile`: focus Start slideshow, press Down until the row is reached, then Right ×2 and Down. `onDownFromRow` was called once with `p2`.
-- `left, right and up on the row don't open the grid`: on the row, Right, Left, Up. `onDownFromRow` is never called, and the last Up lands on a setting.
+- `down from the buttons reaches the row, and down from a row tile opens the grid from that tile`: from Start slideshow, Down until a row tile is focused (no call yet), then Down: `onDownFromRow` was called once with that tile.
+- `down from the third tile opens the grid from it`: entered on `p0`, Right ×2 and Down. `onDownFromRow` was called once with `p2`.
+- `left, right and up on the row don't open the grid`: entered on `p1`, Right, Left (back on `p1`), Up. `onDownFromRow` is never called, and the last Up lands on a setting.
 - `coming back to a tile far along the row focuses it`: `focusTile = p20`. The tile tagged `p20` is focused (give tiles a `testTag` of the photo id if none exists).
 - `coming back to a tile no longer in the row lands on start slideshow`: `focusTile = gone`. Start slideshow is focused.
 - `coming back from browse photos still lands on browse photos`: `focusBrowse = true`.
