@@ -62,12 +62,12 @@ Result: partial
 
 - CI build: full CI command in Docker green: 549 tests passed / 0 failed / 0 skipped, line coverage 89.6% (bound 80%), lint clean, debug APK built.
 - Server: Immich 3.3.6
-- TV: not run (the Chromecast is a shared household TV and the standing rule is not to install or launch on it without the user saying it is free; the pipeline's earlier TV window, 2026-10-30 until 15:30 CET, has ended).
+- TV: not run (2026-11-21 re-run in the TV window the user granted on the issue: the debug APK built, but `adb connect` to the Chromecast was refused for 5 minutes (20 tries, 15 s apart). The TV was on the network and answering on its cast ports 8008/8009/8443, but nothing listened on adb's 5555: network debugging is off on the TV and can't be turned on from here. Earlier window: the TV was shared and the pipeline's 2026-10-30 window had ended.) Code unchanged since the CI run above, so CI was not re-run.
 - Verified:
   - No Immich call changed (`data/immich` untouched; the only `data/` change is `StoredResumePoints`, local storage, covered by `StoredResumePointsTest`).
   - Read-only against the real server, built as the code builds them: `GET /api/server/version`; `GET /api/albums` (15 albums, the fields `AlbumDto` reads present); `GET /api/albums/{id}` on a 1962-item album with videos (order `desc`); `GET /api/timeline/buckets?albumId=…&order=asc` (19 months, counts sum to 1962) and `GET /api/timeline/bucket?albumId=…&timeBucket=…&order=asc` for every month: `id` and `isImage` columns match each month's count, 1511 images and 451 videos. The slides `LoadSlideshow` orders, shuffles and resumes over come back in the shape `BucketAssetsDto` reads, so no shape change.
 - Failed: none
-- Not self-verifiable (check on the TV by hand):
+- Not self-verifiable (check on the TV by hand, after turning on Developer options → Network debugging so adb can reach it):
   - Open an album with no spot: no Continue, the screen as before.
   - Start slideshow, skip three, Back: Continue focused (amber outline), Start over beside it; Continue resumes on that photo.
   - Continue + Start over + Browse photos fit one line in the 760dp info column (estimated about 746dp, the plan's open risk); if not, that is a re-plan.
