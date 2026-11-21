@@ -35,3 +35,14 @@ Branch: `fix/44-keep-home-menu-focus`
 - Skipped: the manual's Home row ("Focus enters on Play slideshow") — still true; the asking rule is stated once on the Top menu line, which a session working on Home reads.
 - Skipped: the `mayTakeFocus` contract for any future tab — `MainScreen`'s KDoc says it and `HomeFocusTest`/`AlbumGridFocusTest`/`PhotoGridFocusTest` enforce it; no CLAUDE.md line needed.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: full CI command in Docker green; 533 tests passed / 0 failed / 0 skipped, application line coverage 91.2% (`koverVerifyDebug` bound 80%), lint 0 errors (28 warnings, none from this branch's files), debug APK built.
+- Server: not run (no Immich call touched; the diff is `ui/`, `MainActivity` and docs only, so there is nothing to check).
+- TV: not run (TV is shared; not cleared by the user for #44). No adb command was run.
+- Verified: Home's first-focus gate and the `lost` guard, by the 9 `HomeFocusTest` cases (real keys through `MainScreen` and `HomeContent` under Robolectric), proved red without each guard during implementation; `AlbumGridFocusTest` and `PhotoGridFocusTest` still green with the changed `MainScreen`.
+- Failed: none
+- Not self-verifiable: on the Chromecast, with the debug build installed: (1) cold open on Home with no key pressed: Play takes focus when the page arrives; (2) cold open, press Right straight after launch during the skeleton: focus stays on the Albums pill when the page arrives; (3) open an album from Home's row and press Back: focus returns to that card; (4) go to Albums and select Home again: the remembered item takes focus. Check the amber outline is visible in each, and `adb logcat -d -t 300 '*:E' | rg -i 'immichtv|AndroidRuntime'` shows no crash.
