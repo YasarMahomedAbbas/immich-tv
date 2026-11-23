@@ -109,13 +109,13 @@ File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/photos/ViewerVi
 
 Goal: the slideshow uses a shared `VideoPicture`, with no change in behaviour.
 
-### [ ] 2.1 — `VideoPicture`
+### [x] 2.1 — `VideoPicture`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/components/VideoPicture.kt`
 
 `@Composable internal fun VideoPicture(player: Player, size: VideoSize?, visible: Boolean, modifier: Modifier = Modifier)`: the `Box` + `AndroidView(TextureView)` from `SlideshowScreen.VideoLayer`, moved as it is. It is non-focusable, `isOpaque = false`, `alpha = if (visible) 1f else 0f`, `player.setVideoTextureView` in the factory, and keeps the `aspectRatio` fit (height first for portrait).
 
-### [ ] 2.2 — Slideshow uses it
+### [x] 2.2 — Slideshow uses it
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/slideshow/SlideshowScreen.kt`. `VideoLayer`'s picture becomes `VideoPicture(player, size, visible = firstFrame)`. Nothing else changes.
 
