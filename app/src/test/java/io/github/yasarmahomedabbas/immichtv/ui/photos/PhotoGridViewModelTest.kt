@@ -560,4 +560,18 @@ class PhotoGridViewModelTest {
         advanceUntilIdle()
         assertEquals(julyPhotos[0], vm.state.value.neighbour(1))
     }
+
+    @Test
+    fun `a photo opened before the months arrive stays open`() = runTest(dispatcher) {
+        // The album row's viewer opens a photo on a grid it has just created.
+        val vm = PhotoGridViewModel(timeline)
+        vm.open(julyPhotos.single())
+        advanceUntilIdle()
+
+        assertEquals(GridLoad.Loaded, vm.state.value.load)
+        assertEquals("p2", vm.viewed)
+        vm.viewerMove(-1)
+        advanceUntilIdle()
+        assertEquals("v1", vm.viewed)
+    }
 }

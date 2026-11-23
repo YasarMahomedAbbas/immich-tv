@@ -239,14 +239,17 @@ class PhotoGridViewModel(private val timeline: Timeline) : ViewModel() {
         }
     }
 
+    // Each keeps the open photo: a viewer can open one on a grid still on its way (the album row's).
     private fun loadMonths() {
-        _state.value = PhotoGridState(GridLoad.Loading)
+        _state.update { PhotoGridState(GridLoad.Loading, viewing = it.viewing) }
         viewModelScope.launch {
             when (val result = timeline.months()) {
-                is ServerResult.Failed -> _state.value = PhotoGridState(GridLoad.Failed(result.problem))
+                is ServerResult.Failed -> _state.update { PhotoGridState(GridLoad.Failed(result.problem), viewing = it.viewing) }
                 is ServerResult.Ok -> {
                     val sections = result.value.map { MonthSection(it.month, it.count) }
-                    _state.value = PhotoGridState(if (sections.isEmpty()) GridLoad.Empty else GridLoad.Loaded, sections)
+                    _state.update {
+                        PhotoGridState(if (sections.isEmpty()) GridLoad.Empty else GridLoad.Loaded, sections, viewing = it.viewing)
+                    }
                     sections.firstOrNull()?.let { fetch(it.month) }
                 }
             }

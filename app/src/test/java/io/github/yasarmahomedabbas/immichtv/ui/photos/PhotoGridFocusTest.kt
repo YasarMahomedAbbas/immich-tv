@@ -5,8 +5,10 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -19,6 +21,7 @@ import io.github.yasarmahomedabbas.immichtv.ui.Tab
 import io.github.yasarmahomedabbas.immichtv.ui.main.MainScreen
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -151,6 +154,18 @@ class PhotoGridFocusTest {
         state.value = monthLoaded
         settle()
         assertEquals("focus moved on arrival", listOf(january, january), tileMonths)
+    }
+
+    @Test
+    fun `on the photos tab, up from the first row still goes to the menu`() {
+        open(monthLoaded)
+        assertEquals(listOf(january), tileMonths)
+        press(listOf(Key.DirectionUp))
+        // Straight up from the first tile is a pill of the menu (Albums, at this size), not a tile.
+        val focused = rule.onNode(isFocused()).fetchSemanticsNode().config
+        assertEquals("still on a tile", null, focused.getOrElseNullable(SemanticsProperties.TestTag) { null })
+        val text = focused.getOrElseNullable(SemanticsProperties.Text) { null }?.joinToString()
+        assertTrue("not on the menu: $text", text in listOf("Home", "Albums", "Photos", "Search"))
     }
 
     @Test

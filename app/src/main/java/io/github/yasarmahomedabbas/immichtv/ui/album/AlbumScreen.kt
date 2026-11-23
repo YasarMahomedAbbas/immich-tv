@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,6 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -114,6 +122,9 @@ internal fun albumBackLabel(cameFrom: CameFrom): Int = when (cameFrom) {
  * Browse photos, the slideshow settings with Random start and Shuffle, and a strip of its first items.
  * With a remembered spot, Continue takes Start slideshow's place and focus, and Start over follows it.
  * [focusBrowse] puts focus on Browse photos instead, for coming Back from it.
+ * OK on a tile of the row calls [onOpenFromRow] with its photo; Down from one calls [onDownFromRow]; [focusTile] puts focus on that tile instead,
+ * scrolled into view, for coming back from the grid entered there or a photo opened there; if it
+ * isn't in the row, [fallbackTile] is focused if it is, else Start slideshow.
  */
 @Composable
 fun AlbumScreen(
@@ -121,7 +132,11 @@ fun AlbumScreen(
     onBack: () -> Unit,
     onBrowsePhotos: (Album) -> Unit,
     onStartSlideshow: (Album, SlideshowSettings, ShowStart) -> Unit,
+    onDownFromRow: (Album, PhotoId) -> Unit,
+    onOpenFromRow: (Album, Photo) -> Unit,
     focusBrowse: Boolean = false,
+    focusTile: PhotoId? = null,
+    fallbackTile: PhotoId? = null,
     cameFrom: CameFrom = CameFrom.AlbumsTab,
 ) {
     val state by viewModel.state.collectAsState()
@@ -129,10 +144,14 @@ fun AlbumScreen(
     AlbumContent(
         state = state,
         focusBrowse = focusBrowse,
+        focusTile = focusTile,
+        fallbackTile = fallbackTile,
         backLabel = albumBackLabel(cameFrom),
         onBack = onBack,
         onStartSlideshow = onStartSlideshow,
         onBrowsePhotos = onBrowsePhotos,
+        onDownFromRow = onDownFromRow,
+        onOpenFromRow = onOpenFromRow,
         onCycleSeconds = viewModel::cycleSeconds,
         onCycleOrder = viewModel::cycleOrder,
         onCycleVideos = viewModel::cycleVideos,
@@ -142,13 +161,17 @@ fun AlbumScreen(
 }
 
 @Composable
-private fun AlbumContent(
+internal fun AlbumContent(
     state: AlbumState,
     focusBrowse: Boolean,
+    focusTile: PhotoId?,
+    fallbackTile: PhotoId? = null,
     @StringRes backLabel: Int,
     onBack: () -> Unit,
     onStartSlideshow: (Album, SlideshowSettings, ShowStart) -> Unit,
     onBrowsePhotos: (Album) -> Unit,
+    onDownFromRow: (Album, PhotoId) -> Unit,
+    onOpenFromRow: (Album, Photo) -> Unit,
     onCycleSeconds: () -> Unit,
     onCycleOrder: () -> Unit,
     onCycleVideos: () -> Unit,
@@ -176,8 +199,12 @@ private fun AlbumContent(
                 settings = state.settings,
                 canContinue = state.canContinue,
                 focusBrowse = focusBrowse,
+                focusTile = focusTile,
+                fallbackTile = fallbackTile,
                 onStartSlideshow = { start -> onStartSlideshow(load.page.album, state.settings, start) },
                 onBrowsePhotos = { onBrowsePhotos(load.page.album) },
+                onDownFromRow = { onDownFromRow(load.page.album, it) },
+                onOpenFromRow = { onOpenFromRow(load.page.album, it) },
                 onCycleSeconds = onCycleSeconds,
                 onCycleOrder = onCycleOrder,
                 onCycleVideos = onCycleVideos,
@@ -193,8 +220,12 @@ private fun LoadedAlbum(
     settings: SlideshowSettings,
     canContinue: Boolean,
     focusBrowse: Boolean,
+    focusTile: PhotoId?,
+    fallbackTile: PhotoId?,
     onStartSlideshow: (ShowStart) -> Unit,
     onBrowsePhotos: () -> Unit,
+    onDownFromRow: (PhotoId) -> Unit,
+    onOpenFromRow: (Photo) -> Unit,
     onCycleSeconds: () -> Unit,
     onCycleOrder: () -> Unit,
     onCycleVideos: () -> Unit,
@@ -205,9 +236,20 @@ private fun LoadedAlbum(
     val contents = page.contents
     val startFocus = remember { FocusRequester() }
     val browseFocus = remember { FocusRequester() }
+    val tileFocus = remember { FocusRequester() }
+    val stripState = rememberLazyListState()
+    // The first of the two that is in the row; it carries tileFocus.
+    val target = listOfNotNull(focusTile, fallbackTile).firstOrNull { t -> contents.firstItems.any { it.id == t } }
     LaunchedEffect(Unit) {
         withFrameNanos { }
-        runCatching { (if (focusBrowse) browseFocus else startFocus).requestFocus() }
+        val tileIndex = target?.let { tile -> contents.firstItems.indexOfFirst { it.id == tile } } ?: -1
+        val onTile = tileIndex >= 0 && run {
+            // The row only composes what is on screen, so a far tile has to be scrolled to first.
+            stripState.scrollToItem(tileIndex)
+            withFrameNanos { }
+            runCatching { tileFocus.requestFocus() }.isSuccess
+        }
+        if (!onTile) runCatching { (if (focusBrowse) browseFocus else startFocus).requestFocus() }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(MosaicToInfo)) {
         Mosaic(album.cover, contents.firstItems)
@@ -274,7 +316,15 @@ private fun LoadedAlbum(
             Text(stringResource(R.string.album_settings_hint), color = colors.onSurfaceVariant, fontSize = 18.sp)
         }
     }
-    Strip(contents.firstItems, onFocusLost = { runCatching { startFocus.requestFocus() } })
+    Strip(
+        contents.firstItems,
+        listState = stripState,
+        focusTile = target,
+        tileFocus = tileFocus,
+        onDown = onDownFromRow,
+        onOpen = onOpenFromRow,
+        onFocusLost = { runCatching { startFocus.requestFocus() } },
+    )
 }
 
 /** The cover over two rows, then the album's next two items; a missing tile stays `surface`. */
@@ -322,11 +372,21 @@ private fun Settings(
 }
 
 /**
- * "In this album": the first items as focusable tiles (opening one comes with the photo viewer).
- * [onFocusLost] is called when the tile the remote was last on is gone after a refresh.
+ * "In this album": the first items as focusable tiles. OK on a tile calls [onOpen] with its photo;
+ * Down from one calls [onDown] with it. The tile [focusTile] carries [tileFocus], so it can be
+ * focused once [listState] has scrolled to it. [onFocusLost] is called when the tile the remote
+ * was last on is gone after a refresh.
  */
 @Composable
-private fun Strip(items: List<Photo>, onFocusLost: () -> Unit) {
+private fun Strip(
+    items: List<Photo>,
+    listState: LazyListState,
+    focusTile: PhotoId?,
+    tileFocus: FocusRequester,
+    onDown: (PhotoId) -> Unit,
+    onOpen: (Photo) -> Unit,
+    onFocusLost: () -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
     var lastFocused by remember { mutableStateOf<PhotoId?>(null) }
     LaunchedEffect(items) {
@@ -341,6 +401,7 @@ private fun Strip(items: List<Photo>, onFocusLost: () -> Unit) {
             Text(stringResource(R.string.album_empty), color = colors.onSurfaceVariant, fontSize = 22.sp, modifier = Modifier.padding(top = FocusRoom))
         } else {
             LazyRow(
+                state = listState,
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(FocusRoom),
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
@@ -348,8 +409,19 @@ private fun Strip(items: List<Photo>, onFocusLost: () -> Unit) {
                 items(items, key = { it.id.value }) { photo ->
                     PhotoTile(
                         photo.id,
-                        Modifier.size(StripTile).onFocusChanged { if (it.isFocused) lastFocused = photo.id },
+                        Modifier
+                            .size(StripTile)
+                            .testTag(photo.id.value)
+                            .then(if (photo.id == focusTile) Modifier.focusRequester(tileFocus) else Modifier)
+                            .onFocusChanged { if (it.isFocused) lastFocused = photo.id }
+                            .onPreviewKeyEvent {
+                                it.type == KeyEventType.KeyDown && it.key == Key.DirectionDown && run {
+                                    onDown(photo.id)
+                                    true
+                                }
+                            },
                         isVideo = photo.isVideo,
+                        onClick = { onOpen(photo) },
                         focusable = true,
                     )
                 }
@@ -424,7 +496,7 @@ private val previewPage = AlbumPage(
 
 @Composable
 private fun AlbumPreview(state: AlbumState) {
-    ImmichTvTheme { AlbumContent(state, false, R.string.album_back, {}, { _, _, _ -> }, {}, {}, {}, {}, {}, {}) }
+    ImmichTvTheme { AlbumContent(state, false, null, null, R.string.album_back, {}, { _, _, _ -> }, {}, { _, _ -> }, { _, _ -> }, {}, {}, {}, {}, {}) }
 }
 
 @Preview(device = Devices.TV_1080p)

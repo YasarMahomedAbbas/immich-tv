@@ -8,8 +8,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
@@ -92,7 +96,7 @@ class MainActivity : ComponentActivity() {
                             onSelectTab = app::selectTab,
                             onOpenSettings = app::openSettings,
                             onVoiceKey = voice,
-                            home = {
+                            home = { mayTakeFocus ->
                                 // The grid's ViewModel, so the viewer opened from a tile moves through the timeline.
                                 val photos: PhotoGridViewModel =
                                     viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline()))
@@ -111,14 +115,16 @@ class MainActivity : ComponentActivity() {
                                         app.openPhotoViewer(fromHome = true)
                                     },
                                     onSeeAll = { app.selectTab(Tab.Albums) },
+                                    mayTakeFirstFocus = mayTakeFocus,
                                 )
                             },
                             search = { SearchScreen(search, onVoice = voice, onPlay = app::openResultsSlideshow, focusResults = current.focusResults) },
-                            albums = {
+                            albums = { mayTakeFocus ->
                                 // Scoped to the activity, so the list and the focused album survive opening one.
                                 AlbumsScreen(
                                     viewModel(key = "albums-$connection", factory = AlbumsViewModel.factory(container)),
                                     onOpenAlbum = { app.openAlbum(it) },
+                                    mayTakeFirstFocus = mayTakeFocus,
                                 )
                             },
                             photos = { mayTakeFocus ->
@@ -140,7 +146,11 @@ class MainActivity : ComponentActivity() {
                         onBack = { app.back() },
                         onBrowsePhotos = { app.openAlbumPhotos(it, current.cameFrom) },
                         onStartSlideshow = { album, settings, start -> app.openSlideshow(album, settings, current.cameFrom, start) },
+                        onDownFromRow = { album, tile -> app.openAlbumPhotos(album, current.cameFrom, fromTile = tile) },
+                        onOpenFromRow = { album, photo -> app.openAlbumRowViewer(album, photo, current.cameFrom) },
                         focusBrowse = current.focusBrowse,
+                        focusTile = current.focusTile,
+                        fallbackTile = current.fallbackTile,
                         cameFrom = current.cameFrom,
                     )
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
@@ -148,8 +158,10 @@ class MainActivity : ComponentActivity() {
                         viewModel = albumGrid(container, connection, current.album),
                         onBack = { app.back() },
                         returning = current.returning,
-                        onOpenPhoto = { app.openAlbumPhotoViewer(current.album, current.cameFrom) },
-                        onStartSlideshow = { app.openAlbumPhotoSlideshow(current.album, it, current.cameFrom) },
+                        onOpenPhoto = { app.openAlbumPhotoViewer(current.album, current.cameFrom, current.fromTile) },
+                        onStartSlideshow = {
+                            app.openAlbumPhotoSlideshow(current.album, it, current.cameFrom, current.fromTile)
+                        },
                     )
                     is AppScreen.MemoryPhotos -> AlbumPhotosScreen(
                         albumName = current.title,
@@ -163,6 +175,25 @@ class MainActivity : ComponentActivity() {
                         viewModel = albumGrid(container, connection, current.album),
                         onBack = { app.back() },
                     )
+                    is AppScreen.AlbumRowViewer -> {
+                        val grid = albumGrid(container, connection, current.album)
+                        // The viewer waits for the grid to have the photo: with none it would go straight back.
+                        var opened by remember(current) { mutableStateOf(false) }
+                        LaunchedEffect(current) {
+                            grid.open(current.opened)
+                            // The grid may be stale: nothing refreshes it while the album screen is up.
+                            grid.refresh()
+                            opened = true
+                        }
+                        // Its own, over the activity's: Back has to know the photo on screen, which only the grid knows.
+                        // Before the photo is set, what the grid has is from an earlier visit.
+                        BackHandler { app.backFromRowViewer(grid.state.value.viewing?.id.takeIf { opened }) }
+                        if (opened) {
+                            PhotoViewerScreen(viewModel = grid, onBack = { app.backFromRowViewer(grid.state.value.viewing?.id) })
+                        } else {
+                            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+                        }
+                    }
                     is AppScreen.MemoryPhotoViewer -> PhotoViewerScreen(
                         viewModel = memoryGrid(connection, current.memory),
                         onBack = { app.back() },
