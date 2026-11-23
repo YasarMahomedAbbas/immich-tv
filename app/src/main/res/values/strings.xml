@@ -59,6 +59,10 @@
     <string name="album_back">Albums</string>
     <string name="album_back_home">Home</string>
     <string name="album_start_slideshow">Start slideshow</string>
+    <string name="album_continue">Continue</string>
+    <string name="album_start_over">Start over</string>
+    <string name="album_random_start">Random start</string>
+    <string name="album_shuffle">Shuffle</string>
     <string name="album_browse_photos">Browse photos</string>
     <string name="album_settings_heading">SLIDESHOW SETTINGS</string>
     <string name="album_settings_hint">Press OK on a setting to change it. It is remembered for this album.</string>

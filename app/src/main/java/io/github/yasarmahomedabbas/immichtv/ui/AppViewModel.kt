@@ -15,6 +15,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
 import io.github.yasarmahomedabbas.immichtv.domain.server.Session
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ShowStart
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.Slide
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -98,11 +99,12 @@ sealed interface AppScreen {
         val fromTile: PhotoId? = null,
     ) : AppScreen
 
-    /** [album] playing with [settings], as the album screen had them when it started. */
+    /** [album] playing with [settings], as the album screen had them when it started, beginning where [start] says. */
     data class Slideshow(
         val album: DomainAlbum,
         val settings: SlideshowSettings,
         val cameFrom: CameFrom = CameFrom.AlbumsTab,
+        val start: ShowStart = ShowStart.Beginning,
     ) : AppScreen
 
     /** Home's memory playing. */
@@ -172,8 +174,13 @@ class AppViewModel(
         moveTo(AppScreen.AlbumPhotos(album, cameFrom, fromTile = fromTile))
     }
 
-    fun openSlideshow(album: DomainAlbum, settings: SlideshowSettings, cameFrom: CameFrom = CameFrom.AlbumsTab) {
-        moveTo(AppScreen.Slideshow(album, settings, cameFrom))
+    fun openSlideshow(
+        album: DomainAlbum,
+        settings: SlideshowSettings,
+        cameFrom: CameFrom = CameFrom.AlbumsTab,
+        start: ShowStart = ShowStart.Beginning,
+    ) {
+        moveTo(AppScreen.Slideshow(album, settings, cameFrom, start))
     }
 
     fun openMemorySlideshow(memory: Memory) {

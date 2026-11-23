@@ -13,6 +13,7 @@ import io.github.yasarmahomedabbas.immichtv.data.immich.immichImageLoader
 import io.github.yasarmahomedabbas.immichtv.data.immich.immichVideoPlayer
 import io.github.yasarmahomedabbas.immichtv.data.settings.KeystoreCipher
 import io.github.yasarmahomedabbas.immichtv.data.settings.SharedPreferencesStorage
+import io.github.yasarmahomedabbas.immichtv.data.settings.StoredResumePoints
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredScreensaverSettings
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSessionRepository
 import io.github.yasarmahomedabbas.immichtv.data.settings.StoredSlideshowSettings
@@ -26,12 +27,14 @@ import io.github.yasarmahomedabbas.immichtv.domain.search.LoadPhotosOf
 import io.github.yasarmahomedabbas.immichtv.domain.search.SearchPhotos
 import io.github.yasarmahomedabbas.immichtv.domain.server.ConnectToServer
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetResumePoint
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetScreensaverSource
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadLibrarySlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadScreensaver
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshow
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.LoadSlideshowFromPhoto
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveResumePoint
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveScreensaverSource
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveSlideshowSettings
 
@@ -53,7 +56,6 @@ class AppContainer(context: Context) {
     val loadAlbums = LoadAlbums(albums)
     val loadAlbum = LoadAlbum(albums)
     val albumTimeline = AlbumTimeline(albums)
-    val loadSlideshow = LoadSlideshow(albums)
     val loadSlideshowFromPhoto = LoadSlideshowFromPhoto(albums)
 
     private val library = ImmichLibraryRepository(http, sessions)
@@ -70,6 +72,8 @@ class AppContainer(context: Context) {
     private val slideshowStorage = SharedPreferencesStorage(context.getSharedPreferences("slideshow", Context.MODE_PRIVATE))
     private val slideshowSettings = StoredSlideshowSettings(slideshowStorage)
     private val screensaverSettings = StoredScreensaverSettings(slideshowStorage)
+    private val resumePoints = StoredResumePoints(slideshowStorage)
+    val loadSlideshow = LoadSlideshow(albums, resumePoints)
 
     /** Loads a domain `Preview` with the key header; the app's one Coil image loader. */
     fun imageLoader(context: Context): ImageLoader = immichImageLoader(context, http, sessions)
@@ -79,6 +83,9 @@ class AppContainer(context: Context) {
 
     val getSlideshowSettings = GetSlideshowSettings(slideshowSettings)
     val saveSlideshowSettings = SaveSlideshowSettings(slideshowSettings)
+
+    val getResumePoint = GetResumePoint(resumePoints)
+    val saveResumePoint = SaveResumePoint(resumePoints)
 
     val getScreensaverSource = GetScreensaverSource(screensaverSettings)
     val saveScreensaverSource = SaveScreensaverSource(screensaverSettings)

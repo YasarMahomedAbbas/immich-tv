@@ -5,11 +5,15 @@ import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumContents
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumPage
+import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.FakeAlbumRepository
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.album
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.FakeResumePointStore
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.FakeSlideshowSettingsStore
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetResumePoint
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.ResumePoint
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowOrder
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
@@ -30,6 +34,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
@@ -41,6 +46,7 @@ class AlbumViewModelTest {
     private val summer = album(id = "a1")
     private val repo = FakeAlbumRepository(albums = ServerResult.Ok(listOf(summer)))
     private val store = FakeSlideshowSettingsStore()
+    private val spots = FakeResumePointStore()
 
     @Before
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -49,7 +55,7 @@ class AlbumViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModel(id: String = "a1") =
-        AlbumViewModel(AlbumId(id), LoadAlbum(repo), GetSlideshowSettings(store), SaveSlideshowSettings(store))
+        AlbumViewModel(AlbumId(id), LoadAlbum(repo), GetSlideshowSettings(store), SaveSlideshowSettings(store), GetResumePoint(spots))
 
     @Test
     fun `loading, then the album and its contents`() = runTest(dispatcher) {
@@ -292,5 +298,46 @@ class AlbumViewModelTest {
     @Test
     fun `summary puts swapped dates in order`() {
         assertEquals("2 photos · June – August 2025", summary(2, 0, "2025-08-03T10:00:00Z", "2025-06-03T10:00:00Z"))
+    }
+
+    @Test
+    fun `no remembered spot offers no continue`() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertFalse(vm.state.value.canContinue)
+    }
+
+    @Test
+    fun `a remembered spot offers continue from the start`() = runTest(dispatcher) {
+        spots.saved[AlbumId("a1")] = ResumePoint(PhotoId("p"), 2, null)
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertTrue(vm.state.value.canContinue)
+    }
+
+    @Test
+    fun `another album's spot offers no continue`() = runTest(dispatcher) {
+        spots.saved[AlbumId("other")] = ResumePoint(PhotoId("p"), 2, null)
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertFalse(vm.state.value.canContinue)
+    }
+
+    @Test
+    fun `a refresh reads the spot again, also while the album is still loading`() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertFalse(vm.state.value.canContinue)
+
+        spots.saved[AlbumId("a1")] = ResumePoint(PhotoId("p"), 0, 7L)
+        vm.refresh()
+        advanceUntilIdle()
+        assertTrue(vm.state.value.canContinue)
+
+        spots.saved.clear()
+        vm.retry()
+        vm.refresh()
+        advanceUntilIdle()
+        assertFalse(vm.state.value.canContinue)
     }
 }

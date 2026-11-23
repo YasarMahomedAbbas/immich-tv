@@ -55,7 +55,7 @@ class AlbumFocusTest {
                     fallbackTile = fallbackTile,
                     backLabel = R.string.album_back,
                     onBack = {},
-                    onStartSlideshow = { _, _ -> },
+                    onStartSlideshow = { _, _, _ -> },
                     onBrowsePhotos = {},
                     onDownFromRow = { _, tile -> downs += tile },
                     onOpenFromRow = { _, photo -> opens += photo },

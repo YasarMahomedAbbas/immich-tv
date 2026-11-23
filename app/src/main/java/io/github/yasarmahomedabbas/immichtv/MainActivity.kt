@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
                         ),
                         onBack = { app.back() },
                         onBrowsePhotos = { app.openAlbumPhotos(it, current.cameFrom) },
-                        onStartSlideshow = { album, settings -> app.openSlideshow(album, settings, current.cameFrom) },
+                        onStartSlideshow = { album, settings, start -> app.openSlideshow(album, settings, current.cameFrom, start) },
                         onDownFromRow = { album, tile -> app.openAlbumPhotos(album, current.cameFrom, fromTile = tile) },
                         onOpenFromRow = { album, photo -> app.openAlbumRowViewer(album, photo, current.cameFrom) },
                         focusBrowse = current.focusBrowse,
@@ -206,7 +206,14 @@ class MainActivity : ComponentActivity() {
                         // In the show store, emptied on leaving: a show starts fresh and its slides don't stay.
                         viewModel = viewModel(
                             viewModelStoreOwner = app.shows,
-                            factory = SlideshowViewModel.factory(container, current.album, current.settings),
+                            factory = SlideshowViewModel.factory(
+                                container,
+                                current.album,
+                                current.settings,
+                                current.start,
+                                // Only the album screen offers Continue, so only its shows keep the spot.
+                                remember = current.cameFrom != CameFrom.HomeHero,
+                            ),
                         ),
                         settings = current.settings,
                         newPlayer = container::videoPlayer,
