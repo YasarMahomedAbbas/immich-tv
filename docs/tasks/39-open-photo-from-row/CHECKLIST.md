@@ -54,7 +54,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumScre
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 - `is AppScreen.Album` passes `fallbackTile = current.fallbackTile`.
-- New branch `is AppScreen.AlbumRowViewer ->`: `val grid = albumGrid(container, connection, current.album)`; `remember(current) { grid.open(current.opened); grid.refresh() }` (before the viewer composes, so `viewing` is set on its first frame and it doesn't go straight back; refresh as Home's Recently added does, the grid may be stale); `BackHandler { app.backFromRowViewer(grid.state.value.viewing?.id) }`; `PhotoViewerScreen(viewModel = grid, onBack = { app.backFromRowViewer(grid.state.value.viewing?.id) })`. Comment why the branch has its own `BackHandler` (the activity's one can't see the photo on screen).
+- New branch `is AppScreen.AlbumRowViewer ->`: `val grid = albumGrid(container, connection, current.album)`; `LaunchedEffect(current) { grid.open(current.opened); grid.refresh(); opened = true }` and `PhotoViewerScreen` only once `opened` (a `bg` box before), so the viewer never sees no photo and goes straight back; refresh as Home's Recently added does, the grid may be stale. (Planned as `remember { open; refresh }` during composition; lint's RememberReturnType rejects a `remember` returning Unit.) `BackHandler { app.backFromRowViewer(grid.state.value.viewing?.id.takeIf { opened }) }`; `PhotoViewerScreen(viewModel = grid, onBack = { app.backFromRowViewer(grid.state.value.viewing?.id) })`. Comment why the branch has its own `BackHandler` (the activity's one can't see the photo on screen).
 
 ### [x] 1.4 — Tests
 
@@ -79,19 +79,19 @@ File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumFocu
 
 Goal: OK on a tile of "In this album" opens the photo full-screen, through the album's grid.
 
-### [ ] 2.1 — `onOpenFromRow` on the album screen
+### [x] 2.1 — `onOpenFromRow` on the album screen
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumScreen.kt`
 - `AlbumScreen` and `AlbumContent` take `onOpenFromRow: (Album, Photo) -> Unit` (after `onDownFromRow`); `LoadedAlbum` takes `onOpenFromRow: (Photo) -> Unit`, passed as `{ onOpenFromRow(load.page.album, it) }`.
 - `Strip` takes `onOpen: (Photo) -> Unit` and passes `onClick = { onOpen(photo) }` to each `PhotoTile`. Update the Strip KDoc (drop "opening one comes with the photo viewer").
 - Update the preview's `AlbumContent` call.
 
-### [ ] 2.2 — Wire it
+### [x] 2.2 — Wire it
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 - `is AppScreen.Album` passes `onOpenFromRow = { album, photo -> app.openAlbumRowViewer(album, photo, current.cameFrom) }`.
 
-### [ ] 2.3 — Tests
+### [x] 2.3 — Tests
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumFocusTest.kt`
 - Record `opens` from `onOpenFromRow`.

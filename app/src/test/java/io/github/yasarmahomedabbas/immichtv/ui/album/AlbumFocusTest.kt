@@ -38,9 +38,11 @@ class AlbumFocusTest {
     @get:Rule
     val rule = createComposeRule()
 
-    private val items = List(30) { Photo(PhotoId("p$it"), isVideo = false) }
+    // p5 is a video.
+    private val items = List(30) { Photo(PhotoId("p$it"), isVideo = it == 5) }
     private val loaded = AlbumState(AlbumLoad.Loaded(AlbumPage(album(), AlbumContents(30, 0, items))))
     private val downs = mutableListOf<PhotoId>()
+    private val opens = mutableListOf<Photo>()
 
     private fun open(focusBrowse: Boolean = false, focusTile: PhotoId? = null, fallbackTile: PhotoId? = null) {
         rule.mainClock.autoAdvance = false
@@ -56,6 +58,7 @@ class AlbumFocusTest {
                     onStartSlideshow = { _, _ -> },
                     onBrowsePhotos = {},
                     onDownFromRow = { _, tile -> downs += tile },
+                    onOpenFromRow = { _, photo -> opens += photo },
                     onCycleSeconds = {},
                     onCycleOrder = {},
                     onCycleVideos = {},
@@ -112,12 +115,42 @@ class AlbumFocusTest {
         rule.onNodeWithTag("p1").assertIsFocused()
         press(listOf(Key.DirectionUp))
         assertEquals(emptyList<PhotoId>(), downs)
+        assertEquals("moving on the row opened a photo", emptyList<Photo>(), opens)
         assertEquals("up didn't leave the row", null, focusedTag())
         val settings = listOf("Each photo for", "Order", "Videos", "Show date & place")
         assertTrue(
             "up didn't land on a setting",
             settings.any { runCatching { rule.onNodeWithText(it, substring = true).assertIsFocused() }.isSuccess },
         )
+    }
+
+    @Test
+    fun `OK on a row tile opens that photo`() {
+        open()
+        var guard = 0
+        while (focusedTag() == null && guard++ < 6) press(listOf(Key.DirectionDown))
+        press(listOf(Key.DirectionRight))
+        val tile = focusedTag()
+        assertTrue("the row wasn't reached", tile != null && tile.startsWith("p"))
+        assertEquals(emptyList<Photo>(), opens)
+
+        press(listOf(Key.DirectionCenter))
+        assertEquals(listOf(items.first { it.id.value == tile }), opens)
+        assertEquals("OK opened the grid", emptyList<PhotoId>(), downs)
+    }
+
+    @Test
+    fun `OK on a far tile opens it`() {
+        open(focusTile = PhotoId("p20"))
+        press(listOf(Key.DirectionCenter))
+        assertEquals(listOf(Photo(PhotoId("p20"), isVideo = false)), opens)
+    }
+
+    @Test
+    fun `OK on a video tile opens it`() {
+        open(focusTile = PhotoId("p5"))
+        press(listOf(Key.DirectionCenter))
+        assertEquals(listOf(Photo(PhotoId("p5"), isVideo = true)), opens)
     }
 
     @Test
