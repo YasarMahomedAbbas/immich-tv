@@ -70,3 +70,9 @@ Result: partial
   - A memory grid: open a video if a memory has one (memories may have none).
   - The remote's Home button pauses the video.
   - `dumpsys meminfo` stays steady over several videos.
+
+## PR
+
+- Shipped with the on-TV checks skipped, on the user's decision in the issue comments (2026-11-23, made on #43 for the same block): the TV runs a release-signed build, so the debug APK can't be installed. Verification stays `partial`, the PR is opened ready (partial is not failed), and its body lists the outstanding TV checks for doing by hand once the release reaches the TV.
+- Merged origin/main (#39, #43): resolved the README Albums line and the manual's Photo row by keeping both sides, and passed `newPlayer = container::videoPlayer` to #39's new album-strip viewer route (`AlbumRowViewer`) so it compiles and plays videos too. Opening a video from the album screen's strip joins the hand checks.
+- Full CI command after the merge: green, 609 passed / 0 failed / 0 skipped, application line coverage 91.6%, lint 0 errors / 31 warnings, debug APK built.
