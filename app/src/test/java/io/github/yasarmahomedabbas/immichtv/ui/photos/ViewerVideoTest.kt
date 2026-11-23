@@ -63,6 +63,16 @@ class ViewerVideoTest {
     }
 
     @Test
+    fun `a late playing or buffering report doesn't undo a pause`() {
+        val paused = playing.toggle()
+        assertSame(paused, paused.playing(id))
+        val pausedWhileLoading = opened.toggle()
+        assertSame(pausedWhileLoading, pausedWhileLoading.buffering(id))
+        val ended = playing.ended(id)
+        assertSame(ended, ended.playing(id))
+    }
+
+    @Test
     fun `an error fails, and OK does nothing`() {
         val failed = playing.failed(id)
         assertEquals(VideoPhase.Failed, failed.phase)

@@ -34,3 +34,10 @@ Branch: `feat/40-play-opened-videos`
 - Tests: full CI command green, 564 passed / 0 failed / 0 skipped (`ViewerVideoTest` 10, `PhotoViewerVideoTest` 6). Removing the `repeatCount == 0` guard fails `only a fresh OK press toggles`. Lint: no errors; one new `SwitchIntDef` warning on the listener's `when (playbackState)`, the same one the slideshow's identical listener already carries.
 - Outstanding: none in the checklist. On-TV checks (sound, pause, replay, Back to the tile, Home pauses, memory) are self-verification's.
 - Contradicted the plan: `PhotoViewerVideoTest` uses a `SimpleBasePlayer` fake instead of a plain `ExoPlayer`. Robolectric isn't the blocker: a plain `ExoPlayer` can't take the viewer's mediaId-only item, which only the data layer's source factory resolves. The plan names this fallback, and the checklist's 3.4 now says so.
+
+## Review
+
+- Fixed: a player report delivered in the same frame as an OK pause undid it. Example: OK pressed just as playback starts, then the player's `isPlaying(true)` (sent before it heard of the pause) arrives. `ViewerVideo.playing` moved Paused back to Playing, and because `playWhenReady` went true→false→true within that frame, the effect never re-ran, so the video kept playing with the user's pause lost. `playing` and `buffering` now act only while the video is meant to run (`ViewerVideo.kt`). The new test `a late playing or buffering report doesn't undo a pause` fails without the fix. Full CI green, 565 passed / 0 failed.
+- Raised: none
+- API: no call added or changed. The viewer uses the existing `container::videoPlayer` → `GET /api/assets/{id}/video/playback` with the `x-api-key` header through `immichHttpClient()`, the same as the slideshow.
+- Layers: clean. `ui/` names only the domain `Photo`/`PhotoId`/`Video` and Media3; the player comes in as a lambda from `MainActivity`.

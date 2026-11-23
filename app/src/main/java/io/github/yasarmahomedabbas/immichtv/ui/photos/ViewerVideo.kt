@@ -25,10 +25,18 @@ internal data class ViewerVideo(
         copy(firstFrame = true, phase = if (phase == VideoPhase.Loading) VideoPhase.Playing else phase)
     }
 
-    fun playing(from: PhotoId) = about(from) { if (firstFrame) copy(phase = VideoPhase.Playing) else this }
+    /**
+     * The player's own reports only move a video that is meant to run: one that arrives just after
+     * OK paused it (sent before the player heard of the pause) leaves it paused.
+     */
+    fun playing(from: PhotoId) = about(from) {
+        if (firstFrame && playWhenReady) copy(phase = VideoPhase.Playing) else this
+    }
 
     /** Buffering mid-play keeps the badge off; only before the first frame does it count as loading. */
-    fun buffering(from: PhotoId) = about(from) { if (!firstFrame) copy(phase = VideoPhase.Loading) else this }
+    fun buffering(from: PhotoId) = about(from) {
+        if (!firstFrame && playWhenReady) copy(phase = VideoPhase.Loading) else this
+    }
 
     fun ended(from: PhotoId) = about(from) { copy(phase = VideoPhase.Ended) }
 
