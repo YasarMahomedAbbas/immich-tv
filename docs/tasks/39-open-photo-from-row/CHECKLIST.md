@@ -33,7 +33,7 @@ The row is `Strip` in `ui/album/AlbumScreen.kt`; its `PhotoTile`s are `focusable
 
 Goal: the app can show an album's photo opened from its row, and Back from it returns to the album screen with the viewed and opened tiles; the album screen focuses the first of them that is in its row.
 
-### [ ] 1.1 — `AppScreen.AlbumRowViewer` and its navigation
+### [x] 1.1 — `AppScreen.AlbumRowViewer` and its navigation
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModel.kt`
 - Add `val fallbackTile: PhotoId? = null` to `AppScreen.Album` (after `focusTile`); KDoc: focus goes to [focusTile] if it is in the row, else to [fallbackTile] if it is.
@@ -43,20 +43,20 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModel.kt
 - In `back()`: `is AppScreen.AlbumRowViewer -> AppScreen.Album(current.album.id, focusTile = current.opened.id, cameFrom = current.cameFrom)`.
 - Import `domain.albums.Photo`.
 
-### [ ] 1.2 — `fallbackTile` on the album screen
+### [x] 1.2 — `fallbackTile` on the album screen
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/album/AlbumScreen.kt`
 - `AlbumScreen`, `AlbumContent`, `LoadedAlbum` take `fallbackTile: PhotoId? = null` (`AlbumContent` after `focusTile`, defaulted so the previews and tests keep compiling).
 - In `LoadedAlbum`'s `LaunchedEffect`: `val target = listOfNotNull(focusTile, fallbackTile).firstOrNull { t -> contents.firstItems.any { it.id == t } }`; scroll to and focus `target` as `focusTile` is today. Pass `target` (not `focusTile`) to `Strip` as the tile carrying `tileFocus`.
 - Update the KDoc of `AlbumScreen`.
 
-### [ ] 1.3 — Wire the screen in `MainActivity`
+### [x] 1.3 — Wire the screen in `MainActivity`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`
 - `is AppScreen.Album` passes `fallbackTile = current.fallbackTile`.
 - New branch `is AppScreen.AlbumRowViewer ->`: `val grid = albumGrid(container, connection, current.album)`; `remember(current) { grid.open(current.opened); grid.refresh() }` (before the viewer composes, so `viewing` is set on its first frame and it doesn't go straight back; refresh as Home's Recently added does, the grid may be stale); `BackHandler { app.backFromRowViewer(grid.state.value.viewing?.id) }`; `PhotoViewerScreen(viewModel = grid, onBack = { app.backFromRowViewer(grid.state.value.viewing?.id) })`. Comment why the branch has its own `BackHandler` (the activity's one can't see the photo on screen).
 
-### [ ] 1.4 — Tests
+### [x] 1.4 — Tests
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/AppViewModelTest.kt` (mirror the `fromTile` tests at ~line 130)
 - `opening a photo from the album row and coming back lands on the photo shown, falling back to the opened one` for both `CameFrom.AlbumsTab` and `CameFrom.HomeRow`.

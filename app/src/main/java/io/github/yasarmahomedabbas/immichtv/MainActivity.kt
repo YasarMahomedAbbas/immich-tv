@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
@@ -145,6 +146,7 @@ class MainActivity : ComponentActivity() {
                         onDownFromRow = { album, tile -> app.openAlbumPhotos(album, current.cameFrom, fromTile = tile) },
                         focusBrowse = current.focusBrowse,
                         focusTile = current.focusTile,
+                        fallbackTile = current.fallbackTile,
                         cameFrom = current.cameFrom,
                     )
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
@@ -169,6 +171,18 @@ class MainActivity : ComponentActivity() {
                         viewModel = albumGrid(container, connection, current.album),
                         onBack = { app.back() },
                     )
+                    is AppScreen.AlbumRowViewer -> {
+                        val grid = albumGrid(container, connection, current.album)
+                        // Before the viewer composes, so it has a photo on its first frame and doesn't go straight back.
+                        remember(current) {
+                            grid.open(current.opened)
+                            // The grid may be stale: nothing refreshes it while the album screen is up.
+                            grid.refresh()
+                        }
+                        // Its own, over the activity's: Back has to know the photo on screen, which only the grid knows.
+                        BackHandler { app.backFromRowViewer(grid.state.value.viewing?.id) }
+                        PhotoViewerScreen(viewModel = grid, onBack = { app.backFromRowViewer(grid.state.value.viewing?.id) })
+                    }
                     is AppScreen.MemoryPhotoViewer -> PhotoViewerScreen(
                         viewModel = memoryGrid(connection, current.memory),
                         onBack = { app.back() },

@@ -42,7 +42,7 @@ class AlbumFocusTest {
     private val loaded = AlbumState(AlbumLoad.Loaded(AlbumPage(album(), AlbumContents(30, 0, items))))
     private val downs = mutableListOf<PhotoId>()
 
-    private fun open(focusBrowse: Boolean = false, focusTile: PhotoId? = null) {
+    private fun open(focusBrowse: Boolean = false, focusTile: PhotoId? = null, fallbackTile: PhotoId? = null) {
         rule.mainClock.autoAdvance = false
         rule.setContent {
             ImmichTvTheme {
@@ -50,6 +50,7 @@ class AlbumFocusTest {
                     state = loaded,
                     focusBrowse = focusBrowse,
                     focusTile = focusTile,
+                    fallbackTile = fallbackTile,
                     backLabel = R.string.album_back,
                     onBack = {},
                     onStartSlideshow = { _, _ -> },
@@ -128,6 +129,24 @@ class AlbumFocusTest {
     @Test
     fun `coming back to a tile no longer in the row lands on start slideshow`() {
         open(focusTile = PhotoId("gone"))
+        rule.onNodeWithText("Start slideshow").assertIsFocused()
+    }
+
+    @Test
+    fun `coming back with a tile not in the row falls back to the opened tile`() {
+        open(focusTile = PhotoId("gone"), fallbackTile = PhotoId("p20"))
+        rule.onNodeWithTag("p20").assertIsFocused()
+    }
+
+    @Test
+    fun `the shown tile wins over the fallback`() {
+        open(focusTile = PhotoId("p3"), fallbackTile = PhotoId("p2"))
+        rule.onNodeWithTag("p3").assertIsFocused()
+    }
+
+    @Test
+    fun `with neither in the row it lands on start slideshow`() {
+        open(focusTile = PhotoId("gone"), fallbackTile = PhotoId("also-gone"))
         rule.onNodeWithText("Start slideshow").assertIsFocused()
     }
 

@@ -160,6 +160,64 @@ class AppViewModelTest {
         }
 
     @Test
+    fun `opening a photo from the album row and coming back lands on the photo shown, falling back to the opened one`() =
+        runTest(dispatcher) {
+            val summer = album(id = "a1")
+            val opened = Photo(PhotoId("p2"), isVideo = false)
+            for (origin in listOf(CameFrom.AlbumsTab, CameFrom.HomeRow)) {
+                val vm = signedIn()
+                vm.openAlbum(summer.id, origin)
+                vm.openAlbumRowViewer(summer, opened, origin)
+                assertEquals(AppScreen.AlbumRowViewer(summer, opened, origin), vm.screen.value)
+
+                vm.backFromRowViewer(PhotoId("p4"))
+                assertEquals(
+                    AppScreen.Album(summer.id, focusTile = PhotoId("p4"), fallbackTile = opened.id, cameFrom = origin),
+                    vm.screen.value,
+                )
+                assertTrue(vm.back())
+                assertEquals(if (origin == CameFrom.HomeRow) home else AppScreen.Main(Tab.Albums), vm.screen.value)
+            }
+        }
+
+    @Test
+    fun `back from the row viewer without the photo shown lands on the opened tile`() = runTest(dispatcher) {
+        val summer = album(id = "a1")
+        val opened = Photo(PhotoId("p2"), isVideo = true)
+        val vm = signedIn()
+        vm.openAlbum(summer.id, CameFrom.HomeRow)
+
+        vm.openAlbumRowViewer(summer, opened, CameFrom.HomeRow)
+        vm.backFromRowViewer(null)
+        assertEquals(AppScreen.Album(summer.id, focusTile = opened.id, cameFrom = CameFrom.HomeRow), vm.screen.value)
+
+        vm.openAlbumRowViewer(summer, opened, CameFrom.HomeRow)
+        assertTrue(vm.back())
+        assertEquals(AppScreen.Album(summer.id, focusTile = opened.id, cameFrom = CameFrom.HomeRow), vm.screen.value)
+    }
+
+    @Test
+    fun `back from the row viewer on the opened photo has no fallback`() = runTest(dispatcher) {
+        val summer = album(id = "a1")
+        val opened = Photo(PhotoId("p2"), isVideo = false)
+        val vm = signedIn()
+        vm.openAlbum(summer.id)
+        vm.openAlbumRowViewer(summer, opened)
+        vm.backFromRowViewer(opened.id)
+        assertEquals(AppScreen.Album(summer.id, focusTile = opened.id, fallbackTile = null), vm.screen.value)
+    }
+
+    @Test
+    fun `backFromRowViewer elsewhere does nothing`() = runTest(dispatcher) {
+        val summer = album(id = "a1")
+        val vm = signedIn()
+        vm.openAlbum(summer.id)
+        val before = vm.screen.value
+        vm.backFromRowViewer(PhotoId("p4"))
+        assertSame(before, vm.screen.value)
+    }
+
+    @Test
     fun `start slideshow plays with the settings given, and back returns to the album on start slideshow`() = runTest(dispatcher) {
         val vm = signedIn()
         val summer = album(id = "a1")
