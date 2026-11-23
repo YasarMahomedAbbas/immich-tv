@@ -41,3 +41,12 @@ Branch: `feat/40-play-opened-videos`
 - Raised: none
 - API: no call added or changed. The viewer uses the existing `container::videoPlayer` → `GET /api/assets/{id}/video/playback` with the `x-api-key` header through `immichHttpClient()`, the same as the slideshow.
 - Layers: clean. `ui/` names only the domain `Photo`/`PhotoId`/`Video` and Media3; the player comes in as a lambda from `MainActivity`.
+
+## Doc drift
+
+- Applied: README.md:Features (Albums, Photos) — opening a video full screen now plays it with sound and OK pauses it; the lines only said "open one full screen" (rung 3, using the app).
+- Skipped: docs/design/README.md Photo row — already updated on this branch during implementation and matches the code (sound, OK pause/replay, badge states, "Couldn't play this video.").
+- Skipped: `VideoPicture` and `KeepScreenOn` in `ui/components/` — non-visual helpers, like `FullScreenImage` and `RefreshOnStart`, which the manual's Components list also leaves out; one `rg` finds them.
+- Skipped: README Development's test list — it names the focus tests; `PhotoViewerVideoTest` is found by `rg` and no session would act wrongly without it.
+- Skipped: CLAUDE.md — no new cross-cutting rule; the viewer's player comes through `container::videoPlayer` and `immichHttpClient()` as CLAUDE.md already says, and `ArchitectureTest` enforces the layers.
+- Stale, fixed separately: none
