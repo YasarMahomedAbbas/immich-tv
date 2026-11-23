@@ -24,3 +24,11 @@ Branch: `feat/39-open-photo-from-row`
 - Raised: none
 - API: none touched (the existing album timeline calls only).
 - Layers: clean
+
+## Doc drift
+
+- Applied: none on this stage. `docs/design/README.md` (Album and Photo rows) was already updated in implementation to say OK on a strip tile opens it full-screen and where Back lands; checked against `AlbumScreen.kt` and `AppViewModel.backFromRowViewer`, it holds.
+- Skipped: README's Albums feature line doesn't name opening a photo from the album screen's strip. It stays true (it lists ways in, not all of them) and no session would do the wrong thing without it.
+- Skipped: `PhotoGridViewModel.loadMonths()` now keeps `viewing`. The code and `PhotoGridViewModelTest` say it; not a cross-cutting rule.
+- Skipped: README architecture block. The branch adds no source files (only modifies existing ones), so the tree it lists is unchanged; no commands, server reads, permissions or release steps changed.
+- Stale, fixed separately: none
