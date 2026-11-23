@@ -120,8 +120,9 @@ internal fun albumBackLabel(cameFrom: CameFrom): Int = when (cameFrom) {
  * One album: the cover mosaic, its title and counts, Start slideshow (focused when it opens),
  * Browse photos, the slideshow settings and a strip of its first items.
  * [focusBrowse] puts focus on Browse photos instead, for coming Back from it.
- * Down from a tile of the row calls [onDownFromRow]; [focusTile] puts focus on that tile instead,
- * scrolled into view, for coming back from the grid entered there (Start slideshow if it's gone).
+ * OK on a tile of the row calls [onOpenFromRow] with its photo; Down from one calls [onDownFromRow]; [focusTile] puts focus on that tile instead,
+ * scrolled into view, for coming back from the grid entered there or a photo opened there; if it
+ * isn't in the row, [fallbackTile] is focused if it is, else Start slideshow.
  */
 @Composable
 fun AlbumScreen(
@@ -130,8 +131,10 @@ fun AlbumScreen(
     onBrowsePhotos: (Album) -> Unit,
     onStartSlideshow: (Album, SlideshowSettings) -> Unit,
     onDownFromRow: (Album, PhotoId) -> Unit,
+    onOpenFromRow: (Album, Photo) -> Unit,
     focusBrowse: Boolean = false,
     focusTile: PhotoId? = null,
+    fallbackTile: PhotoId? = null,
     cameFrom: CameFrom = CameFrom.AlbumsTab,
 ) {
     val state by viewModel.state.collectAsState()
@@ -140,11 +143,13 @@ fun AlbumScreen(
         state = state,
         focusBrowse = focusBrowse,
         focusTile = focusTile,
+        fallbackTile = fallbackTile,
         backLabel = albumBackLabel(cameFrom),
         onBack = onBack,
         onStartSlideshow = onStartSlideshow,
         onBrowsePhotos = onBrowsePhotos,
         onDownFromRow = onDownFromRow,
+        onOpenFromRow = onOpenFromRow,
         onCycleSeconds = viewModel::cycleSeconds,
         onCycleOrder = viewModel::cycleOrder,
         onCycleVideos = viewModel::cycleVideos,
@@ -158,11 +163,13 @@ internal fun AlbumContent(
     state: AlbumState,
     focusBrowse: Boolean,
     focusTile: PhotoId?,
+    fallbackTile: PhotoId? = null,
     @StringRes backLabel: Int,
     onBack: () -> Unit,
     onStartSlideshow: (Album, SlideshowSettings) -> Unit,
     onBrowsePhotos: (Album) -> Unit,
     onDownFromRow: (Album, PhotoId) -> Unit,
+    onOpenFromRow: (Album, Photo) -> Unit,
     onCycleSeconds: () -> Unit,
     onCycleOrder: () -> Unit,
     onCycleVideos: () -> Unit,
@@ -190,9 +197,11 @@ internal fun AlbumContent(
                 settings = state.settings,
                 focusBrowse = focusBrowse,
                 focusTile = focusTile,
+                fallbackTile = fallbackTile,
                 onStartSlideshow = { onStartSlideshow(load.page.album, state.settings) },
                 onBrowsePhotos = { onBrowsePhotos(load.page.album) },
                 onDownFromRow = { onDownFromRow(load.page.album, it) },
+                onOpenFromRow = { onOpenFromRow(load.page.album, it) },
                 onCycleSeconds = onCycleSeconds,
                 onCycleOrder = onCycleOrder,
                 onCycleVideos = onCycleVideos,
@@ -208,9 +217,11 @@ private fun LoadedAlbum(
     settings: SlideshowSettings,
     focusBrowse: Boolean,
     focusTile: PhotoId?,
+    fallbackTile: PhotoId?,
     onStartSlideshow: () -> Unit,
     onBrowsePhotos: () -> Unit,
     onDownFromRow: (PhotoId) -> Unit,
+    onOpenFromRow: (Photo) -> Unit,
     onCycleSeconds: () -> Unit,
     onCycleOrder: () -> Unit,
     onCycleVideos: () -> Unit,
@@ -223,9 +234,11 @@ private fun LoadedAlbum(
     val browseFocus = remember { FocusRequester() }
     val tileFocus = remember { FocusRequester() }
     val stripState = rememberLazyListState()
+    // The first of the two that is in the row; it carries tileFocus.
+    val target = listOfNotNull(focusTile, fallbackTile).firstOrNull { t -> contents.firstItems.any { it.id == t } }
     LaunchedEffect(Unit) {
         withFrameNanos { }
-        val tileIndex = focusTile?.let { tile -> contents.firstItems.indexOfFirst { it.id == tile } } ?: -1
+        val tileIndex = target?.let { tile -> contents.firstItems.indexOfFirst { it.id == tile } } ?: -1
         val onTile = tileIndex >= 0 && run {
             // The row only composes what is on screen, so a far tile has to be scrolled to first.
             stripState.scrollToItem(tileIndex)
@@ -277,9 +290,10 @@ private fun LoadedAlbum(
     Strip(
         contents.firstItems,
         listState = stripState,
-        focusTile = focusTile,
+        focusTile = target,
         tileFocus = tileFocus,
         onDown = onDownFromRow,
+        onOpen = onOpenFromRow,
         onFocusLost = { runCatching { startFocus.requestFocus() } },
     )
 }
@@ -329,8 +343,8 @@ private fun Settings(
 }
 
 /**
- * "In this album": the first items as focusable tiles (opening one comes with the photo viewer).
- * Down from a tile calls [onDown] with it. The tile [focusTile] carries [tileFocus], so it can be
+ * "In this album": the first items as focusable tiles. OK on a tile calls [onOpen] with its photo;
+ * Down from one calls [onDown] with it. The tile [focusTile] carries [tileFocus], so it can be
  * focused once [listState] has scrolled to it. [onFocusLost] is called when the tile the remote
  * was last on is gone after a refresh.
  */
@@ -341,6 +355,7 @@ private fun Strip(
     focusTile: PhotoId?,
     tileFocus: FocusRequester,
     onDown: (PhotoId) -> Unit,
+    onOpen: (Photo) -> Unit,
     onFocusLost: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -377,6 +392,7 @@ private fun Strip(
                                 }
                             },
                         isVideo = photo.isVideo,
+                        onClick = { onOpen(photo) },
                         focusable = true,
                     )
                 }
@@ -451,7 +467,7 @@ private val previewPage = AlbumPage(
 
 @Composable
 private fun AlbumPreview(state: AlbumState) {
-    ImmichTvTheme { AlbumContent(state, false, null, R.string.album_back, {}, { _, _ -> }, {}, { _, _ -> }, {}, {}, {}, {}, {}) }
+    ImmichTvTheme { AlbumContent(state, false, null, null, R.string.album_back, {}, { _, _ -> }, {}, { _, _ -> }, { _, _ -> }, {}, {}, {}, {}, {}) }
 }
 
 @Preview(device = Devices.TV_1080p)

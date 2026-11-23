@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.yasarmahomedabbas.immichtv.AppContainer
 import io.github.yasarmahomedabbas.immichtv.domain.albums.Album as DomainAlbum
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
+import io.github.yasarmahomedabbas.immichtv.domain.albums.Photo
 import io.github.yasarmahomedabbas.immichtv.domain.albums.PhotoId
 import io.github.yasarmahomedabbas.immichtv.domain.home.Memory
 import io.github.yasarmahomedabbas.immichtv.domain.server.GetSession
@@ -52,12 +53,14 @@ sealed interface AppScreen {
 
     /**
      * [focusBrowse]: coming Back from its photos, so focus goes to Browse photos. [focusTile]: coming
-     * back from its photos entered by Down from that row tile, so focus goes to it.
+     * back from its photos entered by Down from that row tile, or from a photo opened from the row,
+     * so focus goes to it if it is in the row, else to [fallbackTile] if that is.
      */
     data class Album(
         val id: AlbumId,
         val focusBrowse: Boolean = false,
         val focusTile: PhotoId? = null,
+        val fallbackTile: PhotoId? = null,
         val cameFrom: CameFrom = CameFrom.AlbumsTab,
     ) : AppScreen
 
@@ -76,6 +79,12 @@ sealed interface AppScreen {
 
     /** One photo of [album] full-screen; which one is its grid's to say. [fromTile]: as for [AlbumPhotos], for the way back. */
     data class AlbumPhotoViewer(val album: DomainAlbum, val cameFrom: CameFrom, val fromTile: PhotoId? = null) : AppScreen
+
+    /**
+     * One photo of [album] full-screen, opened from the album screen's row on [opened]; left and
+     * right move through the album with its grid, and Back comes back to the row.
+     */
+    data class AlbumRowViewer(val album: DomainAlbum, val opened: Photo, val cameFrom: CameFrom) : AppScreen
 
     /**
      * [album] playing from the photo [from] onward, in its grid's order, with [settings].
@@ -179,6 +188,27 @@ class AppViewModel(
         _screen.value = AppScreen.AlbumPhotoViewer(album, cameFrom, fromTile)
     }
 
+    fun openAlbumRowViewer(album: DomainAlbum, opened: Photo, cameFrom: CameFrom = CameFrom.AlbumsTab) {
+        _screen.value = AppScreen.AlbumRowViewer(album, opened, cameFrom)
+    }
+
+    /**
+     * Back from [AppScreen.AlbumRowViewer] with [viewing], the photo on screen: focus goes to its
+     * tile if it is in the row, else to the tile that was opened.
+     */
+    fun backFromRowViewer(viewing: PhotoId?) {
+        val current = _screen.value as? AppScreen.AlbumRowViewer ?: return
+        val opened = current.opened.id
+        moveTo(
+            AppScreen.Album(
+                current.album.id,
+                focusTile = viewing ?: opened,
+                fallbackTile = opened.takeIf { viewing != null && it != viewing },
+                cameFrom = current.cameFrom,
+            ),
+        )
+    }
+
     /** With the album's saved settings; if Back left the grid while they loaded, it stays left. */
     fun openAlbumPhotoSlideshow(
         album: DomainAlbum,
@@ -260,6 +290,8 @@ class AppViewModel(
                 AppScreen.AlbumPhotos(current.album, current.cameFrom, returning = true, fromTile = current.fromTile)
             is AppScreen.AlbumPhotoSlideshow ->
                 AppScreen.AlbumPhotos(current.album, current.cameFrom, returning = true, fromTile = current.fromTile)
+            is AppScreen.AlbumRowViewer ->
+                AppScreen.Album(current.album.id, focusTile = current.opened.id, cameFrom = current.cameFrom)
             is AppScreen.MemoryPhotoViewer -> AppScreen.MemoryPhotos(current.memory, current.title, returning = true)
             is AppScreen.MemoryPhotoSlideshow -> AppScreen.MemoryPhotos(current.memory, current.title, returning = true)
             is AppScreen.Slideshow -> if (current.cameFrom == CameFrom.HomeHero) {
