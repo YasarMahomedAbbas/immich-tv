@@ -8,8 +8,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.MaterialTheme
@@ -141,10 +145,12 @@ class MainActivity : ComponentActivity() {
                         ),
                         onBack = { app.back() },
                         onBrowsePhotos = { app.openAlbumPhotos(it, current.cameFrom) },
-                        onStartSlideshow = { album, settings -> app.openSlideshow(album, settings, current.cameFrom) },
+                        onStartSlideshow = { album, settings, start -> app.openSlideshow(album, settings, current.cameFrom, start) },
                         onDownFromRow = { album, tile -> app.openAlbumPhotos(album, current.cameFrom, fromTile = tile) },
+                        onOpenFromRow = { album, photo -> app.openAlbumRowViewer(album, photo, current.cameFrom) },
                         focusBrowse = current.focusBrowse,
                         focusTile = current.focusTile,
+                        fallbackTile = current.fallbackTile,
                         cameFrom = current.cameFrom,
                     )
                     is AppScreen.AlbumPhotos -> AlbumPhotosScreen(
@@ -170,6 +176,25 @@ class MainActivity : ComponentActivity() {
                         newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                     )
+                    is AppScreen.AlbumRowViewer -> {
+                        val grid = albumGrid(container, connection, current.album)
+                        // The viewer waits for the grid to have the photo: with none it would go straight back.
+                        var opened by remember(current) { mutableStateOf(false) }
+                        LaunchedEffect(current) {
+                            grid.open(current.opened)
+                            // The grid may be stale: nothing refreshes it while the album screen is up.
+                            grid.refresh()
+                            opened = true
+                        }
+                        // Its own, over the activity's: Back has to know the photo on screen, which only the grid knows.
+                        // Before the photo is set, what the grid has is from an earlier visit.
+                        BackHandler { app.backFromRowViewer(grid.state.value.viewing?.id.takeIf { opened }) }
+                        if (opened) {
+                            PhotoViewerScreen(viewModel = grid, newPlayer = container::videoPlayer, onBack = { app.backFromRowViewer(grid.state.value.viewing?.id) })
+                        } else {
+                            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+                        }
+                    }
                     is AppScreen.MemoryPhotoViewer -> PhotoViewerScreen(
                         viewModel = memoryGrid(connection, current.memory),
                         newPlayer = container::videoPlayer,
@@ -184,7 +209,14 @@ class MainActivity : ComponentActivity() {
                         // In the show store, emptied on leaving: a show starts fresh and its slides don't stay.
                         viewModel = viewModel(
                             viewModelStoreOwner = app.shows,
-                            factory = SlideshowViewModel.factory(container, current.album, current.settings),
+                            factory = SlideshowViewModel.factory(
+                                container,
+                                current.album,
+                                current.settings,
+                                current.start,
+                                // Only the album screen offers Continue, so only its shows keep the spot.
+                                remember = current.cameFrom != CameFrom.HomeHero,
+                            ),
                         ),
                         settings = current.settings,
                         newPlayer = container::videoPlayer,

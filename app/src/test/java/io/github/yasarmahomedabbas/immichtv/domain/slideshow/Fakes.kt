@@ -26,3 +26,16 @@ class FakeScreensaverSettingsStore(var source: ScreensaverSource = ScreensaverSo
         this.source = source
     }
 }
+
+/** Remembered spots in a map, recording every save. */
+class FakeResumePointStore : ResumePointStore {
+    val saved = mutableMapOf<AlbumId, ResumePoint>()
+    val saves = mutableListOf<Pair<AlbumId, ResumePoint>>()
+
+    override suspend fun load(album: AlbumId) = saved[album]
+
+    override suspend fun save(album: AlbumId, point: ResumePoint) {
+        saved[album] = point
+        saves += album to point
+    }
+}

@@ -10,6 +10,7 @@ import io.github.yasarmahomedabbas.immichtv.domain.ServerResult
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumId
 import io.github.yasarmahomedabbas.immichtv.domain.albums.AlbumPage
 import io.github.yasarmahomedabbas.immichtv.domain.albums.LoadAlbum
+import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetResumePoint
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.GetSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SaveSlideshowSettings
 import io.github.yasarmahomedabbas.immichtv.domain.slideshow.SlideshowSettings
@@ -31,14 +32,22 @@ sealed interface AlbumLoad {
     data class Failed(val problem: Problem) : AlbumLoad
 }
 
-/** The album screen. [settings] come from the device, so they show even when the server fails. */
-data class AlbumState(val load: AlbumLoad = AlbumLoad.Loading, val settings: SlideshowSettings = SlideshowSettings())
+/**
+ * The album screen. [settings] come from the device, so they show even when the server fails.
+ * [canContinue]: the album has a remembered spot, so Continue is offered.
+ */
+data class AlbumState(
+    val load: AlbumLoad = AlbumLoad.Loading,
+    val settings: SlideshowSettings = SlideshowSettings(),
+    val canContinue: Boolean = false,
+)
 
 class AlbumViewModel(
     private val id: AlbumId,
     private val loadAlbum: LoadAlbum,
     private val getSettings: GetSlideshowSettings,
     private val saveSettings: SaveSlideshowSettings,
+    private val getResumePoint: GetResumePoint,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AlbumState())
     val state: StateFlow<AlbumState> = _state.asStateFlow()
@@ -47,7 +56,8 @@ class AlbumViewModel(
     init {
         viewModelScope.launch {
             val settings = getSettings(id)
-            _state.update { it.copy(settings = settings) }
+            val canContinue = getResumePoint(id) != null
+            _state.update { it.copy(settings = settings, canContinue = canContinue) }
         }
         load()
     }
@@ -69,8 +79,13 @@ class AlbumViewModel(
     /**
      * Reads the album again without the skeleton, so focus stays where it is, and its contents only
      * if the album changed. A failure leaves the screen as it was; the next refresh tries again.
+     * The remembered spot is read again every time, as a show just left may have changed it.
      */
     fun refresh() {
+        viewModelScope.launch {
+            val canContinue = getResumePoint(id) != null
+            _state.update { it.copy(canContinue = canContinue) }
+        }
         val load = _state.value.load
         if (load == AlbumLoad.Loading || refreshJob?.isActive == true) return
         refreshJob = viewModelScope.launch {
@@ -99,7 +114,13 @@ class AlbumViewModel(
     companion object {
         fun factory(container: AppContainer, id: AlbumId) = viewModelFactory {
             initializer {
-                AlbumViewModel(id, container.loadAlbum, container.getSlideshowSettings, container.saveSlideshowSettings)
+                AlbumViewModel(
+                    id,
+                    container.loadAlbum,
+                    container.getSlideshowSettings,
+                    container.saveSlideshowSettings,
+                    container.getResumePoint,
+                )
             }
         }
     }
