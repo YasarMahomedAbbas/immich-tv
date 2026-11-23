@@ -17,3 +17,10 @@ Branch: `feat/39-open-photo-from-row`
 - Tests: 558 passed / 0 failed (full CI command: testDebugUnitTest koverVerifyDebug lintDebug assembleDebug, BUILD SUCCESSFUL). New: 4 in `AppViewModelTest`, 6 in `AlbumFocusTest`.
 - Outstanding: none in the checklist. The TV walk-through in the test plan is left to self-verification.
 - Contradicted the plan: the plan set the photo on the grid with `remember(current) { grid.open(...); grid.refresh() }` during composition. Lint's RememberReturnType rejects a `remember` that returns Unit, so the branch now does this in a `LaunchedEffect(current)` and shows `PhotoViewerScreen` only once the photo is set, with a `bg` box for that first frame. Back during that frame ignores the grid's stale `viewing` and lands on the opened tile. Checklist 1.3 has been updated to match.
+
+## Review
+
+- Fixed: a photo opened from the row on an album whose grid hadn't been opened yet this session bounced straight back to the album screen. The `AlbumRowViewer` branch creates the album grid's ViewModel, `open()` sets `viewing`, and when the months arrive `loadMonths()` replaced the whole state, `viewing` with it; `PhotoViewerScreen` then saw no photo and called `onBack`. `loadMonths()` now keeps `viewing` (`ui/photos/PhotoGridViewModel.kt`), with a test that fails without it (`PhotoGridViewModelTest`: a photo opened before the months arrive stays open). Full CI: 559 passed / 0 failed.
+- Raised: none
+- API: none touched (the existing album timeline calls only).
+- Layers: clean
