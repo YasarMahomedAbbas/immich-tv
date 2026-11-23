@@ -49,7 +49,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -87,6 +86,7 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.Clock
 import io.github.yasarmahomedabbas.immichtv.ui.components.ClockStyle
 import io.github.yasarmahomedabbas.immichtv.ui.components.EmptyState
 import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
+import io.github.yasarmahomedabbas.immichtv.ui.components.KeepScreenOn
 import io.github.yasarmahomedabbas.immichtv.ui.components.OverPhotoPanel
 import io.github.yasarmahomedabbas.immichtv.ui.components.OverPhotoStyle
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
@@ -178,15 +178,6 @@ internal fun RunWhileStarted(viewModel: SlideshowViewModel) {
             lifecycle.removeObserver(observer)
             timer?.cancel()
         }
-    }
-}
-
-@Composable
-private fun KeepScreenOn(awake: Boolean) {
-    val view = LocalView.current
-    DisposableEffect(view, awake) {
-        view.keepScreenOn = awake
-        onDispose { view.keepScreenOn = false }
     }
 }
 

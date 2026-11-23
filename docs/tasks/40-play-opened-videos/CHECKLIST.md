@@ -129,12 +129,12 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/slideshow/Slide
 
 Goal: every viewer entry point plays a video, with the decided keys, sound, badge and failure behaviour.
 
-### [ ] 3.1 — Wire the player in
+### [x] 3.1 — Wire the player in
 
 - `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/photos/PhotoViewerScreen.kt`: `PhotoViewerScreen(viewModel, newPlayer: (Context) -> Player, onBack)`.
 - `app/src/main/java/io/github/yasarmahomedabbas/immichtv/MainActivity.kt`: the three `PhotoViewerScreen` calls (`AlbumPhotoViewer`, `MemoryPhotoViewer`, `PhotoViewer`) pass `newPlayer = container::videoPlayer`.
 
-### [ ] 3.2 — `ViewerVideoLayer`
+### [x] 3.2 — `ViewerVideoLayer`
 
 File: `PhotoViewerScreen.kt`. Composed only when `photo.isVideo && !LocalInspectionMode.current`, keyed so it leaves when a photo is shown. It mirrors `SlideshowScreen.VideoLayer`:
 - It `remember`s one player from `newPlayer`, and a `DisposableEffect(player)` adds the listener, then removes it and `release()`s on dispose.
@@ -147,7 +147,7 @@ File: `PhotoViewerScreen.kt`. Composed only when `photo.isVideo && !LocalInspect
 
 The player outlives a move from one video to the next: the `remember` sits above the `photo.id` key, so it is released only when the viewed item stops being a video or the viewer leaves. Moving to a photo disposes the layer, which stops the sound.
 
-### [ ] 3.3 — Keys, badge, failure, screen on
+### [x] 3.3 — Keys, badge, failure, screen on
 
 File: `PhotoViewerScreen.kt`.
 - In `onPreviewKeyEvent`, `Key.DirectionCenter` and `Key.Enter` on a video toggle the state, only on `KeyDown` with `nativeKeyEvent.repeatCount == 0`. Left and Right are unchanged. On a photo, OK is not consumed.
@@ -156,11 +156,11 @@ File: `PhotoViewerScreen.kt`.
 - `KeepScreenOn(video.keepScreenOn)`: move the slideshow's `KeepScreenOn` to `ui/components/KeepScreenOn.kt` as `internal` and use it from both screens.
 - `app/src/main/res/values/strings.xml`: `<string name="video_failed">Couldn\'t play this video.</string>`.
 
-### [ ] 3.4 — `PhotoViewerVideoTest`
+### [x] 3.4 — `PhotoViewerVideoTest`
 
-File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/photos/PhotoViewerVideoTest.kt`. Robolectric, set up like `PhotoGridFocusTest` (sdk 34, the television qualifiers, NATIVE graphics), with the Robolectric cases from the test plan. To reach the content without a ViewModel, make `PhotoViewerContent` `internal`. Its signature becomes `PhotoViewerContent(photo: Photo, newPlayer: (Context) -> Player, onMove: (Int) -> Unit)`.
+File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/photos/PhotoViewerVideoTest.kt`. Robolectric, set up like `PhotoGridFocusTest` (sdk 34, the television qualifiers, NATIVE graphics), with the Robolectric cases from the test plan. To reach the content without a ViewModel, make `PhotoViewerContent` `internal`. Its signature becomes `PhotoViewerContent(photo: Photo, newPlayer: (Context) -> Player, onMove: (Int) -> Unit)`. The player is a `SimpleBasePlayer` fake: the app's `ExoPlayer` resolves a mediaId-only item only through the data layer's source factory, so a plain one can't take the viewer's item.
 
-### [ ] 3.5 — Manual
+### [x] 3.5 — Manual
 
 `docs/design/README.md`, the Photo row: "a video plays fitted on `bg`, with sound, over its still until the first frame. OK pauses and resumes, and at the end the last frame stays and OK replays it. Left and right move on and stop it. The play badge shows bottom-left at the slideshow's margins while it loads, is paused or has ended. A video that can't play stays a still with 'Couldn't play this video.'"
 

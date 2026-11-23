@@ -167,14 +167,17 @@ class MainActivity : ComponentActivity() {
                     )
                     is AppScreen.AlbumPhotoViewer -> PhotoViewerScreen(
                         viewModel = albumGrid(container, connection, current.album),
+                        newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                     )
                     is AppScreen.MemoryPhotoViewer -> PhotoViewerScreen(
                         viewModel = memoryGrid(connection, current.memory),
+                        newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                     )
                     is AppScreen.PhotoViewer -> PhotoViewerScreen(
                         viewModel = viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
+                        newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                     )
                     is AppScreen.Slideshow -> SlideshowScreen(
