@@ -50,3 +50,23 @@ Branch: `feat/40-play-opened-videos`
 - Skipped: README Development's test list — it names the focus tests; `PhotoViewerVideoTest` is found by `rg` and no session would act wrongly without it.
 - Skipped: CLAUDE.md — no new cross-cutting rule; the viewer's player comes through `container::videoPlayer` and `immichHttpClient()` as CLAUDE.md already says, and `ArchitectureTest` enforces the layers.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: the full CI command in Docker is green. 565 tests passed, 0 failed, 0 skipped. Application line coverage is 92.0% (the bound is 80). Lint has 0 errors and 31 warnings. The debug APK built.
+- Server: Immich 3.3.6. Checked against the v3.3.6 spec only, because the verification key can't fetch media.
+- TV: not run. The Chromecast answered ping, but adb on `TV_ADB` (port 5555) refused the connection at every try from 14:05 to 14:16 UTC on 2026-11-23, inside the user's window, with the adb lock held while connecting. Network debugging looks switched off on the TV.
+- Verified:
+  - In the v3.3.6 spec, `GET /assets/{id}/video/playback` exists with an `id` path parameter and accepts the `api_key` header scheme. It needs the `asset.view` permission. The branch adds or changes no call.
+  - Without the key, a ranged GET of a real timeline video returns 401.
+  - With the verification key it returns 403 "Missing required permission: asset.view", and `/thumbnail?size=preview` returns the same. The verify key has only read scopes (no `asset.view`), so the stream's 206 couldn't be shown here. The app's own key on the TV already plays slideshow videos through this same path (#6).
+- Failed: none
+- Not self-verifiable (check on the TV by hand):
+  - Photos tab: open a video. It plays with sound. OK pauses it (the badge shows) and resumes it. Let it end: the last frame stays with the badge, and OK replays it. Right moves on and the sound stops. Back returns to the video's tile.
+  - An album grid: open a video, then Back returns to its tile.
+  - Home's Recently added row: open a video if one is there. Back returns to Home.
+  - A memory grid: open a video if a memory has one (memories may have none).
+  - The remote's Home button pauses the video.
+  - `dumpsys meminfo` stays steady over several videos.
