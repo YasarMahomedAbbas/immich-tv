@@ -32,3 +32,14 @@ Branch: `feat/39-open-photo-from-row`
 - Skipped: `PhotoGridViewModel.loadMonths()` now keeps `viewing`. The code and `PhotoGridViewModelTest` say it; not a cross-cutting rule.
 - Skipped: README architecture block. The branch adds no source files (only modifies existing ones), so the tree it lists is unchanged; no commands, server reads, permissions or release steps changed.
 - Stale, fixed separately: none
+
+## Self verification
+
+Result: partial
+
+- CI build: 559 tests passed / 0 failed, line coverage 91.5% (1411/1542, koverVerifyDebug minimum 80% met), lint 0 errors (30 warnings, none new to this branch's files), debug APK built.
+- Server: not run (no `data/` change; the branch adds no Immich call and only reuses the album timeline calls already verified).
+- TV: not run (the Chromecast at `TV_ADB` answers ping, but adb on port 5555 refused the connection three times; network debugging is likely off since a restart).
+- Verified: the full CI command in Docker (BUILD SUCCESSFUL). The Robolectric focus tests drive OK on a row tile (near, far and video tile), the focus/fallback rules on coming back, and `AppViewModelTest` the row viewer's Back paths.
+- Failed: none
+- Not self-verifiable: on the TV, by hand: open an album, Down to the row, Right to the third tile, OK: that photo full-screen. Right twice, Left once: moves through the album. Back: focus on the fourth tile, scrolled into view. OK on the row's last tile, Right past the row's end, Back: focus on the last tile. OK on a video tile: a still with the play badge. Back from the album screen still goes to Albums (or Home when opened from Home's row). Also an album not opened before this session: the photo must stay open once its months load (the self-review fix).
