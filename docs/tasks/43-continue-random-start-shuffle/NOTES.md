@@ -60,6 +60,7 @@ Branch: `feat/43-continue-random-start-shuffle`
 
 Result: partial
 
+- Decision (user, 2026-11-23, issue comment): skip the TV checks and ship with verification marked partial; the outstanding on-TV checks below go in the PR as hand-check items.
 - CI build: full CI command in Docker green: 549 tests passed / 0 failed / 0 skipped, line coverage 89.6% (bound 80%), lint clean, debug APK built.
 - Server: Immich 3.3.6
 - TV: not run (2026-11-21 re-run in the TV window the user granted on the issue: the debug APK built, but `adb connect` to the Chromecast was refused for 5 minutes (20 tries, 15 s apart). The TV was on the network and answering on its cast ports 8008/8009/8443, but nothing listened on adb's 5555: network debugging is off on the TV and can't be turned on from here. Earlier window: the TV was shared and the pipeline's 2026-10-30 window had ended.) Code unchanged since the CI run above, so CI was not re-run.
