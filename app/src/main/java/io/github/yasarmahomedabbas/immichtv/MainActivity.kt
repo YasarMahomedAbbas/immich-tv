@@ -173,6 +173,7 @@ class MainActivity : ComponentActivity() {
                     )
                     is AppScreen.AlbumPhotoViewer -> PhotoViewerScreen(
                         viewModel = albumGrid(container, connection, current.album),
+                        newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                     )
                     is AppScreen.AlbumRowViewer -> {
@@ -189,17 +190,19 @@ class MainActivity : ComponentActivity() {
                         // Before the photo is set, what the grid has is from an earlier visit.
                         BackHandler { app.backFromRowViewer(grid.state.value.viewing?.id.takeIf { opened }) }
                         if (opened) {
-                            PhotoViewerScreen(viewModel = grid, onBack = { app.backFromRowViewer(grid.state.value.viewing?.id) })
+                            PhotoViewerScreen(viewModel = grid, newPlayer = container::videoPlayer, onBack = { app.backFromRowViewer(grid.state.value.viewing?.id) })
                         } else {
                             Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
                         }
                     }
                     is AppScreen.MemoryPhotoViewer -> PhotoViewerScreen(
                         viewModel = memoryGrid(connection, current.memory),
+                        newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                     )
                     is AppScreen.PhotoViewer -> PhotoViewerScreen(
                         viewModel = viewModel(key = "photos-$connection", factory = PhotoGridViewModel.factory(container.libraryTimeline())),
+                        newPlayer = container::videoPlayer,
                         onBack = { app.back() },
                     )
                     is AppScreen.Slideshow -> SlideshowScreen(

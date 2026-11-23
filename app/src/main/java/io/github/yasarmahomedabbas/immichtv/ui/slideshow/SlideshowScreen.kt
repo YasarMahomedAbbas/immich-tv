@@ -1,7 +1,6 @@
 package io.github.yasarmahomedabbas.immichtv.ui.slideshow
 
 import android.content.Context
-import android.view.TextureView
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,13 +49,11 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -90,9 +86,11 @@ import io.github.yasarmahomedabbas.immichtv.ui.components.Clock
 import io.github.yasarmahomedabbas.immichtv.ui.components.ClockStyle
 import io.github.yasarmahomedabbas.immichtv.ui.components.EmptyState
 import io.github.yasarmahomedabbas.immichtv.ui.components.FailedState
+import io.github.yasarmahomedabbas.immichtv.ui.components.KeepScreenOn
 import io.github.yasarmahomedabbas.immichtv.ui.components.OverPhotoPanel
 import io.github.yasarmahomedabbas.immichtv.ui.components.OverPhotoStyle
 import io.github.yasarmahomedabbas.immichtv.ui.components.SkeletonBlock
+import io.github.yasarmahomedabbas.immichtv.ui.components.VideoPicture
 import io.github.yasarmahomedabbas.immichtv.ui.components.fullScreenRequest
 import io.github.yasarmahomedabbas.immichtv.ui.theme.ImmichTvTheme
 import kotlinx.coroutines.Job
@@ -180,15 +178,6 @@ internal fun RunWhileStarted(viewModel: SlideshowViewModel) {
             lifecycle.removeObserver(observer)
             timer?.cancel()
         }
-    }
-}
-
-@Composable
-private fun KeepScreenOn(awake: Boolean) {
-    val view = LocalView.current
-    DisposableEffect(view, awake) {
-        view.keepScreenOn = awake
-        onDispose { view.keepScreenOn = false }
     }
 }
 
@@ -447,26 +436,7 @@ private fun VideoLayer(
         }
     }
 
-    val ratio = size?.takeIf { it.width > 0 && it.height > 0 }?.let { it.width * it.pixelWidthHeightRatio / it.height }
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        AndroidView(
-            factory = { viewContext ->
-                TextureView(viewContext).apply {
-                    isFocusable = false
-                    isOpaque = false
-                    alpha = 0f
-                    player.setVideoTextureView(this)
-                }
-            },
-            update = { it.alpha = if (firstFrame) 1f else 0f },
-            modifier = if (ratio == null) {
-                Modifier.fillMaxSize()
-            } else {
-                // Fitted, never cropped: height first for portrait, so it can't run off the screen.
-                Modifier.aspectRatio(ratio, matchHeightConstraintsFirst = ratio < 1f)
-            },
-        )
-    }
+    VideoPicture(player, size, visible = firstFrame)
 }
 
 @Composable
