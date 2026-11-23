@@ -72,7 +72,7 @@ The viewer is opened by an OK press on a tile. That press's repeats and its KeyU
 
 Goal: a pure, tested state for one viewed video, with no player yet.
 
-### [ ] 1.1 — `ViewerVideo`
+### [x] 1.1 — `ViewerVideo`
 
 File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/photos/ViewerVideo.kt`
 
@@ -95,7 +95,7 @@ File: `app/src/main/java/io/github/yasarmahomedabbas/immichtv/ui/photos/ViewerVi
   - `val showBadge get() = phase in setOf(Loading, Paused, Ended)`
   - `val keepScreenOn get() = phase == Playing`
 
-### [ ] 1.2 — `ViewerVideoTest`
+### [x] 1.2 — `ViewerVideoTest`
 
 File: `app/src/test/java/io/github/yasarmahomedabbas/immichtv/ui/photos/ViewerVideoTest.kt`. Plain JUnit, one test per item in the test plan's Unit line.
 
