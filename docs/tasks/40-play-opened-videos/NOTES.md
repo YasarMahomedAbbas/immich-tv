@@ -17,6 +17,7 @@ Branch: `feat/40-play-opened-videos`
   - OK acts only on a fresh KeyDown, because the tile's OK press carries into the viewer.
   - No seeking.
   - The manual's Photo row is updated.
+- Brief approved (pipeline, on the user's behalf; flag: ux): option 1, the plan as written. Rejected: dropping the shared-picture refactor (option 2).
 - API: no call added or changed. The stream is `GET /api/assets/{id}/video/playback` with the key header, unchanged since #6.
 - Open risks:
   - Memory grids may have no videos, because Home drops them from memories. That part of "Done when" may only be checkable as "no video to open".
